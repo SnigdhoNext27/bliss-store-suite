@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,14 +14,21 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [selectedSize, setSelectedSize] = useState(product.sizes[1] || product.sizes[0]);
   const { addItem } = useCartStore();
+  const navigate = useNavigate();
 
-  const handleAddToBag = () => {
+  const handleAddToBag = (e: React.MouseEvent) => {
+    e.stopPropagation();
     addItem(product, selectedSize);
   };
 
-  const handleBuyNow = () => {
+  const handleBuyNow = (e: React.MouseEvent) => {
+    e.stopPropagation();
     addItem(product, selectedSize);
-    // Could navigate to checkout
+    navigate('/checkout');
+  };
+
+  const handleCardClick = () => {
+    navigate(`/product/${product.id}`);
   };
 
   return (
@@ -28,9 +36,10 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: index * 0.1 }}
-      className="group"
+      className="group cursor-pointer"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={handleCardClick}
     >
       {/* Image Container */}
       <div className="relative mb-4 aspect-[4/5] overflow-hidden rounded-2xl bg-card">
@@ -63,6 +72,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
         <motion.button
           initial={{ opacity: 0 }}
           animate={{ opacity: isHovered ? 1 : 0 }}
+          onClick={(e) => { e.stopPropagation(); navigate(`/product/${product.id}`); }}
           className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-background/90 text-foreground shadow-medium backdrop-blur-sm transition-colors hover:bg-primary hover:text-primary-foreground"
           aria-label="Quick view"
         >
@@ -75,12 +85,13 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
           animate={{ opacity: isHovered ? 1 : 0, y: isHovered ? 0 : 20 }}
           transition={{ duration: 0.3 }}
           className="absolute bottom-3 left-3 right-3"
+          onClick={(e) => e.stopPropagation()}
         >
           <div className="flex justify-center gap-2 rounded-lg bg-background/90 p-2 backdrop-blur-sm">
             {product.sizes.map((size) => (
               <button
                 key={size}
-                onClick={() => setSelectedSize(size)}
+                onClick={(e) => { e.stopPropagation(); setSelectedSize(size); }}
                 className={`flex h-8 w-8 items-center justify-center rounded-md text-xs font-medium transition-colors ${
                   selectedSize === size
                     ? 'bg-primary text-primary-foreground'
@@ -104,11 +115,11 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
         </h3>
         <div className="flex items-center gap-2">
           <span className="text-lg font-bold text-primary">
-            ${product.price.toFixed(2)}
+            ৳{product.price.toFixed(0)}
           </span>
           {product.originalPrice && (
             <span className="text-sm text-muted-foreground line-through">
-              ${product.originalPrice.toFixed(2)}
+              ৳{product.originalPrice.toFixed(0)}
             </span>
           )}
         </div>
@@ -116,7 +127,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
         {/* Action Buttons */}
         <div className="flex gap-2 pt-2">
           <Button
-            variant="cta"
+            variant="default"
             size="sm"
             className="flex-1 gap-2"
             onClick={handleAddToBag}
