@@ -8,6 +8,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useCartStore } from '@/lib/store';
+import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
+import { CartSlide } from '@/components/CartSlide';
 
 interface Product {
   id: string;
@@ -87,7 +90,10 @@ export default function Wishlist() {
         <title>Wishlist | Almans</title>
       </Helmet>
 
-      <div className="min-h-screen bg-background py-12">
+      <Header />
+      <CartSlide />
+
+      <div className="min-h-screen bg-background py-12 pt-24">
         <div className="container px-4">
           <div className="flex items-center gap-3 mb-8">
             <Heart className="h-8 w-8 text-primary" />
@@ -99,7 +105,7 @@ export default function Wishlist() {
               <Heart className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
               <h2 className="font-display text-xl font-semibold mb-2">Your wishlist is empty</h2>
               <p className="text-muted-foreground mb-6">Browse our collection and save your favorites!</p>
-              <Button onClick={() => navigate('/')}>Continue Shopping</Button>
+              <Button onClick={() => navigate('/shop')}>Continue Shopping</Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -169,6 +175,8 @@ export default function Wishlist() {
           )}
         </div>
       </div>
+
+      <Footer />
     </>
   );
 }

@@ -73,7 +73,7 @@ export default function Checkout() {
             <Button onClick={() => navigate('/auth?redirect=/checkout')} size="lg">
               Sign In / Sign Up
             </Button>
-            <Button variant="outline" onClick={() => navigate('/')}>
+            <Button variant="outline" onClick={() => navigate('/shop')}>
               Continue Shopping
             </Button>
           </div>
@@ -678,7 +678,7 @@ export default function Checkout() {
                     <Mail className="h-5 w-5" />
                     Send via Email
                   </Button>
-                  <Button onClick={() => navigate('/')} variant="ghost" size="lg" className="w-full">
+                  <Button onClick={() => navigate('/shop')} variant="ghost" size="lg" className="w-full">
                     Continue Shopping
                   </Button>
                 </div>

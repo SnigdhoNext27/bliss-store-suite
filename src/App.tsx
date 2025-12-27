@@ -7,6 +7,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/lib/auth";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import Index from "./pages/Index";
+import Shop from "./pages/Shop";
 import Auth from "./pages/Auth";
 import ProductDetail from "./pages/ProductDetail";
 import Checkout from "./pages/Checkout";
@@ -38,6 +39,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/shop" element={<Shop />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/checkout" element={<Checkout />} />

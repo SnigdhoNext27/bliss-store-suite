@@ -346,7 +346,7 @@ export default function Account() {
                   <div className="text-center py-12 bg-card rounded-xl">
                     <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                     <p className="text-muted-foreground">No orders yet</p>
-                    <Button onClick={() => navigate('/')} className="mt-4">
+                    <Button onClick={() => navigate('/shop')} className="mt-4">
                       Start Shopping
                     </Button>
                   </div>

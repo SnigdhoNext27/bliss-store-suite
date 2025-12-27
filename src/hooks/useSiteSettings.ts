@@ -9,6 +9,9 @@ interface SiteSettings {
   delivery_fee_outside: string;
   business_email: string;
   business_phone: string;
+  social_facebook: string;
+  social_instagram: string;
+  social_whatsapp: string;
 }
 
 const defaultSettings: SiteSettings = {
@@ -18,6 +21,9 @@ const defaultSettings: SiteSettings = {
   delivery_fee_outside: '120',
   business_email: 'rijvialomrafa@gmail.com',
   business_phone: '+8801930278877',
+  social_facebook: 'https://www.facebook.com/profile.php?id=61584375982557',
+  social_instagram: 'https://www.instagram.com/almans.bd',
+  social_whatsapp: '8801930278877',
 };
 
 async function fetchSiteSettings(): Promise<SiteSettings> {

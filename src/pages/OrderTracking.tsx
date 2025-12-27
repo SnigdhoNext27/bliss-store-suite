@@ -141,7 +141,7 @@ export default function OrderTracking() {
             <p className="text-muted-foreground mb-6">
               We couldn't find order #{orderNumber}
             </p>
-            <Button onClick={() => navigate('/')}>Back to Shop</Button>
+            <Button onClick={() => navigate('/shop')}>Back to Shop</Button>
           </div>
         </div>
         <Footer />
