@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Outlet, useNavigate, NavLink } from 'react-router-dom';
+import { Outlet, useNavigate, NavLink, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   ShoppingBag, 
@@ -12,7 +12,8 @@ import {
   Menu,
   X,
   Shield,
-  Grid3X3
+  Grid3X3,
+  Home
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
@@ -148,6 +149,15 @@ export default function AdminLayout() {
 
       {/* Main Content */}
       <main className="flex-1 p-4 lg:p-8 lg:ml-0">
+        {/* Top Bar with Home Button */}
+        <div className="flex justify-end mb-6">
+          <Button variant="outline" size="sm" asChild className="gap-2">
+            <Link to="/">
+              <Home className="h-4 w-4" />
+              <span className="hidden sm:inline">Visit Site</span>
+            </Link>
+          </Button>
+        </div>
         <Outlet />
       </main>
     </div>
