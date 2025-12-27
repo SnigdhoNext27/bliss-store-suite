@@ -2,18 +2,18 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import heroImage1 from '@/assets/hero-1.jpg';
 import heroImage2 from '@/assets/hero-2.jpg';
 import heroImage3 from '@/assets/hero-3.jpg';
 import heroImage4 from '@/assets/hero-4.jpg';
 
-const slides = [
+const defaultSlides = [
   {
     id: 1,
     image: heroImage1,
     subtitle: 'Thoughtful Fashion',
     title: 'ALMANS',
-    tagline: 'Timeless Style 2025',
     description: 'Almans crafts premium, sustainably-made wardrobe essentials that blend modern cuts with long-lasting materials.',
   },
   {
@@ -21,7 +21,6 @@ const slides = [
     image: heroImage2,
     subtitle: 'New Collection',
     title: 'ALMANS',
-    tagline: 'Autumn Essentials',
     description: 'Discover our latest collection of premium casual wear designed for the modern gentleman.',
   },
   {
@@ -29,7 +28,6 @@ const slides = [
     image: heroImage3,
     subtitle: 'Premium Quality',
     title: 'ALMANS',
-    tagline: 'Crafted with Care',
     description: 'Every piece is made with the finest materials, ensuring comfort and durability that lasts.',
   },
   {
@@ -37,7 +35,6 @@ const slides = [
     image: heroImage4,
     subtitle: 'Urban Style',
     title: 'ALMANS',
-    tagline: 'Street Ready',
     description: 'Contemporary streetwear meets timeless elegance for the fashion-forward individual.',
   },
 ];
@@ -66,6 +63,15 @@ export function Hero() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [direction, setDirection] = useState(1);
   const [isPaused, setIsPaused] = useState(false);
+  const { settings } = useSiteSettings();
+
+  // Create slides with dynamic tagline
+  const slides = defaultSlides.map((slide, index) => ({
+    ...slide,
+    tagline: index === 0 ? settings.tagline : 
+             index === 1 ? 'Autumn Essentials' :
+             index === 2 ? 'Crafted with Care' : 'Street Ready',
+  }));
 
   useEffect(() => {
     if (isPaused) return;
@@ -76,7 +82,7 @@ export function Hero() {
     }, 5000);
     
     return () => clearInterval(timer);
-  }, [isPaused]);
+  }, [isPaused, slides.length]);
 
   const goToSlide = (index: number) => {
     setDirection(index > currentSlide ? 1 : -1);

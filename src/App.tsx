@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ProductDetail from "./pages/ProductDetail";
 import Checkout from "./pages/Checkout";
+import Wishlist from "./pages/Wishlist";
 import AdminLayout from "./pages/admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import Orders from "./pages/admin/Orders";
@@ -34,6 +35,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/checkout" element={<Checkout />} />
+              <Route path="/wishlist" element={<Wishlist />} />
               
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>
