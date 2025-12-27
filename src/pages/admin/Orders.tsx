@@ -19,6 +19,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
+import { logAdminAction } from '@/lib/auditLog';
 
 type OrderStatus = Database['public']['Enums']['order_status'];
 
@@ -67,6 +68,9 @@ export default function Orders() {
   };
 
   const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
+    const order = orders.find(o => o.id === orderId);
+    const previousStatus = order?.status;
+    
     try {
       const { error } = await supabase
         .from('orders')
@@ -75,6 +79,7 @@ export default function Orders() {
 
       if (error) throw error;
 
+      await logAdminAction({ action: 'update', entityType: 'order', entityId: orderId, details: { order_number: order?.order_number, previous_status: previousStatus, new_status: status } });
       setOrders(orders.map(o => o.id === orderId ? { ...o, status } : o));
       toast({ title: 'Order status updated' });
     } catch (error) {

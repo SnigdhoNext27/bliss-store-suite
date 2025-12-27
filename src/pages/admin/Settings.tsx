@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { logAdminAction } from '@/lib/auditLog';
 
 interface Settings {
   tagline: string;
@@ -71,6 +72,7 @@ export default function Settings() {
         if (error) throw error;
       }
 
+      await logAdminAction({ action: 'update', entityType: 'settings', details: { updated_keys: Object.keys(settings) } });
       toast({ title: 'Settings saved successfully' });
     } catch (error) {
       console.error('Save settings error:', error);
