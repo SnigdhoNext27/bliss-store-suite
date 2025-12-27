@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Filter, Eye, ChevronDown } from 'lucide-react';
+import { Search, Filter, Eye, Package } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,6 +23,16 @@ import { logAdminAction } from '@/lib/auditLog';
 
 type OrderStatus = Database['public']['Enums']['order_status'];
 
+interface OrderItem {
+  id: string;
+  product_name: string;
+  product_image: string | null;
+  size: string | null;
+  color: string | null;
+  quantity: number;
+  price: number;
+}
+
 interface Order {
   id: string;
   order_number: string;
@@ -44,6 +54,8 @@ export default function Orders() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [loadingItems, setLoadingItems] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -65,6 +77,30 @@ export default function Orders() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchOrderItems = async (orderId: string) => {
+    setLoadingItems(true);
+    try {
+      const { data, error } = await supabase
+        .from('order_items')
+        .select('*')
+        .eq('order_id', orderId);
+
+      if (error) throw error;
+      setOrderItems((data || []) as OrderItem[]);
+    } catch (error) {
+      console.error('Fetch order items error:', error);
+      toast({ title: 'Failed to load order items', variant: 'destructive' });
+    } finally {
+      setLoadingItems(false);
+    }
+  };
+
+  const handleViewOrder = async (order: Order) => {
+    setSelectedOrder(order);
+    setOrderItems([]);
+    await fetchOrderItems(order.id);
   };
 
   const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
@@ -199,7 +235,7 @@ export default function Orders() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setSelectedOrder(order)}
+                        onClick={() => handleViewOrder(order)}
                       >
                         <Eye className="h-4 w-4 mr-1" />
                         View
@@ -214,8 +250,8 @@ export default function Orders() {
       </div>
 
       {/* Order Detail Dialog */}
-      <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
-        <DialogContent className="max-w-lg">
+      <Dialog open={!!selectedOrder} onOpenChange={() => { setSelectedOrder(null); setOrderItems([]); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Order {selectedOrder?.order_number}</DialogTitle>
           </DialogHeader>
@@ -240,6 +276,51 @@ export default function Orders() {
                   <p className="text-sm">{selectedOrder.shipping_address.address}</p>
                   <p className="text-sm capitalize">{selectedOrder.shipping_address.area}</p>
                 </div>
+              </div>
+
+              {/* Order Items Section */}
+              <div>
+                <p className="text-sm text-muted-foreground mb-2 flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Order Items ({orderItems.length})
+                </p>
+                {loadingItems ? (
+                  <p className="text-sm text-muted-foreground py-4 text-center">Loading items...</p>
+                ) : orderItems.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4 text-center">No items found</p>
+                ) : (
+                  <div className="space-y-2">
+                    {orderItems.map((item) => (
+                      <div key={item.id} className="flex gap-3 bg-secondary/50 rounded-lg p-3">
+                        {item.product_image ? (
+                          <img
+                            src={item.product_image}
+                            alt={item.product_name}
+                            className="w-14 h-14 object-cover rounded-md flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="w-14 h-14 bg-secondary rounded-md flex items-center justify-center flex-shrink-0">
+                            <Package className="h-6 w-6 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{item.product_name}</p>
+                          <div className="flex flex-wrap gap-2 text-sm text-muted-foreground mt-0.5">
+                            {item.size && <span>Size: {item.size}</span>}
+                            {item.color && <span>Color: {item.color}</span>}
+                            <span>Qty: {item.quantity}</span>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="font-medium">৳{Number(item.price).toLocaleString()}</p>
+                          <p className="text-xs text-muted-foreground">
+                            ৳{(Number(item.price) * item.quantity).toLocaleString()} total
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="border-t border-border pt-4 space-y-2">
