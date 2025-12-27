@@ -9,9 +9,9 @@ const footerLinks = {
 };
 
 const socialLinks = [
-  { name: 'Facebook', icon: Facebook, href: '#' },
-  { name: 'Instagram', icon: Instagram, href: '#' },
-  { name: 'Twitter', icon: Twitter, href: '#' },
+  { name: 'Facebook', icon: Facebook, href: 'https://facebook.com/almans' },
+  { name: 'Instagram', icon: Instagram, href: 'https://instagram.com/almans' },
+  { name: 'Twitter', icon: Twitter, href: 'https://twitter.com/almans' },
 ];
 
 export function Footer() {
@@ -54,6 +54,8 @@ export function Footer() {
                 <a
                   key={social.name}
                   href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex h-10 w-10 items-center justify-center rounded-full border border-almans-cream/20 text-almans-cream/60 transition-all hover:border-almans-cream hover:text-almans-cream"
                   aria-label={social.name}
                 >
