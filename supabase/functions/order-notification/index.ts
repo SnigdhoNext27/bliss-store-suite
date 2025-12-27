@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -46,6 +47,29 @@ serve(async (req) => {
       notes 
     } = payload;
 
+    // Fetch WhatsApp notification phone from site_settings
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    let businessPhone = Deno.env.get('BUSINESS_PHONE') || '8801930278877';
+    
+    try {
+      const { data: settingData } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'whatsapp_notification_phone')
+        .single();
+      
+      if (settingData?.value) {
+        // Clean the phone number - remove + and any non-numeric characters
+        businessPhone = settingData.value.replace(/[^0-9]/g, '');
+        console.log('Using WhatsApp notification phone from settings:', businessPhone);
+      }
+    } catch (settingsError) {
+      console.log('Could not fetch settings, using default phone:', settingsError);
+    }
+
     // Format items list
     const itemsList = items.map(item => 
       `• ${item.name} | Size: ${item.size} | Qty: ${item.quantity} | ৳${item.price * item.quantity}`
@@ -65,10 +89,9 @@ serve(async (req) => {
       (notes ? `\n📝 Notes: ${notes}` : '');
 
     console.log('Notification message:', message);
+    console.log('Sending to WhatsApp:', businessPhone);
 
     // Return the formatted message for WhatsApp integration
-    // The business phone number should be retrieved from settings
-    const businessPhone = Deno.env.get('BUSINESS_PHONE') || '8801930278877';
     const whatsappUrl = `https://wa.me/${businessPhone}?text=${encodeURIComponent(message)}`;
 
     return new Response(
