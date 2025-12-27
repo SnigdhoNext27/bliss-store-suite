@@ -1,1 +1,4 @@
 project_id = "zoincmqtqugkmvakepra"
+
+[functions.order-notification]
+verify_jwt = false

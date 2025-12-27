@@ -166,6 +166,39 @@ export default function Checkout() {
       clearCart();
       setStep(4);
       
+      // Send WhatsApp notification to admin
+      try {
+        const notificationPayload = {
+          orderNumber: result?.order_number || orderNum,
+          customerName: formData.fullName,
+          customerPhone: formData.phone,
+          customerAddress: formData.address,
+          deliveryArea: formData.deliveryArea,
+          items: items.map(item => ({
+            name: item.product.name,
+            size: item.size,
+            quantity: item.quantity,
+            price: item.livePrice,
+          })),
+          subtotal,
+          deliveryFee,
+          total,
+          notes: formData.notes || undefined,
+        };
+        
+        const { data: notifData } = await supabase.functions.invoke('order-notification', {
+          body: notificationPayload,
+        });
+        
+        // Open WhatsApp link in new tab for admin notification
+        if (notifData?.whatsappUrl) {
+          window.open(notifData.whatsappUrl, '_blank');
+        }
+      } catch (notifError) {
+        console.error('Notification error:', notifError);
+        // Don't fail the order if notification fails
+      }
+      
       toast({ title: 'Order placed successfully!' });
     } catch (error) {
       console.error('Order error:', error);
