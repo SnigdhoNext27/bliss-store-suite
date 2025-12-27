@@ -26,6 +26,16 @@ const CATEGORY_COLORS: Record<string, string> = {
   'Accessories': 'from-cyan-500/20 to-cyan-600/10 border-cyan-500/30',
 };
 
+// Category banner images - use product images as category banners
+const CATEGORY_BANNERS: Record<string, string> = {
+  'T-Shirts': 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=1200&h=300&fit=crop',
+  'Shirts': 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=1200&h=300&fit=crop',
+  'Pants': 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=1200&h=300&fit=crop',
+  'Trousers': 'https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=1200&h=300&fit=crop',
+  'Caps': 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=1200&h=300&fit=crop',
+  'Accessories': 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?w=1200&h=300&fit=crop',
+};
+
 interface CategorySectionProps {
   category: string;
   products: Product[];
@@ -37,6 +47,7 @@ function CategorySection({ category, products, onViewAll }: CategorySectionProps
 
   const colorClass = CATEGORY_COLORS[category] || 'from-primary/20 to-primary/10 border-primary/30';
   const icon = CATEGORY_ICONS[category] || <Package className="h-5 w-5" />;
+  const bannerImage = CATEGORY_BANNERS[category];
 
   return (
     <motion.div
@@ -46,33 +57,70 @@ function CategorySection({ category, products, onViewAll }: CategorySectionProps
       transition={{ duration: 0.6 }}
       className="mb-12"
     >
-      {/* Category Header - Shopee Style */}
-      <div className={`bg-gradient-to-r ${colorClass} border rounded-t-lg p-4 flex items-center justify-between`}>
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-background/80 rounded-lg shadow-sm">
-            {icon}
-          </div>
-          <div>
-            <h3 className="font-display text-xl md:text-2xl font-bold text-foreground">
-              {category}
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              {products.length} {products.length === 1 ? 'item' : 'items'} available
-            </p>
+      {/* Category Banner - Shopee Style */}
+      {bannerImage && (
+        <div className="relative h-32 md:h-40 rounded-t-lg overflow-hidden">
+          <img 
+            src={bannerImage} 
+            alt={`${category} collection`}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent" />
+          <div className="absolute inset-0 flex items-center justify-between px-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                {icon}
+              </div>
+              <div className="text-white">
+                <h3 className="font-display text-2xl md:text-3xl font-bold drop-shadow-lg">
+                  {category}
+                </h3>
+                <p className="text-sm text-white/80">
+                  {products.length} {products.length === 1 ? 'item' : 'items'} available
+                </p>
+              </div>
+            </div>
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              className="gap-1 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white border-white/30"
+              onClick={() => onViewAll(category)}
+            >
+              See All <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
         </div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="text-primary hover:text-primary/80 gap-1"
-          onClick={() => onViewAll(category)}
-        >
-          See All <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
+      )}
+      
+      {/* Category Header fallback (no banner) */}
+      {!bannerImage && (
+        <div className={`bg-gradient-to-r ${colorClass} border rounded-t-lg p-4 flex items-center justify-between`}>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-background/80 rounded-lg shadow-sm">
+              {icon}
+            </div>
+            <div>
+              <h3 className="font-display text-xl md:text-2xl font-bold text-foreground">
+                {category}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {products.length} {products.length === 1 ? 'item' : 'items'} available
+              </p>
+            </div>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-primary hover:text-primary/80 gap-1"
+            onClick={() => onViewAll(category)}
+          >
+            See All <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
       
       {/* Products Grid */}
-      <div className="border border-t-0 rounded-b-lg p-4 bg-card/50">
+      <div className={`border ${bannerImage ? 'rounded-b-lg' : 'border-t-0 rounded-b-lg'} p-4 bg-card/50`}>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {products.slice(0, 5).map((product, index) => (
             <ProductCard key={product.id} product={product} index={index} />
