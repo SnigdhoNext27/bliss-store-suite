@@ -1,20 +1,22 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
 import { ProductCard } from './ProductCard';
 import { SearchFilter, FilterState } from './SearchFilter';
-import { products } from '@/lib/products';
+import { useProducts } from '@/hooks/useProducts';
 
 export function ProductsSection() {
+  const { products, loading, error } = useProducts();
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<FilterState>({
     category: 'all',
-    priceRange: [0, 500],
+    priceRange: [0, 50000],
     sortBy: 'newest',
   });
 
   const categories = useMemo(() => {
     return [...new Set(products.map(p => p.category))];
-  }, []);
+  }, [products]);
 
   const filteredProducts = useMemo(() => {
     let result = [...products];
@@ -57,7 +59,30 @@ export function ProductsSection() {
     }
 
     return result;
-  }, [searchQuery, filters]);
+  }, [products, searchQuery, filters]);
+
+  if (loading) {
+    return (
+      <section id="products" className="py-20 bg-background">
+        <div className="container px-4 md:px-8 flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground">Loading products...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section id="products" className="py-20 bg-background">
+        <div className="container px-4 md:px-8 flex items-center justify-center min-h-[400px]">
+          <p className="text-destructive">{error}</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="products" className="py-20 bg-background">
