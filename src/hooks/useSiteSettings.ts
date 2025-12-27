@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SiteSettings {
@@ -19,35 +20,59 @@ const defaultSettings: SiteSettings = {
   business_phone: '+8801930278877',
 };
 
+async function fetchSiteSettings(): Promise<SiteSettings> {
+  const { data, error } = await supabase
+    .from('site_settings')
+    .select('*');
+
+  if (error) throw error;
+
+  if (data && data.length > 0) {
+    const settingsMap: Record<string, string> = {};
+    data.forEach((item: { key: string; value: string | null }) => {
+      settingsMap[item.key] = item.value || defaultSettings[item.key as keyof SiteSettings] || '';
+    });
+    return { ...defaultSettings, ...settingsMap };
+  }
+
+  return defaultSettings;
+}
+
 export function useSiteSettings() {
-  const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
+  const { data: settings, isLoading: loading } = useQuery({
+    queryKey: ['site-settings'],
+    queryFn: fetchSiteSettings,
+    staleTime: 0, // Always consider data stale
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    refetchOnReconnect: true, // Refetch when internet reconnects
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
+    initialData: defaultSettings,
+  });
+
+  // Subscribe to real-time updates
   useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('site_settings')
-          .select('*');
-
-        if (error) throw error;
-
-        if (data && data.length > 0) {
-          const settingsMap: Record<string, string> = {};
-          data.forEach((item: { key: string; value: string | null }) => {
-            settingsMap[item.key] = item.value || defaultSettings[item.key as keyof SiteSettings] || '';
-          });
-          setSettings(prev => ({ ...prev, ...settingsMap }));
+    const channel = supabase
+      .channel('site-settings-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'site_settings',
+        },
+        () => {
+          // Invalidate and refetch when any setting changes
+          queryClient.invalidateQueries({ queryKey: ['site-settings'] });
         }
-      } catch (error) {
-        console.error('Fetch site settings error:', error);
-      } finally {
-        setLoading(false);
-      }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
     };
+  }, [queryClient]);
 
-    fetchSettings();
-  }, []);
-
-  return { settings, loading };
+  return { settings: settings || defaultSettings, loading };
 }
