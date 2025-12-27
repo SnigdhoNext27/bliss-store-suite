@@ -16,6 +16,7 @@ import AdminLayout from "./pages/admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import Orders from "./pages/admin/Orders";
 import Products from "./pages/admin/Products";
+import Categories from "./pages/admin/Categories";
 import Customers from "./pages/admin/Customers";
 import Coupons from "./pages/admin/Coupons";
 import Banners from "./pages/admin/Banners";
@@ -47,6 +48,7 @@ const App = () => (
                 <Route index element={<Dashboard />} />
                 <Route path="orders" element={<Orders />} />
                 <Route path="products" element={<Products />} />
+                <Route path="categories" element={<Categories />} />
                 <Route path="customers" element={<Customers />} />
                 <Route path="coupons" element={<Coupons />} />
                 <Route path="banners" element={<Banners />} />

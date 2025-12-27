@@ -9,8 +9,8 @@ const footerLinks = {
 };
 
 const socialLinks = [
-  { name: 'Facebook', icon: Facebook, href: 'https://facebook.com/almans' },
-  { name: 'Instagram', icon: Instagram, href: 'https://instagram.com/almans' },
+  { name: 'Facebook', icon: Facebook, href: 'https://www.facebook.com/profile.php?id=61584375982557' },
+  { name: 'Instagram', icon: Instagram, href: 'https://www.instagram.com/almans.bd?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==' },
   { name: 'Twitter', icon: Twitter, href: 'https://twitter.com/almans' },
 ];
 
