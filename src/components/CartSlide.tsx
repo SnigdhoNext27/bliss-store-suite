@@ -1,21 +1,29 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
+import { X, Plus, Minus, Trash2, ShoppingBag, AlertTriangle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/lib/store';
+import { useCartWithLivePrices } from '@/hooks/useCartWithLivePrices';
 
 export function CartSlide() {
+  const { isOpen, closeCart } = useCartStore();
+  const navigate = useNavigate();
   const {
     items,
-    isOpen,
-    closeCart,
+    loading,
+    hasPriceChanges,
+    hasUnavailableProducts,
+    liveSubtotal,
+    liveTotalItems,
     removeItem,
     updateQuantity,
-    getTotalPrice,
-    getTotalItems,
-  } = useCartStore();
+    removeUnavailableItems,
+  } = useCartWithLivePrices();
 
-  const totalItems = getTotalItems();
-  const totalPrice = getTotalPrice();
+  const handleCheckout = () => {
+    closeCart();
+    navigate('/checkout');
+  };
 
   return (
     <AnimatePresence>
@@ -47,7 +55,7 @@ export function CartSlide() {
                     My Bag
                   </h2>
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
-                    {totalItems}
+                    {liveTotalItems}
                   </span>
                 </div>
                 <button
@@ -58,6 +66,27 @@ export function CartSlide() {
                   <X className="h-5 w-5" />
                 </button>
               </div>
+
+              {/* Price Change Warning */}
+              {hasPriceChanges && !loading && (
+                <div className="mx-6 mt-4 flex items-center gap-2 rounded-lg bg-amber-500/10 p-3 text-amber-600 dark:text-amber-400">
+                  <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                  <p className="text-sm">Some prices have been updated since you added them.</p>
+                </div>
+              )}
+
+              {/* Unavailable Products Warning */}
+              {hasUnavailableProducts && !loading && (
+                <div className="mx-6 mt-4 flex items-center justify-between gap-2 rounded-lg bg-destructive/10 p-3 text-destructive">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                    <p className="text-sm">Some items are no longer available.</p>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={removeUnavailableItems}>
+                    Remove
+                  </Button>
+                </div>
+              )}
 
               {/* Cart Items */}
               <div className="flex-1 overflow-y-auto px-6 py-4">
@@ -83,7 +112,7 @@ export function CartSlide() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, x: -100 }}
-                        className="flex gap-4 rounded-xl bg-card p-4"
+                        className={`flex gap-4 rounded-xl bg-card p-4 ${item.productUnavailable ? 'opacity-50' : ''}`}
                       >
                         {/* Product Image */}
                         <div className="h-24 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
@@ -104,6 +133,14 @@ export function CartSlide() {
                               <p className="text-sm text-muted-foreground">
                                 Size: {item.size}
                               </p>
+                              {item.productUnavailable && (
+                                <p className="text-sm text-destructive">Unavailable</p>
+                              )}
+                              {item.priceChanged && !item.productUnavailable && (
+                                <p className="text-xs text-amber-600 dark:text-amber-400">
+                                  Price updated from ৳{item.originalStoredPrice.toFixed(0)}
+                                </p>
+                              )}
                             </div>
                             <button
                               onClick={() => removeItem(item.product.id, item.size)}
@@ -127,6 +164,7 @@ export function CartSlide() {
                                 }
                                 className="flex h-8 w-8 items-center justify-center rounded-md border border-border hover:bg-muted transition-colors"
                                 aria-label="Decrease quantity"
+                                disabled={item.productUnavailable}
                               >
                                 <Minus className="h-4 w-4" />
                               </button>
@@ -143,6 +181,7 @@ export function CartSlide() {
                                 }
                                 className="flex h-8 w-8 items-center justify-center rounded-md border border-border hover:bg-muted transition-colors"
                                 aria-label="Increase quantity"
+                                disabled={item.productUnavailable}
                               >
                                 <Plus className="h-4 w-4" />
                               </button>
@@ -150,7 +189,7 @@ export function CartSlide() {
 
                             {/* Price */}
                             <p className="font-semibold text-primary">
-                              ${(item.product.price * item.quantity).toFixed(2)}
+                              ৳{(item.livePrice * item.quantity).toFixed(0)}
                             </p>
                           </div>
                         </div>
@@ -167,7 +206,7 @@ export function CartSlide() {
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Subtotal</span>
                     <span className="text-lg font-semibold text-foreground">
-                      ${totalPrice.toFixed(2)}
+                      ৳{liveSubtotal.toFixed(0)}
                     </span>
                   </div>
 
@@ -184,7 +223,12 @@ export function CartSlide() {
                     >
                       View Bag
                     </Button>
-                    <Button variant="cta" className="flex-1">
+                    <Button 
+                      variant="cta" 
+                      className="flex-1"
+                      onClick={handleCheckout}
+                      disabled={hasUnavailableProducts}
+                    >
                       Checkout
                     </Button>
                   </div>

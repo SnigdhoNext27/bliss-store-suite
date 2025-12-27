@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, MapPin, Phone, Truck, Check, PartyPopper, MessageCircle, Mail } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Phone, Truck, Check, PartyPopper, MessageCircle, Mail, AlertTriangle } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useCartStore } from '@/lib/store';
+import { useCartWithLivePrices } from '@/hooks/useCartWithLivePrices';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,7 +27,15 @@ export default function Checkout() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
-  const { items, getTotalPrice, clearCart } = useCartStore();
+  const { clearCart } = useCartStore();
+  const { 
+    items, 
+    liveSubtotal, 
+    hasPriceChanges, 
+    hasUnavailableProducts,
+    removeUnavailableItems,
+    loading: productsLoading 
+  } = useCartWithLivePrices();
   const { settings } = useSiteSettings();
 
   const [step, setStep] = useState(1);
@@ -41,7 +50,7 @@ export default function Checkout() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const subtotal = getTotalPrice();
+  const subtotal = liveSubtotal;
   const deliveryFeeDhaka = parseInt(settings.delivery_fee_dhaka) || 60;
   const deliveryFeeOutside = parseInt(settings.delivery_fee_outside) || 120;
   const deliveryFee = formData.deliveryArea === 'dhaka' ? deliveryFeeDhaka : deliveryFeeOutside;
@@ -82,7 +91,7 @@ export default function Checkout() {
         .substring(0, 8);
       const orderNum = `ALM-${randomStr}`;
       
-      // Prepare order items for secure RPC function
+      // Prepare order items for secure RPC function - use live prices
       const orderItems = items.map(item => ({
         product_id: item.product.id,
         product_name: item.product.name,
@@ -90,7 +99,7 @@ export default function Checkout() {
         size: item.size,
         color: null,
         quantity: item.quantity,
-        price: item.product.price,
+        price: item.livePrice, // Use live price instead of stored price
       }));
 
       // Use secure database function for atomic order creation with price validation
@@ -142,7 +151,7 @@ export default function Checkout() {
   const openWhatsApp = () => {
     const phone = settings.business_phone.replace(/[^0-9]/g, '');
     const itemsList = items.map(item => 
-      `• ${item.product.name} — Size: ${item.size} — Qty: ${item.quantity} — Price: ৳${item.product.price}`
+      `• ${item.product.name} — Size: ${item.size} — Qty: ${item.quantity} — Price: ৳${item.livePrice}`
     ).join('\n');
 
     const message = encodeURIComponent(
@@ -161,7 +170,7 @@ export default function Checkout() {
 
   const openEmail = () => {
     const itemsList = items.map(item => 
-      `• ${item.product.name} — Size: ${item.size} — Qty: ${item.quantity} — Price: ৳${item.product.price}`
+      `• ${item.product.name} — Size: ${item.size} — Qty: ${item.quantity} — Price: ৳${item.livePrice}`
     ).join('\n');
 
     const subject = encodeURIComponent('New Order from Almans');
@@ -254,9 +263,30 @@ export default function Checkout() {
               >
                 <h2 className="font-display text-2xl font-bold mb-6">Review Your Bag 👜</h2>
                 
+                {/* Price Change Warning */}
+                {hasPriceChanges && !productsLoading && (
+                  <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 p-3 mb-4 text-amber-600 dark:text-amber-400">
+                    <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                    <p className="text-sm">Some prices have been updated. The amounts below reflect the current prices.</p>
+                  </div>
+                )}
+
+                {/* Unavailable Products Warning */}
+                {hasUnavailableProducts && !productsLoading && (
+                  <div className="flex items-center justify-between gap-2 rounded-lg bg-destructive/10 p-3 mb-4 text-destructive">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                      <p className="text-sm">Some items are no longer available.</p>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={removeUnavailableItems}>
+                      Remove
+                    </Button>
+                  </div>
+                )}
+                
                 <div className="space-y-4 mb-8">
                   {items.map((item) => (
-                    <div key={`${item.product.id}-${item.size}`} className="flex gap-4 bg-card rounded-xl p-4">
+                    <div key={`${item.product.id}-${item.size}`} className={`flex gap-4 bg-card rounded-xl p-4 ${item.productUnavailable ? 'opacity-50' : ''}`}>
                       <img
                         src={item.product.images[0]}
                         alt={item.product.name}
@@ -266,7 +296,15 @@ export default function Checkout() {
                         <h3 className="font-medium">{item.product.name}</h3>
                         <p className="text-sm text-muted-foreground">Size: {item.size}</p>
                         <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
-                        <p className="font-medium mt-1">৳{(item.product.price * item.quantity).toFixed(0)}</p>
+                        {item.productUnavailable && (
+                          <p className="text-sm text-destructive">Unavailable</p>
+                        )}
+                        {item.priceChanged && !item.productUnavailable && (
+                          <p className="text-xs text-amber-600 dark:text-amber-400">
+                            Price updated from ৳{item.originalStoredPrice.toFixed(0)}
+                          </p>
+                        )}
+                        <p className="font-medium mt-1">৳{(item.livePrice * item.quantity).toFixed(0)}</p>
                       </div>
                     </div>
                   ))}
@@ -406,10 +444,10 @@ export default function Checkout() {
                 {/* Order Summary */}
                 <div className="bg-card rounded-xl p-6 mb-6 space-y-4">
                   <h3 className="font-medium">Order Summary</h3>
-                  {items.map((item) => (
+                  {items.filter(item => !item.productUnavailable).map((item) => (
                     <div key={`${item.product.id}-${item.size}`} className="flex justify-between text-sm">
                       <span>{item.product.name} × {item.quantity} ({item.size})</span>
-                      <span>৳{(item.product.price * item.quantity).toFixed(0)}</span>
+                      <span>৳{(item.livePrice * item.quantity).toFixed(0)}</span>
                     </div>
                   ))}
                   <hr className="border-border" />
