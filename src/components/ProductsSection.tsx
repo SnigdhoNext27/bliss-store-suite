@@ -3,7 +3,37 @@ import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { ProductCard } from './ProductCard';
 import { SearchFilter, FilterState } from './SearchFilter';
-import { useProducts } from '@/hooks/useProducts';
+import { useProducts, Product } from '@/hooks/useProducts';
+
+const CATEGORY_ORDER = ['T-Shirts', 'Shirts', 'Pants', 'Trousers', 'Caps'];
+
+interface CategorySectionProps {
+  category: string;
+  products: Product[];
+}
+
+function CategorySection({ category, products }: CategorySectionProps) {
+  if (products.length === 0) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6 }}
+      className="mb-16"
+    >
+      <h3 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-6 pb-3 border-b border-border">
+        {category}
+      </h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {products.map((product, index) => (
+          <ProductCard key={product.id} product={product} index={index} />
+        ))}
+      </div>
+    </motion.div>
+  );
+}
 
 export function ProductsSection() {
   const { products, loading, error } = useProducts();
@@ -54,12 +84,34 @@ export function ProductsSection() {
         break;
       case 'newest':
       default:
-        // Keep original order for newest
         break;
     }
 
     return result;
   }, [products, searchQuery, filters]);
+
+  // Group products by category
+  const productsByCategory = useMemo(() => {
+    const grouped: Record<string, typeof filteredProducts> = {};
+    
+    CATEGORY_ORDER.forEach(cat => {
+      grouped[cat] = filteredProducts.filter(p => p.category === cat);
+    });
+    
+    // Add any products with categories not in CATEGORY_ORDER
+    filteredProducts.forEach(p => {
+      if (!CATEGORY_ORDER.includes(p.category)) {
+        if (!grouped[p.category]) {
+          grouped[p.category] = [];
+        }
+        grouped[p.category].push(p);
+      }
+    });
+    
+    return grouped;
+  }, [filteredProducts]);
+
+  const isFiltering = searchQuery || filters.category !== 'all';
 
   if (loading) {
     return (
@@ -113,23 +165,27 @@ export function ProductsSection() {
           />
         </div>
 
-        {/* Results count */}
-        {(searchQuery || filters.category !== 'all') && (
+        {/* Results count when filtering */}
+        {isFiltering && (
           <p className="text-muted-foreground mb-6">
             Showing {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
           </p>
         )}
 
-        {/* Products Grid */}
+        {/* Products by Category */}
         {filteredProducts.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-xl text-muted-foreground">No products found</p>
             <p className="text-muted-foreground mt-2">Try adjusting your search or filters</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredProducts.map((product, index) => (
-              <ProductCard key={product.id} product={product} index={index} />
+          <div>
+            {Object.entries(productsByCategory).map(([category, categoryProducts]) => (
+              <CategorySection
+                key={category}
+                category={category}
+                products={categoryProducts}
+              />
             ))}
           </div>
         )}
