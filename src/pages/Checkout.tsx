@@ -72,48 +72,56 @@ export default function Checkout() {
     setLoading(true);
     
     try {
-      const orderNum = `ALM-${Date.now().toString(36).toUpperCase()}`;
+      // Generate secure random order number
+      const randomBytes = crypto.getRandomValues(new Uint8Array(6));
+      const randomStr = Array.from(randomBytes)
+        .map(b => b.toString(36))
+        .join('')
+        .toUpperCase()
+        .substring(0, 8);
+      const orderNum = `ALM-${randomStr}`;
       
-      const { data: orderData, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          order_number: orderNum,
-          user_id: user?.id || null,
-          guest_phone: !user ? formData.phone : null,
-          subtotal,
-          delivery_fee: deliveryFee,
-          total,
-          shipping_address: {
-            full_name: formData.fullName,
-            phone: formData.phone,
-            address: formData.address,
-            area: formData.deliveryArea,
-          },
-          notes: formData.notes || null,
-        })
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-
-      // Insert order items
+      // Prepare order items for secure RPC function
       const orderItems = items.map(item => ({
-        order_id: orderData.id,
-        product_id: null, // Using sample products
+        product_id: item.product.id,
         product_name: item.product.name,
-        product_image: item.product.images[0],
+        product_image: item.product.images[0] || null,
         size: item.size,
+        color: null,
         quantity: item.quantity,
         price: item.product.price,
       }));
 
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
+      // Use secure database function for atomic order creation with price validation
+      const { data, error } = await supabase.rpc('create_order_with_items', {
+        p_order_number: orderNum,
+        p_subtotal: subtotal,
+        p_delivery_fee: deliveryFee,
+        p_total: total,
+        p_shipping_address: {
+          full_name: formData.fullName,
+          phone: formData.phone,
+          address: formData.address,
+          area: formData.deliveryArea,
+        },
+        p_items: orderItems,
+        p_user_id: user?.id || null,
+        p_guest_phone: !user ? formData.phone : null,
+        p_guest_email: null,
+        p_notes: formData.notes || null,
+      });
 
-      if (itemsError) throw itemsError;
+      if (error) throw error;
 
-      setOrderNumber(orderNum);
+      // Type assertion for the RPC response
+      const result = data as { success: boolean; order_number?: string; error?: string } | null;
+
+      // Check if the function returned an error
+      if (result && !result.success) {
+        throw new Error(result.error || 'Failed to create order');
+      }
+
+      setOrderNumber(result?.order_number || orderNum);
       clearCart();
       setStep(4);
       
@@ -122,7 +130,7 @@ export default function Checkout() {
       console.error('Order error:', error);
       toast({
         title: 'Failed to place order',
-        description: 'Please try again',
+        description: error instanceof Error ? error.message : 'Please try again',
         variant: 'destructive',
       });
     } finally {
