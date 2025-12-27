@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, ArrowLeft } from 'lucide-react';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth';
+import { supabase } from '@/integrations/supabase/client';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -23,10 +24,11 @@ const signupSchema = loginSchema.extend({
 });
 
 export default function Auth() {
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -70,6 +72,29 @@ export default function Auth() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+    setLoading(true);
+
+    // Handle forgot password
+    if (mode === 'forgot') {
+      if (!formData.email) {
+        setErrors({ email: 'Email is required' });
+        setLoading(false);
+        return;
+      }
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
+          redirectTo: `${window.location.origin}/auth`,
+        });
+        if (error) throw error;
+        setResetSent(true);
+        toast({ title: 'Password reset email sent! Check your inbox.' });
+      } catch (error) {
+        toast({ title: 'Failed to send reset email', description: (error as Error).message, variant: 'destructive' });
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
     setLoading(true);
 
     try {
@@ -151,16 +176,56 @@ export default function Auth() {
       >
         <div className="text-center mb-8">
           <h1 className="font-display text-4xl font-bold text-foreground mb-2">
-            {mode === 'login' ? 'Welcome Back' : 'Create Account'}
+            {mode === 'login' ? 'Welcome Back' : mode === 'signup' ? 'Create Account' : 'Reset Password'}
           </h1>
           <p className="text-muted-foreground">
             {mode === 'login' 
               ? 'Sign in to access your account' 
-              : 'Join Almans for exclusive access'}
+              : mode === 'signup'
+              ? 'Join Almans for exclusive access'
+              : 'Enter your email to reset your password'}
           </p>
         </div>
 
         <div className="bg-card rounded-2xl p-8 shadow-lg border border-border">
+          {mode === 'forgot' ? (
+            resetSent ? (
+              <div className="text-center py-4">
+                <Mail className="h-12 w-12 mx-auto text-primary mb-4" />
+                <p className="text-muted-foreground mb-4">Check your email for a password reset link.</p>
+                <Button variant="outline" onClick={() => { setMode('login'); setResetSent(false); }}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Login
+                </Button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="pl-10"
+                    />
+                  </div>
+                  {errors.email && <p className="text-destructive text-sm">{errors.email}</p>}
+                </div>
+                <Button type="submit" className="w-full" size="lg" disabled={loading}>
+                  {loading ? 'Sending...' : 'Send Reset Link'}
+                </Button>
+                <Button type="button" variant="ghost" className="w-full" onClick={() => setMode('login')}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Login
+                </Button>
+              </form>
+            )
+          ) : (
+            <>
           {/* Google Sign In Button */}
           <Button
             type="button"
