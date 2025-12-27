@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, MapPin, Phone, Truck, Check, PartyPopper, MessageCircle, Mail, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Phone, Truck, Check, PartyPopper, MessageCircle, Mail, AlertTriangle, Banknote, CreditCard, Smartphone } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -46,6 +46,7 @@ export default function Checkout() {
     phone: '',
     address: '',
     deliveryArea: 'dhaka' as 'dhaka' | 'outside',
+    paymentMethod: 'cod' as 'cod' | 'bkash' | 'nagad' | 'card',
     notes: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -528,6 +529,86 @@ export default function Checkout() {
                     <span>Total Payable</span>
                     <span>৳{total.toFixed(0)}</span>
                   </div>
+                </div>
+
+                {/* Payment Method Selection */}
+                <div className="bg-card rounded-xl p-6 mb-6">
+                  <h3 className="font-medium mb-4 flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    Payment Method
+                  </h3>
+                  <RadioGroup
+                    value={formData.paymentMethod}
+                    onValueChange={(val) => setFormData({ ...formData, paymentMethod: val as 'cod' | 'bkash' | 'nagad' | 'card' })}
+                    className="space-y-3"
+                  >
+                    {/* COD - Available */}
+                    <Label
+                      htmlFor="cod"
+                      className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                        formData.paymentMethod === 'cod'
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <RadioGroupItem value="cod" id="cod" />
+                        <div className="flex items-center gap-2">
+                          <Banknote className="h-5 w-5 text-green-600" />
+                          <div>
+                            <p className="font-medium">Cash on Delivery</p>
+                            <p className="text-xs text-muted-foreground">Pay when you receive</p>
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-xs font-medium text-green-600">Available</span>
+                    </Label>
+
+                    {/* bKash - Coming Soon */}
+                    <div className="flex items-center justify-between p-4 rounded-xl border-2 border-border bg-muted/30 opacity-60 cursor-not-allowed">
+                      <div className="flex items-center gap-3">
+                        <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
+                        <div className="flex items-center gap-2">
+                          <Smartphone className="h-5 w-5 text-pink-600" />
+                          <div>
+                            <p className="font-medium">bKash</p>
+                            <p className="text-xs text-muted-foreground">Mobile payment</p>
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-xs font-medium text-muted-foreground">Coming Soon</span>
+                    </div>
+
+                    {/* Nagad - Coming Soon */}
+                    <div className="flex items-center justify-between p-4 rounded-xl border-2 border-border bg-muted/30 opacity-60 cursor-not-allowed">
+                      <div className="flex items-center gap-3">
+                        <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
+                        <div className="flex items-center gap-2">
+                          <Smartphone className="h-5 w-5 text-orange-500" />
+                          <div>
+                            <p className="font-medium">Nagad</p>
+                            <p className="text-xs text-muted-foreground">Mobile payment</p>
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-xs font-medium text-muted-foreground">Coming Soon</span>
+                    </div>
+
+                    {/* Cards - Coming Soon */}
+                    <div className="flex items-center justify-between p-4 rounded-xl border-2 border-border bg-muted/30 opacity-60 cursor-not-allowed">
+                      <div className="flex items-center gap-3">
+                        <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="h-5 w-5 text-blue-500" />
+                          <div>
+                            <p className="font-medium">Debit/Credit Card</p>
+                            <p className="text-xs text-muted-foreground">Visa, Mastercard, etc.</p>
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-xs font-medium text-muted-foreground">Coming Soon</span>
+                    </div>
+                  </RadioGroup>
                 </div>
 
                 {/* Delivery Info */}
