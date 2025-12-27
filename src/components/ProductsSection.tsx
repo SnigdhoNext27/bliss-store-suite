@@ -1,10 +1,18 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Loader2, ChevronRight, Shirt, Package } from 'lucide-react';
 import { ProductCard } from './ProductCard';
 import { SearchFilter, FilterState } from './SearchFilter';
 import { useProducts, Product } from '@/hooks/useProducts';
 import { Button } from './ui/button';
+import { supabase } from '@/integrations/supabase/client';
+
+interface CategoryData {
+  id: string;
+  name: string;
+  image_url: string | null;
+  has_sizes: boolean;
+}
 
 const CATEGORY_ORDER = ['T-Shirts', 'Shirts', 'Pants', 'Trousers', 'Caps', 'Accessories'];
 
@@ -26,28 +34,18 @@ const CATEGORY_COLORS: Record<string, string> = {
   'Accessories': 'from-cyan-500/20 to-cyan-600/10 border-cyan-500/30',
 };
 
-// Category banner images - use product images as category banners
-const CATEGORY_BANNERS: Record<string, string> = {
-  'T-Shirts': 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=1200&h=300&fit=crop',
-  'Shirts': 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=1200&h=300&fit=crop',
-  'Pants': 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=1200&h=300&fit=crop',
-  'Trousers': 'https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=1200&h=300&fit=crop',
-  'Caps': 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=1200&h=300&fit=crop',
-  'Accessories': 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?w=1200&h=300&fit=crop',
-};
-
 interface CategorySectionProps {
   category: string;
   products: Product[];
   onViewAll: (category: string) => void;
+  bannerImage?: string | null;
 }
 
-function CategorySection({ category, products, onViewAll }: CategorySectionProps) {
+function CategorySection({ category, products, onViewAll, bannerImage }: CategorySectionProps) {
   if (products.length === 0) return null;
 
   const colorClass = CATEGORY_COLORS[category] || 'from-primary/20 to-primary/10 border-primary/30';
   const icon = CATEGORY_ICONS[category] || <Package className="h-5 w-5" />;
-  const bannerImage = CATEGORY_BANNERS[category];
 
   return (
     <motion.div
@@ -186,11 +184,30 @@ function CategoryNav({
 export function ProductsSection() {
   const { products, loading, error } = useProducts();
   const [searchQuery, setSearchQuery] = useState('');
+  const [categoryData, setCategoryData] = useState<Record<string, CategoryData>>({});
   const [filters, setFilters] = useState<FilterState>({
     category: 'all',
     priceRange: [0, 50000],
     sortBy: 'newest',
   });
+
+  // Fetch category data including banners
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const { data } = await supabase
+        .from('categories')
+        .select('id, name, image_url, has_sizes');
+      
+      if (data) {
+        const catMap: Record<string, CategoryData> = {};
+        data.forEach((cat) => {
+          catMap[cat.name] = cat as CategoryData;
+        });
+        setCategoryData(catMap);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const categories = useMemo(() => {
     const cats = [...new Set(products.map(p => p.category))];
@@ -360,6 +377,7 @@ export function ProductsSection() {
                 category={category}
                 products={categoryProducts}
                 onViewAll={handleViewAll}
+                bannerImage={categoryData[category]?.image_url}
               />
             ))}
           </div>

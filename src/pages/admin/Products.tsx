@@ -49,6 +49,7 @@ interface Category {
   id: string;
   name: string;
   slug: string;
+  has_sizes?: boolean;
 }
 
 export default function Products() {
@@ -105,7 +106,7 @@ export default function Products() {
     try {
       const { data, error } = await supabase
         .from('categories')
-        .select('id, name, slug')
+        .select('id, name, slug, has_sizes')
         .order('name');
 
       if (error) throw error;
@@ -113,6 +114,13 @@ export default function Products() {
     } catch (error) {
       console.error('Fetch categories error:', error);
     }
+  };
+
+  // Check if selected category has sizes
+  const selectedCategoryHasSizes = () => {
+    if (!formData.category_id) return true;
+    const category = categories.find(c => c.id === formData.category_id);
+    return category?.has_sizes ?? true;
   };
 
   const handleSubmit = async () => {
@@ -351,14 +359,16 @@ export default function Products() {
                     placeholder="0"
                   />
                 </div>
-                <div>
-                  <Label>Sizes (comma separated)</Label>
-                  <Input
-                    value={formData.sizes}
-                    onChange={(e) => setFormData({ ...formData, sizes: e.target.value })}
-                    placeholder="S, M, L, XL"
-                  />
-                </div>
+                {selectedCategoryHasSizes() && (
+                  <div>
+                    <Label>Sizes (comma separated)</Label>
+                    <Input
+                      value={formData.sizes}
+                      onChange={(e) => setFormData({ ...formData, sizes: e.target.value })}
+                      placeholder="S, M, L, XL"
+                    />
+                  </div>
+                )}
               </div>
 
               <div>

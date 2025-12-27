@@ -11,7 +11,8 @@ import {
   LogOut,
   Menu,
   X,
-  Shield
+  Shield,
+  Grid3X3
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
@@ -31,6 +32,7 @@ const allNavItems: NavItem[] = [
   { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true, permission: 'dashboard' },
   { to: '/admin/orders', icon: ShoppingBag, label: 'Orders', permission: 'orders' },
   { to: '/admin/products', icon: Package, label: 'Products', permission: 'products' },
+  { to: '/admin/categories', icon: Grid3X3, label: 'Categories', permission: 'products' },
   { to: '/admin/customers', icon: Users, label: 'Customers', permission: 'customers' },
   { to: '/admin/coupons', icon: Tag, label: 'Coupons', permission: 'coupons' },
   { to: '/admin/banners', icon: Image, label: 'Banners', permission: 'banners' },

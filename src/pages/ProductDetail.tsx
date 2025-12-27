@@ -11,6 +11,7 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { CartSlide } from '@/components/CartSlide';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -24,36 +25,55 @@ export default function ProductDetail() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [categoryHasSizes, setCategoryHasSizes] = useState(true);
+
+  // Fetch category's has_sizes setting
+  useEffect(() => {
+    const fetchCategorySettings = async () => {
+      if (!product?.category) return;
+      
+      const { data } = await supabase
+        .from('categories')
+        .select('has_sizes')
+        .eq('name', product.category)
+        .maybeSingle();
+      
+      if (data !== null) {
+        setCategoryHasSizes(data.has_sizes ?? true);
+      }
+    };
+    fetchCategorySettings();
+  }, [product?.category]);
 
   useEffect(() => {
-    if (product) {
+    if (product && categoryHasSizes) {
       setSelectedSize(product.sizes[0] || '');
     }
-  }, [product]);
+  }, [product, categoryHasSizes]);
 
   const handleAddToCart = () => {
     if (!product) return;
-    if (!selectedSize) {
+    if (categoryHasSizes && product.sizes.length > 0 && !selectedSize) {
       toast({
         title: 'Please select a size',
         variant: 'destructive',
       });
       return;
     }
-    addItem(product, selectedSize, quantity);
+    addItem(product, selectedSize || 'One Size', quantity);
     toast({ title: 'Added to bag!' });
   };
 
   const handleBuyNow = () => {
     if (!product) return;
-    if (!selectedSize) {
+    if (categoryHasSizes && product.sizes.length > 0 && !selectedSize) {
       toast({
         title: 'Please select a size',
         variant: 'destructive',
       });
       return;
     }
-    addItem(product, selectedSize, quantity);
+    addItem(product, selectedSize || 'One Size', quantity);
     navigate('/checkout');
   };
 
@@ -207,28 +227,30 @@ export default function ProductDetail() {
                 {product.description}. Crafted with premium materials for lasting comfort and style.
               </p>
 
-              {/* Size Selection */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">Size</span>
-                  <button className="text-sm text-primary hover:underline">Size Guide</button>
+              {/* Size Selection - Only show if category has sizes */}
+              {categoryHasSizes && product.sizes.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Size</span>
+                    <button className="text-sm text-primary hover:underline">Size Guide</button>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    {product.sizes.map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => setSelectedSize(size)}
+                        className={`min-w-[3rem] h-12 px-4 rounded-lg font-medium transition-all ${
+                          selectedSize === size
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-secondary text-foreground hover:bg-accent'
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-3">
-                  {product.sizes.map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => setSelectedSize(size)}
-                      className={`min-w-[3rem] h-12 px-4 rounded-lg font-medium transition-all ${
-                        selectedSize === size
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-secondary text-foreground hover:bg-accent'
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              )}
 
               {/* Quantity */}
               <div className="space-y-3">
