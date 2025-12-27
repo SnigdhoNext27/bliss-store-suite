@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/lib/auth";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { LiveChatWidget } from "@/components/chat/LiveChatWidget";
 import Index from "./pages/Index";
 import Shop from "./pages/Shop";
 import Auth from "./pages/Auth";
@@ -24,6 +25,7 @@ import Coupons from "./pages/admin/Coupons";
 import Banners from "./pages/admin/Banners";
 import Settings from "./pages/admin/Settings";
 import Team from "./pages/admin/Team";
+import AdminChats from "./pages/admin/Chats";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +38,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <WhatsAppButton />
+          <LiveChatWidget />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
@@ -58,6 +61,7 @@ const App = () => (
                 <Route path="banners" element={<Banners />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="team" element={<Team />} />
+                <Route path="chats" element={<AdminChats />} />
               </Route>
               
               <Route path="*" element={<NotFound />} />
