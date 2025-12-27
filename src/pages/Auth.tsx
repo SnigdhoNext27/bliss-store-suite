@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, User, ArrowLeft } from 'lucide-react';
 import { z } from 'zod';
@@ -39,13 +39,17 @@ export default function Auth() {
 
   const { user, signIn, signUp, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
+
+  // Get redirect URL from query params (e.g., /auth?redirect=/checkout)
+  const redirectTo = searchParams.get('redirect') || '/';
 
   useEffect(() => {
     if (user) {
-      navigate('/');
+      navigate(redirectTo);
     }
-  }, [user, navigate]);
+  }, [user, navigate, redirectTo]);
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
@@ -121,7 +125,7 @@ export default function Auth() {
           });
         } else {
           toast({ title: 'Welcome back!' });
-          navigate('/');
+          navigate(redirectTo);
         }
       } else {
         const result = signupSchema.safeParse(formData);
@@ -152,7 +156,7 @@ export default function Auth() {
           }
         } else {
           toast({ title: 'Account created successfully!' });
-          navigate('/');
+          navigate(redirectTo);
         }
       }
     } catch {
