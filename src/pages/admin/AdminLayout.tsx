@@ -14,14 +14,15 @@ import {
   Shield,
   Grid3X3,
   Home,
-  Bell
+  MessageCircle
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { hasPermission, Permission } from '@/lib/permissions';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useNewOrdersCount } from '@/hooks/useNewOrdersCount';
+import { OrdersDropdown } from '@/components/admin/OrdersDropdown';
+import { useOrderNotificationSound } from '@/hooks/useOrderNotificationSound';
 
 interface NavItem {
   to: string;
@@ -41,6 +42,7 @@ const allNavItems: NavItem[] = [
   { to: '/admin/banners', icon: Image, label: 'Banners', permission: 'banners' },
   { to: '/admin/settings', icon: Settings, label: 'Settings', permission: 'settings' },
   { to: '/admin/team', icon: Shield, label: 'Team', permission: 'team' },
+  { to: '/admin/chats', icon: MessageCircle, label: 'Live Chats', permission: 'orders' },
 ];
 
 const ROLE_LABELS: Record<string, string> = {
@@ -54,12 +56,12 @@ export default function AdminLayout() {
   const { user, isAdmin, loading, signOut, userRole } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { count: pendingOrdersCount, hasNewOrder, clearNewOrderIndicator } = useNewOrdersCount();
+  const { requestPermission } = useOrderNotificationSound();
 
-  const handleOrdersClick = () => {
-    clearNewOrderIndicator();
-    navigate('/admin/orders');
-  };
+  // Request notification permission on first render
+  useEffect(() => {
+    requestPermission();
+  }, []);
 
   // Filter nav items based on user's role permissions
   const navItems = useMemo(() => {
@@ -166,26 +168,8 @@ export default function AdminLayout() {
             </Link>
           </Button>
           
-          {/* Notification Bell */}
-          <button
-            onClick={handleOrdersClick}
-            className={`relative p-2 rounded-lg transition-colors ${
-              hasNewOrder 
-                ? 'bg-primary/10 text-primary animate-pulse' 
-                : 'hover:bg-secondary text-muted-foreground hover:text-foreground'
-            }`}
-            title={`${pendingOrdersCount} pending orders`}
-          >
-            <Bell className="h-5 w-5" />
-            {pendingOrdersCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
-                {pendingOrdersCount > 99 ? '99+' : pendingOrdersCount}
-              </span>
-            )}
-            {hasNewOrder && (
-              <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-green-500" />
-            )}
-          </button>
+          {/* Orders Dropdown with Notification */}
+          <OrdersDropdown />
         </div>
         <Outlet />
       </main>
