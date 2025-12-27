@@ -1,0 +1,472 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, ChevronRight, MapPin, Phone, Truck, Check, PartyPopper } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useCartStore } from '@/lib/store';
+import { useAuth } from '@/lib/auth';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+
+const DELIVERY_FEE_DHAKA = 60;
+const DELIVERY_FEE_OUTSIDE = 120;
+
+const deliverySchema = z.object({
+  fullName: z.string().min(2, 'Name is required').max(100),
+  phone: z.string().min(10, 'Valid phone number required').max(15),
+  address: z.string().min(10, 'Please enter your full address').max(500),
+  deliveryArea: z.enum(['dhaka', 'outside']),
+});
+
+export default function Checkout() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const { items, getTotalPrice, clearCart } = useCartStore();
+
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [orderNumber, setOrderNumber] = useState('');
+  const [formData, setFormData] = useState({
+    fullName: '',
+    phone: '',
+    address: '',
+    deliveryArea: 'dhaka' as 'dhaka' | 'outside',
+    notes: '',
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const subtotal = getTotalPrice();
+  const deliveryFee = formData.deliveryArea === 'dhaka' ? DELIVERY_FEE_DHAKA : DELIVERY_FEE_OUTSIDE;
+  const total = subtotal + deliveryFee;
+
+  const handleNext = () => {
+    if (step === 1 && items.length === 0) {
+      toast({ title: 'Your bag is empty', variant: 'destructive' });
+      return;
+    }
+    
+    if (step === 2) {
+      const result = deliverySchema.safeParse(formData);
+      if (!result.success) {
+        const fieldErrors: Record<string, string> = {};
+        result.error.errors.forEach(err => {
+          if (err.path[0]) fieldErrors[err.path[0] as string] = err.message;
+        });
+        setErrors(fieldErrors);
+        return;
+      }
+      setErrors({});
+    }
+    
+    setStep(step + 1);
+  };
+
+  const handlePlaceOrder = async () => {
+    setLoading(true);
+    
+    try {
+      const orderNum = `ALM-${Date.now().toString(36).toUpperCase()}`;
+      
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          order_number: orderNum,
+          user_id: user?.id || null,
+          guest_phone: !user ? formData.phone : null,
+          subtotal,
+          delivery_fee: deliveryFee,
+          total,
+          shipping_address: {
+            full_name: formData.fullName,
+            phone: formData.phone,
+            address: formData.address,
+            area: formData.deliveryArea,
+          },
+          notes: formData.notes || null,
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Insert order items
+      const orderItems = items.map(item => ({
+        order_id: orderData.id,
+        product_id: null, // Using sample products
+        product_name: item.product.name,
+        product_image: item.product.images[0],
+        size: item.size,
+        quantity: item.quantity,
+        price: item.product.price,
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      setOrderNumber(orderNum);
+      clearCart();
+      setStep(4);
+      
+      toast({ title: 'Order placed successfully!' });
+    } catch (error) {
+      console.error('Order error:', error);
+      toast({
+        title: 'Failed to place order',
+        description: 'Please try again',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openWhatsApp = () => {
+    const itemsList = items.map(item => 
+      `• ${item.product.name} — Size: ${item.size} — Qty: ${item.quantity} — Price: ৳${item.product.price}`
+    ).join('\n');
+
+    const message = encodeURIComponent(
+      `Hello Almans 👋\nI want to place an order:\n` +
+      `• Phone: ${formData.phone}\n` +
+      `• Address: ${formData.address}\n` +
+      `• Delivery Area: ${formData.deliveryArea === 'dhaka' ? 'Inside Dhaka' : 'Outside Dhaka'}\n` +
+      `• Items:\n${itemsList}\n` +
+      `Subtotal: ৳${subtotal}\n` +
+      `Delivery Fee: ৳${deliveryFee}\n` +
+      `Total: ৳${total}`
+    );
+
+    window.open(`https://wa.me/8801930278877?text=${message}`, '_blank');
+  };
+
+  if (items.length === 0 && step < 4) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="font-display text-2xl font-bold mb-4">Your bag is empty</h2>
+          <Button onClick={() => navigate('/')}>Continue Shopping</Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Helmet>
+        <title>Checkout | Almans</title>
+      </Helmet>
+
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <header className="bg-card border-b border-border py-4">
+          <div className="container px-4 flex items-center justify-between">
+            <button
+              onClick={() => step > 1 && step < 4 ? setStep(step - 1) : navigate('/')}
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <ChevronLeft className="h-5 w-5" />
+              {step === 1 ? 'Back to Shop' : 'Back'}
+            </button>
+            <h1 className="font-display text-xl font-bold">Checkout</h1>
+            <div className="w-20" />
+          </div>
+        </header>
+
+        {/* Progress Steps */}
+        {step < 4 && (
+          <div className="bg-card border-b border-border py-4">
+            <div className="container px-4">
+              <div className="flex items-center justify-center gap-4">
+                {[1, 2, 3].map((s) => (
+                  <div key={s} className="flex items-center gap-2">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                        s <= step
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-secondary text-muted-foreground'
+                      }`}
+                    >
+                      {s < step ? <Check className="h-4 w-4" /> : s}
+                    </div>
+                    <span className={`text-sm hidden sm:block ${s <= step ? 'text-foreground' : 'text-muted-foreground'}`}>
+                      {s === 1 ? 'Review' : s === 2 ? 'Delivery' : 'Confirm'}
+                    </span>
+                    {s < 3 && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <main className="container px-4 py-8">
+          <AnimatePresence mode="wait">
+            {/* Step 1: Review Bag */}
+            {step === 1 && (
+              <motion.div
+                key="step1"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="max-w-2xl mx-auto"
+              >
+                <h2 className="font-display text-2xl font-bold mb-6">Review Your Bag 👜</h2>
+                
+                <div className="space-y-4 mb-8">
+                  {items.map((item) => (
+                    <div key={`${item.product.id}-${item.size}`} className="flex gap-4 bg-card rounded-xl p-4">
+                      <img
+                        src={item.product.images[0]}
+                        alt={item.product.name}
+                        className="w-20 h-24 object-cover rounded-lg"
+                      />
+                      <div className="flex-1">
+                        <h3 className="font-medium">{item.product.name}</h3>
+                        <p className="text-sm text-muted-foreground">Size: {item.size}</p>
+                        <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                        <p className="font-medium mt-1">৳{(item.product.price * item.quantity).toFixed(0)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="bg-card rounded-xl p-6 mb-6">
+                  <div className="flex justify-between mb-2">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span>৳{subtotal.toFixed(0)}</span>
+                  </div>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-muted-foreground">Delivery</span>
+                    <span className="text-sm text-muted-foreground">Select area in next step</span>
+                  </div>
+                </div>
+
+                <Button onClick={handleNext} size="lg" className="w-full">
+                  NEXT ➜
+                </Button>
+              </motion.div>
+            )}
+
+            {/* Step 2: Delivery Info */}
+            {step === 2 && (
+              <motion.div
+                key="step2"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="max-w-2xl mx-auto"
+              >
+                <h2 className="font-display text-2xl font-bold mb-6">Delivery Information</h2>
+                
+                <div className="space-y-5 mb-8">
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName">Full Name *</Label>
+                    <Input
+                      id="fullName"
+                      value={formData.fullName}
+                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                      placeholder="Your full name"
+                    />
+                    {errors.fullName && <p className="text-destructive text-sm">{errors.fullName}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="phone" className="flex items-center gap-2">
+                      <Phone className="h-4 w-4" /> Phone Number *
+                    </Label>
+                    <Input
+                      id="phone"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      placeholder="+880 1XXX XXXXXX"
+                    />
+                    {errors.phone && <p className="text-destructive text-sm">{errors.phone}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="address" className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4" /> Delivery Address *
+                    </Label>
+                    <Textarea
+                      id="address"
+                      value={formData.address}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      placeholder="House, Road, Area, City"
+                      rows={3}
+                    />
+                    {errors.address && <p className="text-destructive text-sm">{errors.address}</p>}
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="flex items-center gap-2">
+                      <Truck className="h-4 w-4" /> Delivery Area *
+                    </Label>
+                    <RadioGroup
+                      value={formData.deliveryArea}
+                      onValueChange={(val) => setFormData({ ...formData, deliveryArea: val as 'dhaka' | 'outside' })}
+                      className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                    >
+                      <Label
+                        htmlFor="dhaka"
+                        className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                          formData.deliveryArea === 'dhaka'
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <RadioGroupItem value="dhaka" id="dhaka" />
+                          <div>
+                            <p className="font-medium">🏙️ Inside Dhaka</p>
+                            <p className="text-sm text-muted-foreground">2-3 business days</p>
+                          </div>
+                        </div>
+                        <span className="font-bold">৳{DELIVERY_FEE_DHAKA}</span>
+                      </Label>
+                      <Label
+                        htmlFor="outside"
+                        className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                          formData.deliveryArea === 'outside'
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <RadioGroupItem value="outside" id="outside" />
+                          <div>
+                            <p className="font-medium">🌍 Outside Dhaka</p>
+                            <p className="text-sm text-muted-foreground">3-5 business days</p>
+                          </div>
+                        </div>
+                        <span className="font-bold">৳{DELIVERY_FEE_OUTSIDE}</span>
+                      </Label>
+                    </RadioGroup>
+                  </div>
+                </div>
+
+                <Button onClick={handleNext} size="lg" className="w-full">
+                  NEXT ➜
+                </Button>
+              </motion.div>
+            )}
+
+            {/* Step 3: Confirm */}
+            {step === 3 && (
+              <motion.div
+                key="step3"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="max-w-2xl mx-auto"
+              >
+                <h2 className="font-display text-2xl font-bold mb-6">Confirm Your Order</h2>
+                
+                {/* Order Summary */}
+                <div className="bg-card rounded-xl p-6 mb-6 space-y-4">
+                  <h3 className="font-medium">Order Summary</h3>
+                  {items.map((item) => (
+                    <div key={`${item.product.id}-${item.size}`} className="flex justify-between text-sm">
+                      <span>{item.product.name} × {item.quantity} ({item.size})</span>
+                      <span>৳{(item.product.price * item.quantity).toFixed(0)}</span>
+                    </div>
+                  ))}
+                  <hr className="border-border" />
+                  <div className="flex justify-between">
+                    <span>Subtotal</span>
+                    <span>৳{subtotal.toFixed(0)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Delivery ({formData.deliveryArea === 'dhaka' ? 'Dhaka' : 'Outside'})</span>
+                    <span>৳{deliveryFee}</span>
+                  </div>
+                  <hr className="border-border" />
+                  <div className="flex justify-between text-lg font-bold">
+                    <span>Total Payable</span>
+                    <span>৳{total.toFixed(0)}</span>
+                  </div>
+                </div>
+
+                {/* Delivery Info */}
+                <div className="bg-card rounded-xl p-6 mb-6">
+                  <h3 className="font-medium mb-3">Delivery To</h3>
+                  <p className="font-medium">{formData.fullName}</p>
+                  <p className="text-muted-foreground text-sm">{formData.phone}</p>
+                  <p className="text-muted-foreground text-sm">{formData.address}</p>
+                </div>
+
+                {/* Notes */}
+                <div className="mb-6">
+                  <Label htmlFor="notes">Order Notes (optional)</Label>
+                  <Textarea
+                    id="notes"
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    placeholder="Any special instructions..."
+                    className="mt-2"
+                  />
+                </div>
+
+                <Button
+                  onClick={handlePlaceOrder}
+                  size="lg"
+                  className="w-full text-lg"
+                  disabled={loading}
+                >
+                  {loading ? 'Placing Order...' : '🎉 PLACE MY ORDER'}
+                </Button>
+              </motion.div>
+            )}
+
+            {/* Step 4: Success */}
+            {step === 4 && (
+              <motion.div
+                key="step4"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="max-w-lg mx-auto text-center py-12"
+              >
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: 'spring' }}
+                  className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6"
+                >
+                  <PartyPopper className="h-10 w-10 text-primary" />
+                </motion.div>
+
+                <h2 className="font-display text-3xl font-bold mb-4">Thanks — Order Placed!</h2>
+                <p className="text-muted-foreground mb-6">
+                  Your order has been confirmed. We'll contact you shortly.
+                </p>
+
+                <div className="bg-card rounded-xl p-6 mb-6">
+                  <p className="text-sm text-muted-foreground">Order ID</p>
+                  <p className="font-display text-2xl font-bold text-primary">{orderNumber}</p>
+                </div>
+
+                <div className="space-y-3">
+                  <Button onClick={openWhatsApp} size="lg" className="w-full bg-green-600 hover:bg-green-700">
+                    📱 Send via WhatsApp
+                  </Button>
+                  <Button onClick={() => navigate('/')} variant="outline" size="lg" className="w-full">
+                    Continue Shopping
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </main>
+      </div>
+    </>
+  );
+}
