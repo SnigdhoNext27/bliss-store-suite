@@ -13,13 +13,15 @@ import {
   X,
   Shield,
   Grid3X3,
-  Home
+  Home,
+  Bell
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { hasPermission, Permission } from '@/lib/permissions';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useNewOrdersCount } from '@/hooks/useNewOrdersCount';
 
 interface NavItem {
   to: string;
@@ -52,6 +54,12 @@ export default function AdminLayout() {
   const { user, isAdmin, loading, signOut, userRole } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { count: pendingOrdersCount, hasNewOrder, clearNewOrderIndicator } = useNewOrdersCount();
+
+  const handleOrdersClick = () => {
+    clearNewOrderIndicator();
+    navigate('/admin/orders');
+  };
 
   // Filter nav items based on user's role permissions
   const navItems = useMemo(() => {
@@ -149,14 +157,35 @@ export default function AdminLayout() {
 
       {/* Main Content */}
       <main className="flex-1 p-4 lg:p-8 lg:ml-0">
-        {/* Top Bar with Home Button */}
-        <div className="flex justify-start mb-6 pl-12 lg:pl-0">
+        {/* Top Bar */}
+        <div className="flex items-center justify-between mb-6 pl-12 lg:pl-0">
           <Button variant="outline" size="sm" asChild className="gap-2">
             <Link to="/">
               <Home className="h-4 w-4" />
               <span className="hidden sm:inline">Visit Site</span>
             </Link>
           </Button>
+          
+          {/* Notification Bell */}
+          <button
+            onClick={handleOrdersClick}
+            className={`relative p-2 rounded-lg transition-colors ${
+              hasNewOrder 
+                ? 'bg-primary/10 text-primary animate-pulse' 
+                : 'hover:bg-secondary text-muted-foreground hover:text-foreground'
+            }`}
+            title={`${pendingOrdersCount} pending orders`}
+          >
+            <Bell className="h-5 w-5" />
+            {pendingOrdersCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+                {pendingOrdersCount > 99 ? '99+' : pendingOrdersCount}
+              </span>
+            )}
+            {hasNewOrder && (
+              <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-green-500" />
+            )}
+          </button>
         </div>
         <Outlet />
       </main>
