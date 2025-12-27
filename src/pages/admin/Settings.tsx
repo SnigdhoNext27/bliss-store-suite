@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Save, Store, Truck, Bell } from 'lucide-react';
+import { Save, Store, Truck, Bell, Share2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,9 @@ interface Settings {
   business_email: string;
   business_phone: string;
   whatsapp_notification_phone: string;
+  social_facebook: string;
+  social_instagram: string;
+  social_whatsapp: string;
 }
 
 export default function Settings() {
@@ -27,6 +30,9 @@ export default function Settings() {
     business_email: 'rijvialomrafa@gmail.com',
     business_phone: '+8801930278877',
     whatsapp_notification_phone: '+8801930278877',
+    social_facebook: '',
+    social_instagram: '',
+    social_whatsapp: '',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -222,6 +228,58 @@ export default function Settings() {
             />
             <p className="text-xs text-muted-foreground mt-1">
               New order notifications will be sent to this WhatsApp number. Include country code (e.g., 8801XXXXXXXXX)
+            </p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Social Media Settings */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="bg-card rounded-xl border border-border p-6 space-y-6"
+      >
+        <div className="flex items-center gap-3 mb-4">
+          <Share2 className="h-5 w-5 text-primary" />
+          <h2 className="font-display text-xl font-semibold">Social Media Links</h2>
+        </div>
+        <p className="text-sm text-muted-foreground -mt-4">
+          These links appear in the "Follow us" section of your website header
+        </p>
+
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="social_facebook">Facebook Page URL</Label>
+            <Input
+              id="social_facebook"
+              value={settings.social_facebook}
+              onChange={(e) => setSettings({ ...settings, social_facebook: e.target.value })}
+              placeholder="https://www.facebook.com/yourpage"
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <Label htmlFor="social_instagram">Instagram Profile URL</Label>
+            <Input
+              id="social_instagram"
+              value={settings.social_instagram}
+              onChange={(e) => setSettings({ ...settings, social_instagram: e.target.value })}
+              placeholder="https://www.instagram.com/yourprofile"
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <Label htmlFor="social_whatsapp">WhatsApp Number (for Follow us link)</Label>
+            <Input
+              id="social_whatsapp"
+              value={settings.social_whatsapp}
+              onChange={(e) => setSettings({ ...settings, social_whatsapp: e.target.value })}
+              placeholder="8801930278877"
+              className="mt-1"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Enter number without + sign. This is used in the "Follow us" section.
             </p>
           </div>
         </div>

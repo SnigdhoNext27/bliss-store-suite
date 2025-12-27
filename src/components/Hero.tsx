@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -64,6 +65,7 @@ export function Hero() {
   const [direction, setDirection] = useState(1);
   const [isPaused, setIsPaused] = useState(false);
   const { settings } = useSiteSettings();
+  const navigate = useNavigate();
 
   // Create slides with dynamic tagline
   const slides = defaultSlides.map((slide, index) => ({
@@ -197,9 +199,7 @@ export function Hero() {
                   <Button
                     size="lg"
                     className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                    onClick={() => {
-                      document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
-                    }}
+                    onClick={() => navigate('/shop')}
                   >
                     SHOP NOW
                   </Button>
@@ -207,9 +207,7 @@ export function Hero() {
                     variant="outline"
                     size="lg"
                     className="border-almans-cream/40 text-almans-cream hover:bg-almans-cream hover:text-almans-chocolate"
-                    onClick={() => {
-                      document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
-                    }}
+                    onClick={() => navigate('/shop')}
                   >
                     EXPLORE NEW ARRIVALS
                   </Button>
