@@ -13,6 +13,13 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ImageUpload } from '@/components/admin/ImageUpload';
@@ -34,10 +41,19 @@ interface Product {
   description: string | null;
   short_description: string | null;
   sku: string | null;
+  category_id: string | null;
+  category?: { name: string } | null;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
 }
 
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -56,18 +72,23 @@ export default function Products() {
     is_active: true,
     is_new: true,
     is_featured: false,
+    category_id: '',
   });
   const { toast } = useToast();
 
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
 
   const fetchProducts = async () => {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('*')
+        .select(`
+          *,
+          category:categories(name)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -77,6 +98,20 @@ export default function Products() {
       toast({ title: 'Failed to load products', variant: 'destructive' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name, slug')
+        .order('name');
+
+      if (error) throw error;
+      setCategories((data || []) as Category[]);
+    } catch (error) {
+      console.error('Fetch categories error:', error);
     }
   };
 
@@ -119,6 +154,7 @@ export default function Products() {
       is_active: formData.is_active,
       is_new: formData.is_new,
       is_featured: formData.is_featured,
+      category_id: formData.category_id || null,
     };
 
     try {
@@ -182,6 +218,7 @@ export default function Products() {
       is_active: product.is_active,
       is_new: product.is_new,
       is_featured: product.is_featured,
+      category_id: product.category_id || '',
     });
     setDialogOpen(true);
   };
@@ -202,6 +239,7 @@ export default function Products() {
       is_active: true,
       is_new: true,
       is_featured: false,
+      category_id: '',
     });
   };
 
@@ -252,6 +290,25 @@ export default function Products() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Product name"
                 />
+              </div>
+
+              <div>
+                <Label>Category</Label>
+                <Select
+                  value={formData.category_id}
+                  onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, MapPin, Phone, Truck, Check, PartyPopper } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Phone, Truck, Check, PartyPopper, MessageCircle, Mail } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -13,9 +13,7 @@ import { useCartStore } from '@/lib/store';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-
-const DELIVERY_FEE_DHAKA = 60;
-const DELIVERY_FEE_OUTSIDE = 120;
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 const deliverySchema = z.object({
   fullName: z.string().min(2, 'Name is required').max(100),
@@ -29,6 +27,7 @@ export default function Checkout() {
   const { toast } = useToast();
   const { user } = useAuth();
   const { items, getTotalPrice, clearCart } = useCartStore();
+  const { settings } = useSiteSettings();
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -43,7 +42,9 @@ export default function Checkout() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const subtotal = getTotalPrice();
-  const deliveryFee = formData.deliveryArea === 'dhaka' ? DELIVERY_FEE_DHAKA : DELIVERY_FEE_OUTSIDE;
+  const deliveryFeeDhaka = parseInt(settings.delivery_fee_dhaka) || 60;
+  const deliveryFeeOutside = parseInt(settings.delivery_fee_outside) || 120;
+  const deliveryFee = formData.deliveryArea === 'dhaka' ? deliveryFeeDhaka : deliveryFeeOutside;
   const total = subtotal + deliveryFee;
 
   const handleNext = () => {
@@ -139,6 +140,7 @@ export default function Checkout() {
   };
 
   const openWhatsApp = () => {
+    const phone = settings.business_phone.replace(/[^0-9]/g, '');
     const itemsList = items.map(item => 
       `• ${item.product.name} — Size: ${item.size} — Qty: ${item.quantity} — Price: ৳${item.product.price}`
     ).join('\n');
@@ -154,7 +156,29 @@ export default function Checkout() {
       `Total: ৳${total}`
     );
 
-    window.open(`https://wa.me/8801930278877?text=${message}`, '_blank');
+    window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+  };
+
+  const openEmail = () => {
+    const itemsList = items.map(item => 
+      `• ${item.product.name} — Size: ${item.size} — Qty: ${item.quantity} — Price: ৳${item.product.price}`
+    ).join('\n');
+
+    const subject = encodeURIComponent('New Order from Almans');
+    const body = encodeURIComponent(
+      `Hello Almans,\n\nI want to place an order:\n\n` +
+      `Name: ${formData.fullName}\n` +
+      `Phone: ${formData.phone}\n` +
+      `Address: ${formData.address}\n` +
+      `Delivery Area: ${formData.deliveryArea === 'dhaka' ? 'Inside Dhaka' : 'Outside Dhaka'}\n\n` +
+      `Items:\n${itemsList}\n\n` +
+      `Subtotal: ৳${subtotal}\n` +
+      `Delivery Fee: ৳${deliveryFee}\n` +
+      `Total: ৳${total}\n\n` +
+      `Please confirm my order.\nThank you!`
+    );
+
+    window.open(`mailto:${settings.business_email}?subject=${subject}&body=${body}`, '_blank');
   };
 
   if (items.length === 0 && step < 4) {
@@ -339,7 +363,7 @@ export default function Checkout() {
                             <p className="text-sm text-muted-foreground">2-3 business days</p>
                           </div>
                         </div>
-                        <span className="font-bold">৳{DELIVERY_FEE_DHAKA}</span>
+                        <span className="font-bold">৳{deliveryFeeDhaka}</span>
                       </Label>
                       <Label
                         htmlFor="outside"
@@ -356,7 +380,7 @@ export default function Checkout() {
                             <p className="text-sm text-muted-foreground">3-5 business days</p>
                           </div>
                         </div>
-                        <span className="font-bold">৳{DELIVERY_FEE_OUTSIDE}</span>
+                        <span className="font-bold">৳{deliveryFeeOutside}</span>
                       </Label>
                     </RadioGroup>
                   </div>
@@ -463,10 +487,15 @@ export default function Checkout() {
                 </div>
 
                 <div className="space-y-3">
-                  <Button onClick={openWhatsApp} size="lg" className="w-full bg-green-600 hover:bg-green-700">
-                    📱 Send via WhatsApp
+                  <Button onClick={openWhatsApp} size="lg" className="w-full bg-green-600 hover:bg-green-700 gap-2">
+                    <MessageCircle className="h-5 w-5" />
+                    Send via WhatsApp
                   </Button>
-                  <Button onClick={() => navigate('/')} variant="outline" size="lg" className="w-full">
+                  <Button onClick={openEmail} size="lg" variant="outline" className="w-full gap-2">
+                    <Mail className="h-5 w-5" />
+                    Send via Email
+                  </Button>
+                  <Button onClick={() => navigate('/')} variant="ghost" size="lg" className="w-full">
                     Continue Shopping
                   </Button>
                 </div>

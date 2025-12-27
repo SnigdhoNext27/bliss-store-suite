@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Minus, Plus, Heart, Share2, ChevronLeft, Star, Truck, Shield, RefreshCw } from 'lucide-react';
+import { Minus, Plus, Heart, Share2, ChevronLeft, Star, Truck, Shield, RefreshCw, Loader2, MessageCircle, Mail } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
-import { useCartStore, Product } from '@/lib/store';
-import { products } from '@/lib/products';
+import { useCartStore } from '@/lib/store';
+import { useProduct } from '@/hooks/useProducts';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { CartSlide } from '@/components/CartSlide';
@@ -16,30 +17,22 @@ export default function ProductDetail() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const addItem = useCartStore((state) => state.addItem);
+  const { product, loading, error } = useProduct(id);
+  const { settings } = useSiteSettings();
 
-  const [product, setProduct] = useState<Product | null>(null);
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
 
   useEffect(() => {
-    const foundProduct = products.find(p => p.id === id);
-    if (foundProduct) {
-      setProduct(foundProduct);
-      setSelectedSize(foundProduct.sizes[0] || '');
+    if (product) {
+      setSelectedSize(product.sizes[0] || '');
     }
-  }, [id]);
-
-  if (!product) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Product not found</p>
-      </div>
-    );
-  }
+  }, [product]);
 
   const handleAddToCart = () => {
+    if (!product) return;
     if (!selectedSize) {
       toast({
         title: 'Please select a size',
@@ -52,6 +45,7 @@ export default function ProductDetail() {
   };
 
   const handleBuyNow = () => {
+    if (!product) return;
     if (!selectedSize) {
       toast({
         title: 'Please select a size',
@@ -62,6 +56,54 @@ export default function ProductDetail() {
     addItem(product, selectedSize, quantity);
     navigate('/checkout');
   };
+
+  const handleOrderViaWhatsApp = () => {
+    if (!product) return;
+    const phone = settings.business_phone.replace(/[^0-9]/g, '');
+    const message = encodeURIComponent(
+      `Hello Almans! 👋\n\nI'd like to order:\n` +
+      `• Product: ${product.name}\n` +
+      `• Size: ${selectedSize || 'Not selected'}\n` +
+      `• Quantity: ${quantity}\n` +
+      `• Price: ৳${product.price * quantity}\n\n` +
+      `Please confirm availability and provide payment details.`
+    );
+    window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+  };
+
+  const handleOrderViaEmail = () => {
+    if (!product) return;
+    const subject = encodeURIComponent(`Order Inquiry: ${product.name}`);
+    const body = encodeURIComponent(
+      `Hello Almans,\n\nI'd like to order:\n\n` +
+      `Product: ${product.name}\n` +
+      `Size: ${selectedSize || 'Not selected'}\n` +
+      `Quantity: ${quantity}\n` +
+      `Price: ৳${product.price * quantity}\n\n` +
+      `Please confirm availability and provide payment details.\n\n` +
+      `Thank you!`
+    );
+    window.open(`mailto:${settings.business_email}?subject=${subject}&body=${body}`, '_blank');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-4">Product not found</p>
+          <Button onClick={() => navigate('/')}>Back to Shop</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -93,11 +135,17 @@ export default function ProductDetail() {
               className="space-y-4"
             >
               <div className="aspect-[4/5] bg-card rounded-2xl overflow-hidden">
-                <img
-                  src={product.images[selectedImage]}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                />
+                {product.images[selectedImage] ? (
+                  <img
+                    src={product.images[selectedImage]}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-secondary">
+                    <p className="text-muted-foreground">No image</p>
+                  </div>
+                )}
               </div>
 
               {product.images.length > 1 && (
@@ -214,6 +262,26 @@ export default function ProductDetail() {
                 </Button>
                 <Button onClick={handleBuyNow} size="lg" className="flex-1">
                   BUY NOW
+                </Button>
+              </div>
+
+              {/* WhatsApp / Email Order Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <Button
+                  onClick={handleOrderViaWhatsApp}
+                  variant="outline"
+                  className="flex-1 gap-2 border-green-500 text-green-600 hover:bg-green-50 hover:text-green-700"
+                >
+                  <MessageCircle className="h-5 w-5" />
+                  Order via WhatsApp
+                </Button>
+                <Button
+                  onClick={handleOrderViaEmail}
+                  variant="outline"
+                  className="flex-1 gap-2"
+                >
+                  <Mail className="h-5 w-5" />
+                  Order via Email
                 </Button>
               </div>
 
