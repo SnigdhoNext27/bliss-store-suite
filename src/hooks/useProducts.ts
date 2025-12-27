@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/lib/store';
 
@@ -48,106 +49,153 @@ function mapDBProductToProduct(dbProduct: DBProduct): Product {
   };
 }
 
+async function fetchAllProducts(): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from('products')
+    .select(`
+      id,
+      name,
+      price,
+      sale_price,
+      description,
+      short_description,
+      images,
+      sizes,
+      stock,
+      is_new,
+      is_featured,
+      is_active,
+      category_id,
+      slug,
+      category:categories(name)
+    `)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  return (data || []).map(item => 
+    mapDBProductToProduct(item as unknown as DBProduct)
+  );
+}
+
+async function fetchSingleProduct(id: string): Promise<Product | null> {
+  const { data, error } = await supabase
+    .from('products')
+    .select(`
+      id,
+      name,
+      price,
+      sale_price,
+      description,
+      short_description,
+      images,
+      sizes,
+      stock,
+      is_new,
+      is_featured,
+      is_active,
+      category_id,
+      slug,
+      category:categories(name)
+    `)
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  if (data) {
+    return mapDBProductToProduct(data as unknown as DBProduct);
+  }
+  
+  return null;
+}
+
 export function useProducts() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
+  const { data: products, isLoading: loading, error } = useQuery({
+    queryKey: ['products'],
+    queryFn: fetchAllProducts,
+    staleTime: 0, // Always consider data stale
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    refetchOnReconnect: true, // Refetch when internet reconnects
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
+    initialData: [],
+  });
+
+  // Subscribe to real-time updates
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('products')
-          .select(`
-            id,
-            name,
-            price,
-            sale_price,
-            description,
-            short_description,
-            images,
-            sizes,
-            stock,
-            is_new,
-            is_featured,
-            is_active,
-            category_id,
-            slug,
-            category:categories(name)
-          `)
-          .eq('is_active', true)
-          .order('created_at', { ascending: false });
+    const channel = supabase
+      .channel('products-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'products',
+        },
+        () => {
+          // Invalidate and refetch when any product changes
+          queryClient.invalidateQueries({ queryKey: ['products'] });
+        }
+      )
+      .subscribe();
 
-        if (error) throw error;
-
-        const mappedProducts = (data || []).map(item => 
-          mapDBProductToProduct(item as unknown as DBProduct)
-        );
-        setProducts(mappedProducts);
-      } catch (err) {
-        console.error('Fetch products error:', err);
-        setError('Failed to load products');
-      } finally {
-        setLoading(false);
-      }
+    return () => {
+      supabase.removeChannel(channel);
     };
+  }, [queryClient]);
 
-    fetchProducts();
-  }, []);
-
-  return { products, loading, error };
+  return { 
+    products: products || [], 
+    loading, 
+    error: error ? 'Failed to load products' : null 
+  };
 }
 
 export function useProduct(id: string | undefined) {
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
+  const { data: product, isLoading: loading, error } = useQuery({
+    queryKey: ['product', id],
+    queryFn: () => fetchSingleProduct(id!),
+    enabled: !!id,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchInterval: 30000,
+  });
+
+  // Subscribe to real-time updates for this specific product
   useEffect(() => {
-    if (!id) {
-      setLoading(false);
-      return;
-    }
+    if (!id) return;
 
-    const fetchProduct = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('products')
-          .select(`
-            id,
-            name,
-            price,
-            sale_price,
-            description,
-            short_description,
-            images,
-            sizes,
-            stock,
-            is_new,
-            is_featured,
-            is_active,
-            category_id,
-            slug,
-            category:categories(name)
-          `)
-          .eq('id', id)
-          .maybeSingle();
-
-        if (error) throw error;
-
-        if (data) {
-          setProduct(mapDBProductToProduct(data as unknown as DBProduct));
+    const channel = supabase
+      .channel(`product-${id}-changes`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'products',
+          filter: `id=eq.${id}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['product', id] });
+          queryClient.invalidateQueries({ queryKey: ['products'] });
         }
-      } catch (err) {
-        console.error('Fetch product error:', err);
-        setError('Failed to load product');
-      } finally {
-        setLoading(false);
-      }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
     };
+  }, [id, queryClient]);
 
-    fetchProduct();
-  }, [id]);
-
-  return { product, loading, error };
+  return { 
+    product: product || null, 
+    loading, 
+    error: error ? 'Failed to load product' : null 
+  };
 }
