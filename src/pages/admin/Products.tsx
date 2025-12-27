@@ -85,19 +85,36 @@ export default function Products() {
       return;
     }
 
-    const slug = formData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    // Validate price is positive
+    const price = parseFloat(formData.price);
+    if (isNaN(price) || price < 0) {
+      toast({ title: 'Price must be a positive number', variant: 'destructive' });
+      return;
+    }
+
+    // Validate stock is non-negative
+    const stock = parseInt(formData.stock) || 0;
+    if (stock < 0) {
+      toast({ title: 'Stock cannot be negative', variant: 'destructive' });
+      return;
+    }
+
+    // Generate secure random slug suffix instead of timestamp
+    const baseSlug = formData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const randomSuffix = crypto.randomUUID().split('-')[0];
+    
     const productData = {
-      name: formData.name,
-      slug: editingProduct ? editingProduct.slug : `${slug}-${Date.now()}`,
-      price: parseFloat(formData.price),
+      name: formData.name.substring(0, 200), // Limit name length
+      slug: editingProduct ? editingProduct.slug : `${baseSlug}-${randomSuffix}`,
+      price: price,
       sale_price: formData.sale_price ? parseFloat(formData.sale_price) : null,
-      stock: parseInt(formData.stock) || 0,
-      description: formData.description || null,
-      short_description: formData.short_description || null,
-      sizes: formData.sizes.split(',').map(s => s.trim()).filter(Boolean),
-      colors: formData.colors ? formData.colors.split(',').map(s => s.trim()).filter(Boolean) : [],
-      images: formData.images,
-      sku: formData.sku || null,
+      stock: stock,
+      description: formData.description?.substring(0, 5000) || null, // Limit description
+      short_description: formData.short_description?.substring(0, 500) || null,
+      sizes: formData.sizes.split(',').map(s => s.trim()).filter(Boolean).slice(0, 20),
+      colors: formData.colors ? formData.colors.split(',').map(s => s.trim()).filter(Boolean).slice(0, 20) : [],
+      images: formData.images.slice(0, 10), // Limit images
+      sku: formData.sku?.substring(0, 50) || null,
       is_active: formData.is_active,
       is_new: formData.is_new,
       is_featured: formData.is_featured,
