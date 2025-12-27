@@ -2,11 +2,14 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
+export type AdminRole = 'super_admin' | 'admin' | 'moderator' | 'officer' | null;
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
   isAdmin: boolean;
+  userRole: AdminRole;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -19,6 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [userRole, setUserRole] = useState<AdminRole>(null);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -35,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }, 0);
         } else {
           setIsAdmin(false);
+          setUserRole(null);
         }
       }
     );
@@ -55,20 +60,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAdminRole = async (userId: string) => {
     try {
+      // Check for any admin-level role
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .eq('role', 'admin')
+        .in('role', ['super_admin', 'admin', 'moderator', 'officer'])
         .maybeSingle();
 
       if (!error && data) {
         setIsAdmin(true);
+        setUserRole(data.role as AdminRole);
       } else {
         setIsAdmin(false);
+        setUserRole(null);
       }
     } catch {
       setIsAdmin(false);
+      setUserRole(null);
     }
   };
 
@@ -103,6 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setSession(null);
     setIsAdmin(false);
+    setUserRole(null);
   };
 
   return (
@@ -111,6 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       loading,
       isAdmin,
+      userRole,
       signUp,
       signIn,
       signOut,

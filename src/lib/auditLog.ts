@@ -18,7 +18,8 @@ export type EntityType =
   | 'banner' 
   | 'hero_slide' 
   | 'category' 
-  | 'settings';
+  | 'settings'
+  | 'admin_role';
 
 interface AuditLogParams {
   action: AuditAction;
