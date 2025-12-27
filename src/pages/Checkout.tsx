@@ -26,7 +26,7 @@ const deliverySchema = z.object({
 export default function Checkout() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { clearCart } = useCartStore();
   const { 
     items, 
@@ -56,6 +56,31 @@ export default function Checkout() {
   const deliveryFee = formData.deliveryArea === 'dhaka' ? deliveryFeeDhaka : deliveryFeeOutside;
   const total = subtotal + deliveryFee;
 
+  // Require login to checkout
+  if (!authLoading && !user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <AlertTriangle className="h-8 w-8 text-primary" />
+          </div>
+          <h2 className="font-display text-2xl font-bold mb-3">Login Required</h2>
+          <p className="text-muted-foreground mb-6">
+            Please sign in or create an account to complete your order. This helps us track your orders and provide better service.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button onClick={() => navigate('/auth?redirect=/checkout')} size="lg">
+              Sign In / Sign Up
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/')}>
+              Continue Shopping
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const handleNext = () => {
     if (step === 1 && items.length === 0) {
       toast({ title: 'Your bag is empty', variant: 'destructive' });
@@ -79,6 +104,12 @@ export default function Checkout() {
   };
 
   const handlePlaceOrder = async () => {
+    if (!user) {
+      toast({ title: 'Please sign in to place an order', variant: 'destructive' });
+      navigate('/auth?redirect=/checkout');
+      return;
+    }
+
     setLoading(true);
     
     try {
@@ -115,8 +146,8 @@ export default function Checkout() {
           area: formData.deliveryArea,
         },
         p_items: orderItems,
-        p_user_id: user?.id || null,
-        p_guest_phone: !user ? formData.phone : null,
+        p_user_id: user.id, // User is now required
+        p_guest_phone: null,
         p_guest_email: null,
         p_notes: formData.notes || null,
       });
