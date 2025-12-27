@@ -25,11 +25,6 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
     addItem(product, selectedSize);
   };
 
-  const handleBuyNow = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    addItem(product, selectedSize);
-    navigate('/checkout');
-  };
 
   const handleToggleWishlist = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -148,24 +143,16 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
           )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-2 pt-2">
+        {/* Action Button */}
+        <div className="pt-2">
           <Button
             variant="default"
             size="sm"
-            className="flex-1 gap-2"
+            className="w-full gap-2"
             onClick={handleAddToBag}
           >
             <ShoppingBag className="h-4 w-4" />
             ADD TO BAG
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1"
-            onClick={handleBuyNow}
-          >
-            BUY NOW
           </Button>
         </div>
       </div>
