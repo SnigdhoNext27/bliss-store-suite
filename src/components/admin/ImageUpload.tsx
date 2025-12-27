@@ -27,9 +27,12 @@ export function ImageUpload({ images, onImagesChange, maxImages = 5 }: ImageUplo
     setUploading(true);
     const newImages: string[] = [];
 
+    // Allowed file extensions whitelist
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+    
     try {
       for (const file of Array.from(files)) {
-        // Validate file type
+        // Validate file type - check MIME type
         if (!file.type.startsWith('image/')) {
           toast({ title: 'Please upload only images', variant: 'destructive' });
           continue;
@@ -41,8 +44,16 @@ export function ImageUpload({ images, onImagesChange, maxImages = 5 }: ImageUplo
           continue;
         }
 
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        // Validate file extension against whitelist
+        const fileExt = file.name.split('.').pop()?.toLowerCase();
+        if (!fileExt || !allowedExtensions.includes(fileExt)) {
+          toast({ title: 'Only JPG, PNG, WebP, and GIF images are allowed', variant: 'destructive' });
+          continue;
+        }
+
+        // Generate cryptographically secure random filename
+        const randomName = crypto.randomUUID();
+        const fileName = `${randomName}.${fileExt}`;
         const filePath = `products/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
