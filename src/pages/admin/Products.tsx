@@ -16,6 +16,7 @@ import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ImageUpload } from '@/components/admin/ImageUpload';
+import { logAdminAction } from '@/lib/auditLog';
 
 interface Product {
   id: string;
@@ -127,12 +128,16 @@ export default function Products() {
           .update(productData)
           .eq('id', editingProduct.id);
         if (error) throw error;
+        await logAdminAction({ action: 'update', entityType: 'product', entityId: editingProduct.id, details: { name: productData.name } });
         toast({ title: 'Product updated' });
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('products')
-          .insert(productData);
+          .insert(productData)
+          .select('id')
+          .single();
         if (error) throw error;
+        await logAdminAction({ action: 'create', entityType: 'product', entityId: data?.id, details: { name: productData.name } });
         toast({ title: 'Product created' });
       }
 
@@ -147,10 +152,12 @@ export default function Products() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
+    const product = products.find(p => p.id === id);
 
     try {
       const { error } = await supabase.from('products').delete().eq('id', id);
       if (error) throw error;
+      await logAdminAction({ action: 'delete', entityType: 'product', entityId: id, details: { name: product?.name } });
       setProducts(products.filter(p => p.id !== id));
       toast({ title: 'Product deleted' });
     } catch (error) {

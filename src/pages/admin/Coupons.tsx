@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { logAdminAction } from '@/lib/auditLog';
 
 interface Coupon {
   id: string;
@@ -94,12 +95,16 @@ export default function Coupons() {
           .update(couponData)
           .eq('id', editingCoupon.id);
         if (error) throw error;
+        await logAdminAction({ action: 'update', entityType: 'coupon', entityId: editingCoupon.id, details: { code: couponData.code } });
         toast({ title: 'Coupon updated' });
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('coupons')
-          .insert(couponData);
+          .insert(couponData)
+          .select('id')
+          .single();
         if (error) throw error;
+        await logAdminAction({ action: 'create', entityType: 'coupon', entityId: data?.id, details: { code: couponData.code } });
         toast({ title: 'Coupon created' });
       }
 
@@ -114,10 +119,12 @@ export default function Coupons() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this coupon?')) return;
+    const coupon = coupons.find(c => c.id === id);
 
     try {
       const { error } = await supabase.from('coupons').delete().eq('id', id);
       if (error) throw error;
+      await logAdminAction({ action: 'delete', entityType: 'coupon', entityId: id, details: { code: coupon?.code } });
       setCoupons(coupons.filter(c => c.id !== id));
       toast({ title: 'Coupon deleted' });
     } catch (error) {

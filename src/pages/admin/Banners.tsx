@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { logAdminAction } from '@/lib/auditLog';
 
 interface HeroSlide {
   id: string;
@@ -93,12 +94,16 @@ export default function Banners() {
           .update(slideData)
           .eq('id', editingSlide.id);
         if (error) throw error;
+        await logAdminAction({ action: 'update', entityType: 'banner', entityId: editingSlide.id, details: { title: slideData.title } });
         toast({ title: 'Banner updated' });
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('hero_slides')
-          .insert(slideData);
+          .insert(slideData)
+          .select('id')
+          .single();
         if (error) throw error;
+        await logAdminAction({ action: 'create', entityType: 'banner', entityId: data?.id, details: { title: slideData.title } });
         toast({ title: 'Banner created' });
       }
 
@@ -113,10 +118,12 @@ export default function Banners() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this banner?')) return;
+    const slide = slides.find(s => s.id === id);
 
     try {
       const { error } = await supabase.from('hero_slides').delete().eq('id', id);
       if (error) throw error;
+      await logAdminAction({ action: 'delete', entityType: 'banner', entityId: id, details: { title: slide?.title } });
       setSlides(slides.filter(s => s.id !== id));
       toast({ title: 'Banner deleted' });
     } catch (error) {
@@ -132,6 +139,7 @@ export default function Banners() {
         .update({ is_active: !slide.is_active })
         .eq('id', slide.id);
       if (error) throw error;
+      await logAdminAction({ action: 'update', entityType: 'banner', entityId: slide.id, details: { title: slide.title, is_active: !slide.is_active } });
       setSlides(slides.map(s => s.id === slide.id ? { ...s, is_active: !s.is_active } : s));
     } catch (error) {
       console.error('Toggle error:', error);
