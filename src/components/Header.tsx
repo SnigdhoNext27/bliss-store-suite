@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, ShoppingBag, User, Menu, X, LogOut, Settings } from 'lucide-react';
+import { Search, ShoppingBag, User, Menu, X, LogOut, Settings, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -93,7 +93,12 @@ export function Header() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => navigate('/checkout')}>
+                <DropdownMenuItem onClick={() => navigate('/account')}>
+                  <User className="h-4 w-4 mr-2" />
+                  My Account
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/account?tab=orders')}>
+                  <Package className="h-4 w-4 mr-2" />
                   My Orders
                 </DropdownMenuItem>
                 {isAdmin && (
