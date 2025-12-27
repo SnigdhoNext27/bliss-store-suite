@@ -18,6 +18,7 @@ import Customers from "./pages/admin/Customers";
 import Coupons from "./pages/admin/Coupons";
 import Banners from "./pages/admin/Banners";
 import Settings from "./pages/admin/Settings";
+import Team from "./pages/admin/Team";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
                 <Route path="coupons" element={<Coupons />} />
                 <Route path="banners" element={<Banners />} />
                 <Route path="settings" element={<Settings />} />
+                <Route path="team" element={<Team />} />
               </Route>
               
               <Route path="*" element={<NotFound />} />

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Outlet, useNavigate, NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -10,26 +10,50 @@ import {
   Image,
   LogOut,
   Menu,
-  X
+  X,
+  Shield
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
+import { hasPermission, Permission } from '@/lib/permissions';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
-const navItems = [
-  { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
-  { to: '/admin/orders', icon: ShoppingBag, label: 'Orders' },
-  { to: '/admin/products', icon: Package, label: 'Products' },
-  { to: '/admin/customers', icon: Users, label: 'Customers' },
-  { to: '/admin/coupons', icon: Tag, label: 'Coupons' },
-  { to: '/admin/banners', icon: Image, label: 'Banners' },
-  { to: '/admin/settings', icon: Settings, label: 'Settings' },
+interface NavItem {
+  to: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  end?: boolean;
+  permission: Permission;
+}
+
+const allNavItems: NavItem[] = [
+  { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true, permission: 'dashboard' },
+  { to: '/admin/orders', icon: ShoppingBag, label: 'Orders', permission: 'orders' },
+  { to: '/admin/products', icon: Package, label: 'Products', permission: 'products' },
+  { to: '/admin/customers', icon: Users, label: 'Customers', permission: 'customers' },
+  { to: '/admin/coupons', icon: Tag, label: 'Coupons', permission: 'coupons' },
+  { to: '/admin/banners', icon: Image, label: 'Banners', permission: 'banners' },
+  { to: '/admin/settings', icon: Settings, label: 'Settings', permission: 'settings' },
+  { to: '/admin/team', icon: Shield, label: 'Team', permission: 'team' },
 ];
 
+const ROLE_LABELS: Record<string, string> = {
+  super_admin: 'Super Admin',
+  admin: 'Admin',
+  moderator: 'Moderator',
+  officer: 'Officer',
+};
+
 export default function AdminLayout() {
-  const { user, isAdmin, loading, signOut } = useAuth();
+  const { user, isAdmin, loading, signOut, userRole } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Filter nav items based on user's role permissions
+  const navItems = useMemo(() => {
+    return allNavItems.filter(item => hasPermission(userRole, item.permission));
+  }, [userRole]);
 
   useEffect(() => {
     if (!loading && (!user || !isAdmin)) {
@@ -72,6 +96,11 @@ export default function AdminLayout() {
       >
         <div className="p-6 border-b border-border">
           <h1 className="font-display text-2xl font-bold text-primary">Almans Admin</h1>
+          {userRole && (
+            <Badge variant="secondary" className="mt-2">
+              {ROLE_LABELS[userRole] || userRole}
+            </Badge>
+          )}
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
