@@ -1,19 +1,42 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ChevronRight, Shirt, Package } from 'lucide-react';
 import { ProductCard } from './ProductCard';
 import { SearchFilter, FilterState } from './SearchFilter';
 import { useProducts, Product } from '@/hooks/useProducts';
+import { Button } from './ui/button';
 
-const CATEGORY_ORDER = ['T-Shirts', 'Shirts', 'Pants', 'Trousers', 'Caps'];
+const CATEGORY_ORDER = ['T-Shirts', 'Shirts', 'Pants', 'Trousers', 'Caps', 'Accessories'];
+
+const CATEGORY_ICONS: Record<string, React.ReactNode> = {
+  'T-Shirts': <Shirt className="h-5 w-5" />,
+  'Shirts': <Shirt className="h-5 w-5" />,
+  'Pants': <Package className="h-5 w-5" />,
+  'Trousers': <Package className="h-5 w-5" />,
+  'Caps': <Package className="h-5 w-5" />,
+  'Accessories': <Package className="h-5 w-5" />,
+};
+
+const CATEGORY_COLORS: Record<string, string> = {
+  'T-Shirts': 'from-blue-500/20 to-blue-600/10 border-blue-500/30',
+  'Shirts': 'from-emerald-500/20 to-emerald-600/10 border-emerald-500/30',
+  'Pants': 'from-amber-500/20 to-amber-600/10 border-amber-500/30',
+  'Trousers': 'from-purple-500/20 to-purple-600/10 border-purple-500/30',
+  'Caps': 'from-rose-500/20 to-rose-600/10 border-rose-500/30',
+  'Accessories': 'from-cyan-500/20 to-cyan-600/10 border-cyan-500/30',
+};
 
 interface CategorySectionProps {
   category: string;
   products: Product[];
+  onViewAll: (category: string) => void;
 }
 
-function CategorySection({ category, products }: CategorySectionProps) {
+function CategorySection({ category, products, onViewAll }: CategorySectionProps) {
   if (products.length === 0) return null;
+
+  const colorClass = CATEGORY_COLORS[category] || 'from-primary/20 to-primary/10 border-primary/30';
+  const icon = CATEGORY_ICONS[category] || <Package className="h-5 w-5" />;
 
   return (
     <motion.div
@@ -21,16 +44,93 @@ function CategorySection({ category, products }: CategorySectionProps) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className="mb-16"
+      className="mb-12"
     >
-      <h3 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-6 pb-3 border-b border-border">
-        {category}
-      </h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {products.map((product, index) => (
-          <ProductCard key={product.id} product={product} index={index} />
-        ))}
+      {/* Category Header - Shopee Style */}
+      <div className={`bg-gradient-to-r ${colorClass} border rounded-t-lg p-4 flex items-center justify-between`}>
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-background/80 rounded-lg shadow-sm">
+            {icon}
+          </div>
+          <div>
+            <h3 className="font-display text-xl md:text-2xl font-bold text-foreground">
+              {category}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              {products.length} {products.length === 1 ? 'item' : 'items'} available
+            </p>
+          </div>
+        </div>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="text-primary hover:text-primary/80 gap-1"
+          onClick={() => onViewAll(category)}
+        >
+          See All <ChevronRight className="h-4 w-4" />
+        </Button>
       </div>
+      
+      {/* Products Grid */}
+      <div className="border border-t-0 rounded-b-lg p-4 bg-card/50">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {products.slice(0, 5).map((product, index) => (
+            <ProductCard key={product.id} product={product} index={index} />
+          ))}
+        </div>
+        {products.length > 5 && (
+          <div className="text-center mt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => onViewAll(category)}
+              className="gap-2"
+            >
+              View all {products.length} items in {category}
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+// Quick Category Navigation
+function CategoryNav({ 
+  categories, 
+  activeCategory, 
+  onSelect 
+}: { 
+  categories: string[]; 
+  activeCategory: string;
+  onSelect: (cat: string) => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex flex-wrap gap-2 mb-8 justify-center"
+    >
+      <Button
+        variant={activeCategory === 'all' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() => onSelect('all')}
+        className="rounded-full"
+      >
+        All Products
+      </Button>
+      {categories.map(cat => (
+        <Button
+          key={cat}
+          variant={activeCategory === cat ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => onSelect(cat)}
+          className="rounded-full gap-1.5"
+        >
+          {CATEGORY_ICONS[cat]}
+          {cat}
+        </Button>
+      ))}
     </motion.div>
   );
 }
@@ -45,7 +145,16 @@ export function ProductsSection() {
   });
 
   const categories = useMemo(() => {
-    return [...new Set(products.map(p => p.category))];
+    const cats = [...new Set(products.map(p => p.category))];
+    // Sort by CATEGORY_ORDER, then alphabetically for others
+    return cats.sort((a, b) => {
+      const aIndex = CATEGORY_ORDER.indexOf(a);
+      const bIndex = CATEGORY_ORDER.indexOf(b);
+      if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+      if (aIndex !== -1) return -1;
+      if (bIndex !== -1) return 1;
+      return a.localeCompare(b);
+    });
   }, [products]);
 
   const filteredProducts = useMemo(() => {
@@ -94,24 +203,22 @@ export function ProductsSection() {
   const productsByCategory = useMemo(() => {
     const grouped: Record<string, typeof filteredProducts> = {};
     
-    CATEGORY_ORDER.forEach(cat => {
+    // Use sorted categories
+    categories.forEach(cat => {
       grouped[cat] = filteredProducts.filter(p => p.category === cat);
     });
     
-    // Add any products with categories not in CATEGORY_ORDER
-    filteredProducts.forEach(p => {
-      if (!CATEGORY_ORDER.includes(p.category)) {
-        if (!grouped[p.category]) {
-          grouped[p.category] = [];
-        }
-        grouped[p.category].push(p);
-      }
-    });
-    
     return grouped;
-  }, [filteredProducts]);
+  }, [filteredProducts, categories]);
+
+  const handleViewAll = (category: string) => {
+    setFilters(prev => ({ ...prev, category }));
+    // Scroll to top of products
+    document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   const isFiltering = searchQuery || filters.category !== 'all';
+  const showCategorySections = !isFiltering && filteredProducts.length > 0;
 
   if (loading) {
     return (
@@ -148,13 +255,19 @@ export function ProductsSection() {
           className="mb-8 text-center"
         >
           <h2 className="font-display text-4xl md:text-5xl font-bold text-foreground mb-4 tracking-wide">
-            NEW ARRIVALS
+            SHOP BY CATEGORY
           </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto mb-8">
-            Fresh takes on classics: breathable shirts, tailored trousers, and lightweight
-            outerwear in season-neutral colors
+          <p className="text-muted-foreground max-w-xl mx-auto mb-6">
+            Browse our collection organized by category. Find exactly what you're looking for.
           </p>
         </motion.div>
+
+        {/* Quick Category Navigation */}
+        <CategoryNav 
+          categories={categories}
+          activeCategory={filters.category}
+          onSelect={(cat) => setFilters(prev => ({ ...prev, category: cat }))}
+        />
 
         {/* Search & Filters */}
         <div className="mb-10">
@@ -167,27 +280,52 @@ export function ProductsSection() {
 
         {/* Results count when filtering */}
         {isFiltering && (
-          <p className="text-muted-foreground mb-6">
-            Showing {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
-          </p>
+          <div className="flex items-center justify-between mb-6">
+            <p className="text-muted-foreground">
+              Showing {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
+              {filters.category !== 'all' && ` in ${filters.category}`}
+            </p>
+            {filters.category !== 'all' && (
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setFilters(prev => ({ ...prev, category: 'all' }))}
+              >
+                Clear filter
+              </Button>
+            )}
+          </div>
         )}
 
-        {/* Products by Category */}
+        {/* Products Display */}
         {filteredProducts.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-xl text-muted-foreground">No products found</p>
             <p className="text-muted-foreground mt-2">Try adjusting your search or filters</p>
           </div>
-        ) : (
+        ) : showCategorySections ? (
+          // Show products grouped by category (Shopee style)
           <div>
             {Object.entries(productsByCategory).map(([category, categoryProducts]) => (
               <CategorySection
                 key={category}
                 category={category}
                 products={categoryProducts}
+                onViewAll={handleViewAll}
               />
             ))}
           </div>
+        ) : (
+          // Show filtered products in a single grid
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
+          >
+            {filteredProducts.map((product, index) => (
+              <ProductCard key={product.id} product={product} index={index} />
+            ))}
+          </motion.div>
         )}
       </div>
     </section>
