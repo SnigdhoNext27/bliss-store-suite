@@ -15,6 +15,7 @@ interface Settings {
   delivery_fee_outside: string;
   business_email: string;
   business_phone: string;
+  whatsapp_notification_phone: string;
 }
 
 export default function Settings() {
@@ -25,6 +26,7 @@ export default function Settings() {
     delivery_fee_outside: '120',
     business_email: 'rijvialomrafa@gmail.com',
     business_phone: '+8801930278877',
+    whatsapp_notification_phone: '+8801930278877',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -197,7 +199,7 @@ export default function Settings() {
             />
           </div>
           <div>
-            <Label htmlFor="phone">Business Phone / WhatsApp</Label>
+            <Label htmlFor="phone">Business Phone (displayed to customers)</Label>
             <Input
               id="phone"
               value={settings.business_phone}
@@ -205,6 +207,22 @@ export default function Settings() {
               placeholder="+8801930278877"
               className="mt-1"
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              This phone number is shown to customers on the website
+            </p>
+          </div>
+          <div>
+            <Label htmlFor="whatsapp_notification">WhatsApp Notification Number (for admin alerts)</Label>
+            <Input
+              id="whatsapp_notification"
+              value={settings.whatsapp_notification_phone}
+              onChange={(e) => setSettings({ ...settings, whatsapp_notification_phone: e.target.value })}
+              placeholder="+8801930278877"
+              className="mt-1"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              New order notifications will be sent to this WhatsApp number. Include country code (e.g., 8801XXXXXXXXX)
+            </p>
           </div>
         </div>
       </motion.div>
