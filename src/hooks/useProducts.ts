@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/lib/store';
 
+export type { Product };
+
 interface DBProduct {
   id: string;
   name: string;
