@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Filter, Eye, Package } from 'lucide-react';
+import { Search, Filter, Eye, Package, Printer } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -56,7 +56,51 @@ export default function Orders() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  const handlePrint = () => {
+    if (!printRef.current || !selectedOrder) return;
+    
+    const printContent = printRef.current.innerHTML;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Order ${selectedOrder.order_number}</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: system-ui, -apple-system, sans-serif; padding: 20px; color: #333; }
+            .print-header { text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #333; }
+            .print-header h1 { font-size: 24px; margin-bottom: 4px; }
+            .print-header p { color: #666; font-size: 14px; }
+            .section { margin-bottom: 20px; }
+            .section-title { font-size: 14px; color: #666; margin-bottom: 8px; font-weight: 600; }
+            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+            .info-item label { font-size: 12px; color: #666; display: block; }
+            .info-item p { font-weight: 500; }
+            .address-box { background: #f5f5f5; padding: 12px; border-radius: 4px; }
+            .items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+            .items-table th, .items-table td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+            .items-table th { background: #f5f5f5; font-weight: 600; font-size: 12px; }
+            .totals { margin-left: auto; width: 250px; }
+            .total-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+            .total-row.final { font-weight: bold; font-size: 18px; border-top: 2px solid #333; border-bottom: none; padding-top: 12px; }
+            .notes { background: #fffde7; padding: 12px; border-radius: 4px; font-size: 14px; }
+            @media print { body { padding: 0; } }
+          </style>
+        </head>
+        <body>
+          ${printContent}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+  };
 
   useEffect(() => {
     fetchOrders();
@@ -252,10 +296,93 @@ export default function Orders() {
       {/* Order Detail Dialog */}
       <Dialog open={!!selectedOrder} onOpenChange={() => { setSelectedOrder(null); setOrderItems([]); }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+          <DialogHeader className="flex flex-row items-center justify-between">
             <DialogTitle>Order {selectedOrder?.order_number}</DialogTitle>
+            <Button variant="outline" size="sm" onClick={handlePrint} className="ml-auto mr-6">
+              <Printer className="h-4 w-4 mr-2" />
+              Print
+            </Button>
           </DialogHeader>
           {selectedOrder && (
+            <>
+            {/* Printable content */}
+            <div ref={printRef} className="hidden">
+              <div className="print-header">
+                <h1>Order #{selectedOrder.order_number}</h1>
+                <p>{new Date(selectedOrder.created_at).toLocaleString()}</p>
+              </div>
+              
+              <div className="info-grid">
+                <div className="info-item">
+                  <label>Status</label>
+                  <p style={{ textTransform: 'capitalize' }}>{selectedOrder.status}</p>
+                </div>
+                <div className="info-item">
+                  <label>Order Date</label>
+                  <p>{new Date(selectedOrder.created_at).toLocaleDateString()}</p>
+                </div>
+              </div>
+              
+              <div className="section">
+                <div className="section-title">Shipping Address</div>
+                <div className="address-box">
+                  <p style={{ fontWeight: 500 }}>{selectedOrder.shipping_address.full_name}</p>
+                  <p>{selectedOrder.shipping_address.phone}</p>
+                  <p>{selectedOrder.shipping_address.address}</p>
+                  <p style={{ textTransform: 'capitalize' }}>{selectedOrder.shipping_address.area}</p>
+                </div>
+              </div>
+              
+              <div className="section">
+                <div className="section-title">Order Items</div>
+                <table className="items-table">
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th>Size</th>
+                      <th>Color</th>
+                      <th>Qty</th>
+                      <th style={{ textAlign: 'right' }}>Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orderItems.map((item) => (
+                      <tr key={item.id}>
+                        <td>{item.product_name}</td>
+                        <td>{item.size || '-'}</td>
+                        <td>{item.color || '-'}</td>
+                        <td>{item.quantity}</td>
+                        <td style={{ textAlign: 'right' }}>৳{(Number(item.price) * item.quantity).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              <div className="totals">
+                <div className="total-row">
+                  <span>Subtotal</span>
+                  <span>৳{Number(selectedOrder.subtotal).toLocaleString()}</span>
+                </div>
+                <div className="total-row">
+                  <span>Delivery Fee</span>
+                  <span>৳{Number(selectedOrder.delivery_fee).toLocaleString()}</span>
+                </div>
+                <div className="total-row final">
+                  <span>Total</span>
+                  <span>৳{Number(selectedOrder.total).toLocaleString()}</span>
+                </div>
+              </div>
+              
+              {selectedOrder.notes && (
+                <div className="section" style={{ marginTop: 20 }}>
+                  <div className="section-title">Notes</div>
+                  <div className="notes">{selectedOrder.notes}</div>
+                </div>
+              )}
+            </div>
+
+            {/* Visible dialog content */}
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -345,6 +472,7 @@ export default function Orders() {
                 </div>
               )}
             </div>
+            </>
           )}
         </DialogContent>
       </Dialog>
