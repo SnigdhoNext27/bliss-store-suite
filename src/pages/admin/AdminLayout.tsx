@@ -150,7 +150,7 @@ export default function AdminLayout() {
       {/* Main Content */}
       <main className="flex-1 p-4 lg:p-8 lg:ml-0">
         {/* Top Bar with Home Button */}
-        <div className="flex justify-end mb-6">
+        <div className="flex justify-start mb-6 pl-12 lg:pl-0">
           <Button variant="outline" size="sm" asChild className="gap-2">
             <Link to="/">
               <Home className="h-4 w-4" />
