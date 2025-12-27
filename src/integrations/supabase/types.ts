@@ -547,6 +547,9 @@ export type Database = {
         }
         Returns: Json
       }
+      get_admin_count: { Args: never; Returns: number }
+      get_user_admin_role: { Args: { _user_id: string }; Returns: string }
+      has_admin_access: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
