@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { ImageUpload } from '@/components/admin/ImageUpload';
 
 interface Product {
   id: string;
@@ -28,7 +29,10 @@ interface Product {
   is_featured: boolean;
   images: string[];
   sizes: string[];
+  colors: string[];
   description: string | null;
+  short_description: string | null;
+  sku: string | null;
 }
 
 export default function Products() {
@@ -43,7 +47,11 @@ export default function Products() {
     sale_price: '',
     stock: '',
     description: '',
+    short_description: '',
     sizes: 'S, M, L, XL',
+    colors: '',
+    sku: '',
+    images: [] as string[],
     is_active: true,
     is_new: true,
     is_featured: false,
@@ -77,15 +85,19 @@ export default function Products() {
       return;
     }
 
-    const slug = formData.name.toLowerCase().replace(/\s+/g, '-');
+    const slug = formData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     const productData = {
       name: formData.name,
-      slug: editingProduct ? editingProduct.slug : slug,
+      slug: editingProduct ? editingProduct.slug : `${slug}-${Date.now()}`,
       price: parseFloat(formData.price),
       sale_price: formData.sale_price ? parseFloat(formData.sale_price) : null,
       stock: parseInt(formData.stock) || 0,
       description: formData.description || null,
-      sizes: formData.sizes.split(',').map(s => s.trim()),
+      short_description: formData.short_description || null,
+      sizes: formData.sizes.split(',').map(s => s.trim()).filter(Boolean),
+      colors: formData.colors ? formData.colors.split(',').map(s => s.trim()).filter(Boolean) : [],
+      images: formData.images,
+      sku: formData.sku || null,
       is_active: formData.is_active,
       is_new: formData.is_new,
       is_featured: formData.is_featured,
@@ -138,7 +150,11 @@ export default function Products() {
       sale_price: product.sale_price?.toString() || '',
       stock: product.stock.toString(),
       description: product.description || '',
+      short_description: product.short_description || '',
       sizes: product.sizes?.join(', ') || 'S, M, L, XL',
+      colors: product.colors?.join(', ') || '',
+      sku: product.sku || '',
+      images: product.images || [],
       is_active: product.is_active,
       is_new: product.is_new,
       is_featured: product.is_featured,
@@ -154,7 +170,11 @@ export default function Products() {
       sale_price: '',
       stock: '',
       description: '',
+      short_description: '',
       sizes: 'S, M, L, XL',
+      colors: '',
+      sku: '',
+      images: [],
       is_active: true,
       is_new: true,
       is_featured: false,
@@ -187,11 +207,20 @@ export default function Products() {
               Add Product
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-4">
+              {/* Image Upload */}
+              <div>
+                <Label className="mb-2 block">Product Images</Label>
+                <ImageUpload
+                  images={formData.images}
+                  onImagesChange={(images) => setFormData({ ...formData, images })}
+                />
+              </div>
+
               <div>
                 <Label>Name *</Label>
                 <Input
@@ -200,9 +229,19 @@ export default function Products() {
                   placeholder="Product name"
                 />
               </div>
+
+              <div>
+                <Label>SKU</Label>
+                <Input
+                  value={formData.sku}
+                  onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                  placeholder="SKU-001"
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Price *</Label>
+                  <Label>Price (৳) *</Label>
                   <Input
                     type="number"
                     value={formData.price}
@@ -211,7 +250,7 @@ export default function Products() {
                   />
                 </div>
                 <div>
-                  <Label>Sale Price</Label>
+                  <Label>Sale Price (৳)</Label>
                   <Input
                     type="number"
                     value={formData.sale_price}
@@ -220,6 +259,7 @@ export default function Products() {
                   />
                 </div>
               </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Stock</Label>
@@ -239,37 +279,59 @@ export default function Products() {
                   />
                 </div>
               </div>
+
               <div>
-                <Label>Description</Label>
+                <Label>Colors (comma separated)</Label>
+                <Input
+                  value={formData.colors}
+                  onChange={(e) => setFormData({ ...formData, colors: e.target.value })}
+                  placeholder="Black, White, Navy"
+                />
+              </div>
+
+              <div>
+                <Label>Short Description</Label>
+                <Input
+                  value={formData.short_description}
+                  onChange={(e) => setFormData({ ...formData, short_description: e.target.value })}
+                  placeholder="Brief product summary"
+                />
+              </div>
+
+              <div>
+                <Label>Full Description</Label>
                 <Textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Product description..."
+                  placeholder="Detailed product description..."
+                  rows={3}
                 />
               </div>
+
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label>Active</Label>
+                  <Label>Active (visible on store)</Label>
                   <Switch
                     checked={formData.is_active}
                     onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label>New Arrival</Label>
+                  <Label>New Arrival Badge</Label>
                   <Switch
                     checked={formData.is_new}
                     onCheckedChange={(checked) => setFormData({ ...formData, is_new: checked })}
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label>Featured</Label>
+                  <Label>Featured Product</Label>
                   <Switch
                     checked={formData.is_featured}
                     onCheckedChange={(checked) => setFormData({ ...formData, is_featured: checked })}
                   />
                 </div>
               </div>
+
               <Button onClick={handleSubmit} className="w-full">
                 {editingProduct ? 'Update Product' : 'Create Product'}
               </Button>
@@ -319,7 +381,7 @@ export default function Products() {
                     {product.is_active ? 'Active' : 'Inactive'}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center gap-2 mb-1">
                   <span className="font-bold">৳{Number(product.price).toLocaleString()}</span>
                   {product.sale_price && (
                     <span className="text-sm text-muted-foreground line-through">
@@ -327,6 +389,9 @@ export default function Products() {
                     </span>
                   )}
                 </div>
+                {product.sku && (
+                  <p className="text-xs text-muted-foreground mb-2">SKU: {product.sku}</p>
+                )}
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Stock: {product.stock}</span>
                   <div className="flex gap-2">

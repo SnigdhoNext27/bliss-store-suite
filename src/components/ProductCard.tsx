@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, ShoppingBag } from 'lucide-react';
+import { Eye, ShoppingBag, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Product, useCartStore } from '@/lib/store';
+import { useWishlist } from '@/hooks/useWishlist';
 
 interface ProductCardProps {
   product: Product;
@@ -14,7 +15,10 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [selectedSize, setSelectedSize] = useState(product.sizes[1] || product.sizes[0]);
   const { addItem } = useCartStore();
+  const { isInWishlist, toggleWishlist } = useWishlist();
   const navigate = useNavigate();
+
+  const inWishlist = isInWishlist(product.id);
 
   const handleAddToBag = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -25,6 +29,11 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
     e.stopPropagation();
     addItem(product, selectedSize);
     navigate('/checkout');
+  };
+
+  const handleToggleWishlist = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleWishlist(product.id);
   };
 
   const handleCardClick = () => {
@@ -68,12 +77,27 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
           </div>
         )}
 
+        {/* Wishlist Button */}
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isHovered ? 1 : 0 }}
+          onClick={handleToggleWishlist}
+          className={`absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full shadow-medium backdrop-blur-sm transition-colors ${
+            inWishlist 
+              ? 'bg-primary text-primary-foreground' 
+              : 'bg-background/90 text-foreground hover:bg-primary hover:text-primary-foreground'
+          }`}
+          aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+        >
+          <Heart className={`h-5 w-5 ${inWishlist ? 'fill-current' : ''}`} />
+        </motion.button>
+
         {/* Quick View Button */}
         <motion.button
           initial={{ opacity: 0 }}
           animate={{ opacity: isHovered ? 1 : 0 }}
           onClick={(e) => { e.stopPropagation(); navigate(`/product/${product.id}`); }}
-          className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-background/90 text-foreground shadow-medium backdrop-blur-sm transition-colors hover:bg-primary hover:text-primary-foreground"
+          className="absolute right-3 top-16 flex h-10 w-10 items-center justify-center rounded-full bg-background/90 text-foreground shadow-medium backdrop-blur-sm transition-colors hover:bg-primary hover:text-primary-foreground"
           aria-label="Quick view"
         >
           <Eye className="h-5 w-5" />
