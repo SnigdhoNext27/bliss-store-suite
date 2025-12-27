@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send, Loader2, Minimize2 } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -22,8 +22,6 @@ export function LiveChatWidget() {
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const [guestName, setGuestName] = useState('');
-  const [guestEmail, setGuestEmail] = useState('');
   const [chatStarted, setChatStarted] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
@@ -98,8 +96,9 @@ export function LiveChatWidget() {
   };
 
   const startChat = async () => {
-    if (!user && (!guestName.trim() || !guestEmail.trim())) {
-      toast({ title: 'Please enter your name and email', variant: 'destructive' });
+    // Require user login for chat (authenticated-only)
+    if (!user) {
+      toast({ title: 'Please sign in to start a chat', variant: 'destructive' });
       return;
     }
 
@@ -107,9 +106,9 @@ export function LiveChatWidget() {
       const { data: conversation, error } = await supabase
         .from('chat_conversations')
         .insert({
-          customer_id: user?.id || null,
-          customer_name: user?.user_metadata?.full_name || guestName || 'Guest',
-          customer_email: user?.email || guestEmail,
+          customer_id: user.id,
+          customer_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Customer',
+          customer_email: user.email,
           status: 'open',
         })
         .select()
@@ -119,14 +118,6 @@ export function LiveChatWidget() {
 
       setConversationId(conversation.id);
       setChatStarted(true);
-
-      // Send welcome message
-      await supabase.from('chat_messages').insert({
-        conversation_id: conversation.id,
-        sender_type: 'admin',
-        message: 'Hello! Welcome to Almans. How can we help you today?',
-      });
-
       loadMessages(conversation.id);
     } catch (error) {
       console.error('Error starting chat:', error);
@@ -135,14 +126,14 @@ export function LiveChatWidget() {
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !conversationId) return;
+    if (!newMessage.trim() || !conversationId || !user) return;
 
     setSending(true);
     try {
       const { error } = await supabase.from('chat_messages').insert({
         conversation_id: conversationId,
         sender_type: 'customer',
-        sender_id: user?.id || null,
+        sender_id: user.id,
         message: newMessage.trim(),
       });
 
@@ -209,27 +200,14 @@ export function LiveChatWidget() {
             {!chatStarted ? (
               <div className="p-4 space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Start a conversation with our support team. We're here to help!
+                  {user 
+                    ? "Start a conversation with our support team. We're here to help!"
+                    : "Please sign in to start a live chat with our support team."
+                  }
                 </p>
                 
-                {!user && (
-                  <>
-                    <Input
-                      placeholder="Your name"
-                      value={guestName}
-                      onChange={(e) => setGuestName(e.target.value)}
-                    />
-                    <Input
-                      placeholder="Your email"
-                      type="email"
-                      value={guestEmail}
-                      onChange={(e) => setGuestEmail(e.target.value)}
-                    />
-                  </>
-                )}
-                
                 <Button onClick={startChat} className="w-full">
-                  Start Chat
+                  {user ? 'Start Chat' : 'Sign In to Chat'}
                 </Button>
               </div>
             ) : (
@@ -237,6 +215,11 @@ export function LiveChatWidget() {
                 {/* Messages */}
                 <ScrollArea className="h-80 p-4" ref={scrollRef}>
                   <div className="space-y-4">
+                    {messages.length === 0 && (
+                      <p className="text-center text-sm text-muted-foreground py-8">
+                        Send a message to start the conversation
+                      </p>
+                    )}
                     {messages.map((msg) => (
                       <div
                         key={msg.id}
