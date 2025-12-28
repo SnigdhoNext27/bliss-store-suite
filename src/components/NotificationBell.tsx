@@ -246,7 +246,17 @@ export function NotificationBell() {
         ref={buttonRef}
         variant="ghost"
         size="icon"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          // Clear badge when opening (store all current notification IDs as "seen")
+          if (!isOpen && unreadCount > 0) {
+            const allIds = notifications.map(n => n.id);
+            const localReadIds = getLocalReadIds();
+            const newReadIds = [...new Set([...localReadIds, ...allIds])];
+            saveLocalReadIds(newReadIds);
+            setUnreadCount(0);
+          }
+          setIsOpen(!isOpen);
+        }}
         className="relative"
         aria-label={`Notifications ${unreadCount > 0 ? `(${unreadCount} unread)` : ''}`}
       >
