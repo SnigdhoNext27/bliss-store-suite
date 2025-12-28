@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Facebook, Instagram, Banknote, CreditCard, Smartphone } from 'lucide-react';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { WolfLogoIcon } from './WolfLogoIcon';
 
 const footerLinks = {
   'About Us': ['Our Story', 'Careers', 'Sustainability', 'Press'],
@@ -72,11 +73,9 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8">
           {/* Logo & Description */}
           <div className="col-span-2">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-almans-cream/30">
-                <span className="font-display text-lg font-semibold">A</span>
-              </div>
-              <span className="font-display text-xl font-semibold">ALMANS</span>
+            <div className="flex items-center gap-2.5 mb-4">
+              <WolfLogoIcon className="h-11 w-11" variant="light" />
+              <span className="font-display text-xl font-bold tracking-wider">ALMANS</span>
             </div>
             <p className="text-almans-cream/60 text-sm mb-6">
               Where your vibes meet our vision. Premium fashion essentials for the modern individual.

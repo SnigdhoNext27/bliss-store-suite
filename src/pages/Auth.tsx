@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, AlertTriangle, ShoppingBag, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, AlertTriangle, Sparkles } from 'lucide-react';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { PasswordStrengthIndicator, isCommonPassword } from '@/components/PasswordStrengthIndicator';
 import { useLoginRateLimit } from '@/hooks/useLoginRateLimit';
 import { MFAVerification } from '@/components/auth/MFAVerification';
+import { WolfLogoIcon } from '@/components/WolfLogoIcon';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -283,11 +284,11 @@ export default function Auth() {
           >
             {/* Logo Icon */}
             <motion.div 
-              className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg"
+              className="mx-auto mb-6"
               whileHover={{ scale: 1.05, rotate: 5 }}
               transition={{ type: "spring", stiffness: 300 }}
             >
-              <ShoppingBag className="h-10 w-10 text-primary-foreground" />
+              <WolfLogoIcon className="w-20 h-20" variant="default" />
             </motion.div>
             
             <h1 className="font-display text-4xl font-bold text-foreground mb-2">

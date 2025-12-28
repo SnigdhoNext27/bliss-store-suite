@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { OrdersDropdown } from '@/components/admin/OrdersDropdown';
 import { useOrderNotificationSound } from '@/hooks/useOrderNotificationSound';
+import { WolfLogoIcon } from '@/components/WolfLogoIcon';
 
 interface NavItem {
   to: string;
@@ -108,7 +109,10 @@ export default function AdminLayout() {
         }`}
       >
         <div className="p-6 border-b border-border">
-          <h1 className="font-display text-2xl font-bold text-primary">Almans Admin</h1>
+          <div className="flex items-center gap-2.5">
+            <WolfLogoIcon className="h-10 w-10" />
+            <h1 className="font-display text-xl font-bold text-primary">Admin</h1>
+          </div>
           {userRole && (
             <Badge variant="secondary" className="mt-2">
               {ROLE_LABELS[userRole] || userRole}
