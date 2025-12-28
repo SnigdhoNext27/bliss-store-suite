@@ -748,6 +748,7 @@ export default function Account() {
                           value={passwordForm.newPassword}
                           onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
                           placeholder="Enter new password"
+                          autoComplete="new-password"
                         />
                         {errors.newPassword && <p className="text-destructive text-sm">{errors.newPassword}</p>}
                       </div>
@@ -760,6 +761,7 @@ export default function Account() {
                           value={passwordForm.confirmPassword}
                           onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
                           placeholder="Confirm new password"
+                          autoComplete="new-password"
                         />
                         {errors.confirmPassword && <p className="text-destructive text-sm">{errors.confirmPassword}</p>}
                       </div>

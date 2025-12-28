@@ -472,6 +472,7 @@ export default function Auth() {
                           value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                           className="pl-12 h-12 rounded-xl border-border/50 bg-background/50"
+                          autoComplete="email"
                         />
                       </div>
                       {errors.email && <p className="text-destructive text-sm">{errors.email}</p>}
@@ -499,6 +500,7 @@ export default function Auth() {
                           value={formData.password}
                           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                           className="pl-12 pr-12 h-12 rounded-xl border-border/50 bg-background/50"
+                          autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                         />
                         <button
                           type="button"
@@ -526,6 +528,7 @@ export default function Auth() {
                             value={formData.confirmPassword}
                             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                             className="pl-12 pr-12 h-12 rounded-xl border-border/50 bg-background/50"
+                            autoComplete="new-password"
                           />
                           <button
                             type="button"
