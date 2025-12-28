@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, ShoppingBag, Heart } from 'lucide-react';
+import { Eye, ShoppingBag, Heart, GitCompare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Product, useCartStore } from '@/lib/store';
 import { useWishlist } from '@/hooks/useWishlist';
+import { useProductComparison } from '@/hooks/useProductComparison';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProductCardProps {
   product: Product;
@@ -16,19 +18,51 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
   const [selectedSize, setSelectedSize] = useState(product.sizes[1] || product.sizes[0]);
   const { addItem } = useCartStore();
   const { isInWishlist, toggleWishlist } = useWishlist();
+  const { addProduct, isInComparison, removeProduct } = useProductComparison();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const inWishlist = isInWishlist(product.id);
+  const inComparison = isInComparison(product.id);
 
   const handleAddToBag = (e: React.MouseEvent) => {
     e.stopPropagation();
     addItem(product, selectedSize);
   };
 
-
   const handleToggleWishlist = (e: React.MouseEvent) => {
     e.stopPropagation();
     toggleWishlist(product.id);
+  };
+
+  const handleToggleComparison = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (inComparison) {
+      removeProduct(product.id);
+      toast({
+        title: 'Removed from comparison',
+        description: `${product.name} has been removed.`,
+      });
+    } else {
+      // Convert to the format expected by comparison
+      const comparisonProduct = {
+        ...product,
+        description: product.description || '',
+      };
+      const added = addProduct(comparisonProduct as any);
+      if (added) {
+        toast({
+          title: 'Added to comparison',
+          description: `${product.name} has been added. Select up to 4 products.`,
+        });
+      } else {
+        toast({
+          title: 'Comparison limit reached',
+          description: 'You can compare up to 4 products at a time.',
+          variant: 'destructive',
+        });
+      }
+    }
   };
 
   const handleCardClick = () => {
@@ -72,31 +106,51 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
           </div>
         )}
 
-        {/* Wishlist Button */}
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: isHovered ? 1 : 0 }}
-          onClick={handleToggleWishlist}
-          className={`absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full shadow-medium backdrop-blur-sm transition-colors ${
-            inWishlist 
-              ? 'bg-primary text-primary-foreground' 
-              : 'bg-background/90 text-foreground hover:bg-primary hover:text-primary-foreground'
-          }`}
-          aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
-        >
-          <Heart className={`h-5 w-5 ${inWishlist ? 'fill-current' : ''}`} />
-        </motion.button>
+        {/* Action Buttons */}
+        <div className="absolute right-3 top-3 flex flex-col gap-2">
+          {/* Wishlist Button */}
+          <motion.button
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: isHovered || inWishlist ? 1 : 0, x: isHovered || inWishlist ? 0 : 10 }}
+            onClick={handleToggleWishlist}
+            className={`flex h-10 w-10 items-center justify-center rounded-full shadow-medium backdrop-blur-sm transition-colors ${
+              inWishlist 
+                ? 'bg-primary text-primary-foreground' 
+                : 'bg-background/90 text-foreground hover:bg-primary hover:text-primary-foreground'
+            }`}
+            aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+          >
+            <Heart className={`h-5 w-5 ${inWishlist ? 'fill-current' : ''}`} />
+          </motion.button>
 
-        {/* Quick View Button */}
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: isHovered ? 1 : 0 }}
-          onClick={(e) => { e.stopPropagation(); navigate(`/product/${product.id}`); }}
-          className="absolute right-3 top-16 flex h-10 w-10 items-center justify-center rounded-full bg-background/90 text-foreground shadow-medium backdrop-blur-sm transition-colors hover:bg-primary hover:text-primary-foreground"
-          aria-label="Quick view"
-        >
-          <Eye className="h-5 w-5" />
-        </motion.button>
+          {/* Comparison Button */}
+          <motion.button
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: isHovered || inComparison ? 1 : 0, x: isHovered || inComparison ? 0 : 10 }}
+            transition={{ delay: 0.05 }}
+            onClick={handleToggleComparison}
+            className={`flex h-10 w-10 items-center justify-center rounded-full shadow-medium backdrop-blur-sm transition-colors ${
+              inComparison 
+                ? 'bg-almans-gold text-almans-chocolate' 
+                : 'bg-background/90 text-foreground hover:bg-almans-gold hover:text-almans-chocolate'
+            }`}
+            aria-label={inComparison ? 'Remove from comparison' : 'Add to comparison'}
+          >
+            <GitCompare className="h-5 w-5" />
+          </motion.button>
+
+          {/* Quick View Button */}
+          <motion.button
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: isHovered ? 1 : 0, x: isHovered ? 0 : 10 }}
+            transition={{ delay: 0.1 }}
+            onClick={(e) => { e.stopPropagation(); navigate(`/product/${product.id}`); }}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-background/90 text-foreground shadow-medium backdrop-blur-sm transition-colors hover:bg-primary hover:text-primary-foreground"
+            aria-label="Quick view"
+          >
+            <Eye className="h-5 w-5" />
+          </motion.button>
+        </div>
 
         {/* Size Selector on Hover */}
         <motion.div
