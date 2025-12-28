@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
-import { Package, User, MapPin, Lock, ChevronRight, Loader2, Plus, Trash2, Edit, Calendar, Shield } from 'lucide-react';
+import { Package, User, MapPin, Lock, ChevronRight, Loader2, Plus, Trash2, Edit, Calendar, Shield, FileText } from 'lucide-react';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,7 @@ import { ReferralProgram } from '@/components/ReferralProgram';
 import { SavedPaymentMethods } from '@/components/SavedPaymentMethods';
 import { OrderHistoryExport } from '@/components/OrderHistoryExport';
 import { OrderFilters, OrderFiltersState, defaultFilters } from '@/components/OrderFilters';
+import { InvoiceDownloadButton } from '@/components/InvoiceDownloadButton';
 
 interface OrderItem {
   id: string;
@@ -640,41 +641,68 @@ export default function Account() {
                       {paginatedOrders.map((order) => (
                         <div
                           key={order.id}
-                          onClick={() => navigate(`/orders/${order.order_number}`)}
-                          className="bg-secondary/50 rounded-xl p-4 cursor-pointer hover:bg-secondary transition-colors"
+                          className="bg-secondary/50 rounded-xl p-4 hover:bg-secondary transition-colors"
                         >
-                          <div className="flex items-center justify-between mb-3">
-                            <div>
-                              <p className="font-medium">{order.order_number}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {new Date(order.created_at).toLocaleDateString()}
-                              </p>
+                          <div 
+                            className="cursor-pointer"
+                            onClick={() => navigate(`/orders/${order.order_number}`)}
+                          >
+                            <div className="flex items-center justify-between mb-3">
+                              <div>
+                                <p className="font-medium">{order.order_number}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {new Date(order.created_at).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge className={`${getStatusColor(order.status)} text-white capitalize`}>
+                                  {order.status}
+                                </Badge>
+                                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Badge className={`${getStatusColor(order.status)} text-white capitalize`}>
-                                {order.status}
-                              </Badge>
-                              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                            {order.order_items && order.order_items.length > 0 && (
+                              <div className="text-sm text-muted-foreground mb-2">
+                                {order.order_items.slice(0, 2).map((item, idx) => (
+                                  <span key={item.id}>
+                                    {item.product_name} × {item.quantity}
+                                    {idx < Math.min(order.order_items!.length - 1, 1) ? ', ' : ''}
+                                  </span>
+                                ))}
+                                {order.order_items.length > 2 && (
+                                  <span> +{order.order_items.length - 2} more</span>
+                                )}
+                              </div>
+                            )}
+                            <div className="flex justify-between items-center">
+                              <p className="text-sm text-muted-foreground">
+                                {order.shipping_address?.address?.substring(0, 40)}...
+                              </p>
+                              <p className="font-bold">৳{order.total.toFixed(0)}</p>
                             </div>
                           </div>
-                          {order.order_items && order.order_items.length > 0 && (
-                            <div className="text-sm text-muted-foreground mb-2">
-                              {order.order_items.slice(0, 2).map((item, idx) => (
-                                <span key={item.id}>
-                                  {item.product_name} × {item.quantity}
-                                  {idx < Math.min(order.order_items!.length - 1, 1) ? ', ' : ''}
-                                </span>
-                              ))}
-                              {order.order_items.length > 2 && (
-                                <span> +{order.order_items.length - 2} more</span>
-                              )}
-                            </div>
-                          )}
-                          <div className="flex justify-between items-center">
-                            <p className="text-sm text-muted-foreground">
-                              {order.shipping_address?.address?.substring(0, 40)}...
-                            </p>
-                            <p className="font-bold">৳{order.total.toFixed(0)}</p>
+                          {/* Invoice Download Button */}
+                          <div className="mt-3 pt-3 border-t border-border flex justify-end">
+                            <InvoiceDownloadButton 
+                              order={{
+                                id: order.id,
+                                order_number: order.order_number,
+                                created_at: order.created_at,
+                                status: order.status,
+                                subtotal: order.subtotal || order.total,
+                                delivery_fee: order.delivery_fee || 0,
+                                discount: null,
+                                total: order.total,
+                                shipping_address: order.shipping_address,
+                                items: order.order_items?.map(item => ({
+                                  product_name: item.product_name,
+                                  quantity: item.quantity,
+                                  price: item.price,
+                                  size: item.size
+                                }))
+                              }}
+                              size="sm"
+                            />
                           </div>
                         </div>
                       ))}
