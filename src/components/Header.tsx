@@ -292,8 +292,10 @@ export function Header() {
             )}
           </Button>
 
-          {/* Settings Panel (Language, Currency, Theme) */}
-          <SettingsPanel />
+          {/* Settings Panel (Language, Currency, Theme) - Desktop only */}
+          <div className="hidden md:block">
+            <SettingsPanel />
+          </div>
 
           {/* Mobile Menu Toggle */}
           <Button
