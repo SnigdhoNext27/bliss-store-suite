@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { ChevronLeft, ChevronRight, MoveHorizontal, Sparkles, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
@@ -71,6 +71,20 @@ export function Hero() {
   const [hasSwiped, setHasSwiped] = useState(false);
   const { settings } = useSiteSettings();
   const navigate = useNavigate();
+  
+  // Parallax scroll setup
+  const sectionRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end start"]
+  });
+  
+  // Parallax transforms
+  const backgroundY = useTransform(scrollYProgress, [0, 1], ['0%', '30%']);
+  const contentY = useTransform(scrollYProgress, [0, 1], ['0%', '15%']);
+  const brandTextY = useTransform(scrollYProgress, [0, 1], ['0%', '40%']);
+  const overlayOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0.3]);
+  const scale = useTransform(scrollYProgress, [0, 1], [1, 1.1]);
 
   // Create slides with dynamic tagline
   const slides = defaultSlides.map((slide, index) => ({
@@ -146,6 +160,7 @@ export function Hero() {
 
   return (
     <section 
+      ref={sectionRef}
       className="relative w-full overflow-hidden bg-primary touch-pan-y"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
@@ -154,7 +169,7 @@ export function Hero() {
       onTouchEnd={onTouchEnd}
     >
       <div className="relative h-[85vh] min-h-[600px] max-h-[900px]">
-        {/* Background Image */}
+        {/* Background Image with Parallax */}
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={currentSlide}
@@ -164,14 +179,18 @@ export function Hero() {
             animate="center"
             exit="exit"
             className="absolute inset-0"
+            style={{ y: backgroundY, scale }}
           >
             <img
               src={slide.image}
               alt={slide.title}
               className="h-full w-full object-cover object-center"
             />
-            {/* Futuristic gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-r from-almans-chocolate/90 via-almans-chocolate/50 to-transparent" />
+            {/* Futuristic gradient overlay with parallax opacity */}
+            <motion.div 
+              className="absolute inset-0 bg-gradient-to-r from-almans-chocolate/90 via-almans-chocolate/50 to-transparent"
+              style={{ opacity: overlayOpacity }}
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-almans-chocolate/60 via-transparent to-almans-chocolate/20" />
           </motion.div>
         </AnimatePresence>
@@ -228,8 +247,11 @@ export function Hero() {
           </svg>
         </div>
 
-        {/* Large Brand Typography - Background */}
-        <div className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none">
+        {/* Large Brand Typography - Background with Parallax */}
+        <motion.div 
+          className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none"
+          style={{ y: brandTextY }}
+        >
           <motion.span
             key={`brand-${currentSlide}`}
             initial={{ opacity: 0, x: 100, filter: 'blur(10px)' }}
@@ -239,10 +261,13 @@ export function Hero() {
           >
             ALMANS
           </motion.span>
-        </div>
+        </motion.div>
 
-        {/* Content */}
-        <div className="container relative z-10 flex h-full items-center px-4 md:px-8">
+        {/* Content with Parallax */}
+        <motion.div 
+          className="container relative z-10 flex h-full items-center px-4 md:px-8"
+          style={{ y: contentY }}
+        >
           <div className="max-w-xl">
             <AnimatePresence mode="wait">
               <motion.div key={`content-${currentSlide}`}>
@@ -395,7 +420,7 @@ export function Hero() {
               </motion.div>
             </AnimatePresence>
           </div>
-        </div>
+        </motion.div>
 
         {/* Navigation Arrows - Enhanced */}
         <button
