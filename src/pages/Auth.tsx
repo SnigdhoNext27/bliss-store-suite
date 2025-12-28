@@ -68,6 +68,16 @@ export default function Auth() {
   } = useLoginRateLimit();
 
   const redirectTo = searchParams.get('redirect') || '/';
+  const modeParam = searchParams.get('mode');
+
+  // Set mode from URL parameter
+  useEffect(() => {
+    if (modeParam === 'signup') {
+      setMode('signup');
+    } else if (modeParam === 'login') {
+      setMode('login');
+    }
+  }, [modeParam]);
 
   useEffect(() => {
     if (user) {

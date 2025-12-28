@@ -27,7 +27,8 @@ interface MobileMenuOverlayProps {
   isAuthenticated: boolean;
   isAdmin: boolean;
   onAdmin: () => void;
-  onAuth: () => void;
+  onLogin: () => void;
+  onSignup: () => void;
   onSignOut: () => void;
 }
 
@@ -40,7 +41,8 @@ export function MobileMenuOverlay({
   isAuthenticated,
   isAdmin,
   onAdmin,
-  onAuth,
+  onLogin,
+  onSignup,
   onSignOut,
 }: MobileMenuOverlayProps) {
   if (typeof document === 'undefined') return null;
@@ -133,10 +135,10 @@ export function MobileMenuOverlay({
                   </>
                 ) : (
                   <>
-                    <Button variant="outline" className="flex-1" onClick={onAuth}>
+                    <Button variant="outline" className="flex-1" onClick={onLogin}>
                       Login
                     </Button>
-                    <Button variant="default" className="flex-1" onClick={onAuth}>
+                    <Button variant="default" className="flex-1" onClick={onSignup}>
                       Signup
                     </Button>
                   </>
