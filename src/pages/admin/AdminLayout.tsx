@@ -101,55 +101,74 @@ export default function AdminLayout() {
       {/* Mobile Menu Button */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-card rounded-lg shadow-md"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2.5 bg-card/90 backdrop-blur-sm rounded-xl shadow-lg border border-border hover:bg-card transition-colors"
       >
-        {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </button>
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:sticky top-0 left-0 h-screen w-64 bg-card border-r border-border flex flex-col z-40 transform transition-transform lg:translate-x-0 ${
+        className={`fixed lg:sticky top-0 left-0 h-screen w-72 bg-card/50 backdrop-blur-xl border-r border-border flex flex-col z-40 transform transition-transform lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="p-6 border-b border-border">
-          <div className="flex items-center gap-2.5">
-            <WolfLogoIcon className="h-10 w-10" />
-            <h1 className="font-display text-xl font-bold text-primary">Admin</h1>
+        {/* Sidebar gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent pointer-events-none" />
+        
+        <div className="relative p-6 border-b border-border/50">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
+              <WolfLogoIcon className="h-11 w-11 relative z-10" />
+            </div>
+            <div>
+              <h1 className="font-display text-xl font-bold text-foreground">Admin</h1>
+              {userRole && (
+                <Badge variant="secondary" className="mt-1 text-[10px] px-2">
+                  {ROLE_LABELS[userRole] || userRole}
+                </Badge>
+              )}
+            </div>
           </div>
-          {userRole && (
-            <Badge variant="secondary" className="mt-2">
-              {ROLE_LABELS[userRole] || userRole}
-            </Badge>
-          )}
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
-          {navItems.map((item) => (
+        <nav className="relative flex-1 p-4 space-y-1 overflow-y-auto">
+          {navItems.map((item, idx) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.end}
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                `group flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                   isActive
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
                     : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
                 }`
               }
             >
-              <item.icon className="h-5 w-5" />
-              {item.label}
+              {({ isActive }) => (
+                <>
+                  <div className={`p-1.5 rounded-lg transition-colors ${
+                    isActive ? 'bg-primary-foreground/20' : 'bg-muted/50 group-hover:bg-muted'
+                  }`}>
+                    <item.icon className="h-4 w-4" />
+                  </div>
+                  <span className="font-medium">{item.label}</span>
+                  {isActive && (
+                    <div className="ml-auto w-1.5 h-1.5 bg-primary-foreground rounded-full" />
+                  )}
+                </>
+              )}
             </NavLink>
           ))}
         </nav>
 
-        <div className="p-4 border-t border-border">
+        <div className="relative p-4 border-t border-border/50">
           <Button
             variant="ghost"
             onClick={handleSignOut}
-            className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive"
+            className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl py-3"
           >
             <LogOut className="h-5 w-5" />
             Sign Out
@@ -160,16 +179,22 @@ export default function AdminLayout() {
       {/* Overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-foreground/20 z-30 lg:hidden"
+          className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-30 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Main Content */}
-      <main className="flex-1 p-4 lg:p-8 lg:ml-0">
+      <main className="flex-1 p-4 lg:p-8 lg:ml-0 relative">
+        {/* Background pattern */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.02]" style={{
+          backgroundImage: `radial-gradient(circle at 1px 1px, hsl(var(--foreground)) 1px, transparent 0)`,
+          backgroundSize: '32px 32px',
+        }} />
+        
         {/* Top Bar */}
-        <div className="flex items-center justify-between mb-6 pl-12 lg:pl-0">
-          <Button variant="outline" size="sm" asChild className="gap-2">
+        <div className="relative flex items-center justify-between mb-8 pl-14 lg:pl-0">
+          <Button variant="outline" size="sm" asChild className="gap-2 rounded-xl hover:bg-primary/10 hover:text-primary hover:border-primary/30">
             <Link to="/">
               <Home className="h-4 w-4" />
               <span className="hidden sm:inline">Visit Site</span>
@@ -179,7 +204,9 @@ export default function AdminLayout() {
           {/* Orders Dropdown with Notification */}
           <OrdersDropdown />
         </div>
-        <Outlet />
+        <div className="relative">
+          <Outlet />
+        </div>
       </main>
     </div>
   );
