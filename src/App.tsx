@@ -82,9 +82,9 @@ const App = () => {
                   <WhatsAppButton />
                   <LiveChatWidget />
                   <BackToTop />
-                  <ProductComparisonBar />
-                  <ProductComparisonModal />
                   <BrowserRouter>
+                    <ProductComparisonBar />
+                    <ProductComparisonModal />
                     <AnimatedRoutes>
                       <Routes>
                         <Route path="/" element={<Index />} />
