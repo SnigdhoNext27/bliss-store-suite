@@ -9,6 +9,7 @@ import { ProductsSection } from '@/components/ProductsSection';
 import { PromotionalBanner } from '@/components/PromotionalBanner';
 import { FeaturedCarousel } from '@/components/FeaturedCarousel';
 import { CollectionSection } from '@/components/CollectionSection';
+import { RecentlyViewedProducts } from '@/components/RecentlyViewedProducts';
 import { Footer } from '@/components/Footer';
 import { CartSlide } from '@/components/CartSlide';
 import { PullToRefresh } from '@/components/PullToRefresh';
@@ -348,6 +349,9 @@ const Shop = () => {
           <div id="products">
             <ProductsSection />
           </div>
+          
+          {/* Recently Viewed Products */}
+          <RecentlyViewedProducts />
           
           {/* Collection Section */}
           <CollectionSection />
