@@ -397,26 +397,33 @@ export function Hero() {
                   </Button>
                 </motion.div>
 
-                {/* Scroll indicator */}
-                <motion.div
+                {/* Scroll indicator - clickable */}
+                <motion.button
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 1.5 }}
-                  className="hidden md:flex items-center gap-3 mt-16 text-almans-cream/50"
+                  className="hidden md:flex items-center gap-3 mt-16 text-almans-cream/50 hover:text-almans-cream/80 transition-colors cursor-pointer group"
+                  onClick={() => {
+                    const nextSection = document.getElementById('about-section');
+                    if (nextSection) {
+                      nextSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }}
+                  aria-label="Scroll to next section"
                 >
                   <motion.div
-                    className="w-6 h-10 rounded-full border border-almans-cream/30 flex justify-center p-2"
+                    className="w-6 h-10 rounded-full border border-almans-cream/30 group-hover:border-almans-cream/50 flex justify-center p-2 transition-colors"
                     animate={{ opacity: [0.5, 1, 0.5] }}
                     transition={{ duration: 2, repeat: Infinity }}
                   >
                     <motion.div
-                      className="w-1 h-2 bg-almans-cream/60 rounded-full"
+                      className="w-1 h-2 bg-almans-cream/60 group-hover:bg-almans-cream rounded-full transition-colors"
                       animate={{ y: [0, 12, 0] }}
                       transition={{ duration: 1.5, repeat: Infinity }}
                     />
                   </motion.div>
                   <span className="text-xs tracking-widest uppercase">Scroll to explore</span>
-                </motion.div>
+                </motion.button>
               </motion.div>
             </AnimatePresence>
           </div>

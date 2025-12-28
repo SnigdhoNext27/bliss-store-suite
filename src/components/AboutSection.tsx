@@ -4,7 +4,7 @@ import aboutImage from '@/assets/about-lifestyle.jpg';
 
 export function AboutSection() {
   return (
-    <section id="about" className="py-20 bg-card">
+    <section id="about-section" className="py-20 bg-card">
       <div className="container px-4 md:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           {/* Image Gallery */}
