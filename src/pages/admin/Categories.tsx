@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, Edit, Trash2, Grid3X3, ImageIcon } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Grid3X3, ImageIcon, Upload, X, Loader2, Images } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,6 +33,7 @@ export default function Categories() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -40,6 +41,9 @@ export default function Categories() {
     image_url: '',
     has_sizes: true,
   });
+  const [bulkUploading, setBulkUploading] = useState(false);
+  const [bulkUploadProgress, setBulkUploadProgress] = useState<Record<string, 'pending' | 'uploading' | 'done' | 'error'>>({});
+  const bulkInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -140,6 +144,130 @@ export default function Categories() {
     }
   };
 
+  const handleRemoveBanner = async (categoryId: string) => {
+    const category = categories.find(c => c.id === categoryId);
+    if (!category?.image_url) return;
+
+    try {
+      // Delete from storage
+      const urlParts = category.image_url.split('/product-images/');
+      if (urlParts.length > 1) {
+        await supabase.storage.from('product-images').remove([urlParts[1]]);
+      }
+
+      // Update database
+      const { error } = await supabase
+        .from('categories')
+        .update({ image_url: null })
+        .eq('id', categoryId);
+
+      if (error) throw error;
+
+      await logAdminAction({
+        action: 'update',
+        entityType: 'category',
+        entityId: categoryId,
+        details: { action: 'removed_banner', name: category.name }
+      });
+
+      setCategories(categories.map(c => 
+        c.id === categoryId ? { ...c, image_url: null } : c
+      ));
+      toast({ title: 'Banner removed, reverting to AI-generated image' });
+    } catch (error) {
+      console.error('Remove banner error:', error);
+      toast({ title: 'Failed to remove banner', variant: 'destructive' });
+    }
+  };
+
+  const handleBulkUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setBulkUploading(true);
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+    const progress: Record<string, 'pending' | 'uploading' | 'done' | 'error'> = {};
+
+    // Initialize progress for all files
+    Array.from(files).forEach(file => {
+      progress[file.name] = 'pending';
+    });
+    setBulkUploadProgress({ ...progress });
+
+    let successCount = 0;
+
+    for (const file of Array.from(files)) {
+      // Extract category name from filename (e.g., "shirts.jpg" -> "Shirts")
+      const fileNameWithoutExt = file.name.split('.')[0];
+      const categoryName = fileNameWithoutExt.charAt(0).toUpperCase() + fileNameWithoutExt.slice(1).toLowerCase();
+      
+      // Find matching category
+      const matchingCategory = categories.find(c => 
+        c.name.toLowerCase() === categoryName.toLowerCase() ||
+        c.slug.toLowerCase().includes(fileNameWithoutExt.toLowerCase())
+      );
+
+      if (!matchingCategory) {
+        progress[file.name] = 'error';
+        setBulkUploadProgress({ ...progress });
+        continue;
+      }
+
+      progress[file.name] = 'uploading';
+      setBulkUploadProgress({ ...progress });
+
+      try {
+        // Validate file
+        if (!file.type.startsWith('image/')) continue;
+        if (file.size > 5 * 1024 * 1024) continue;
+
+        const fileExt = file.name.split('.').pop()?.toLowerCase();
+        if (!fileExt || !allowedExtensions.includes(fileExt)) continue;
+
+        // Upload to storage
+        const randomName = crypto.randomUUID();
+        const fileName = `${randomName}.${fileExt}`;
+        const filePath = `categories/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage
+          .from('product-images')
+          .getPublicUrl(filePath);
+
+        // Update category
+        const { error: updateError } = await supabase
+          .from('categories')
+          .update({ image_url: urlData.publicUrl })
+          .eq('id', matchingCategory.id);
+
+        if (updateError) throw updateError;
+
+        progress[file.name] = 'done';
+        successCount++;
+      } catch (error) {
+        console.error(`Failed to upload ${file.name}:`, error);
+        progress[file.name] = 'error';
+      }
+
+      setBulkUploadProgress({ ...progress });
+    }
+
+    setBulkUploading(false);
+    if (bulkInputRef.current) bulkInputRef.current.value = '';
+    
+    toast({ 
+      title: `Bulk upload complete`, 
+      description: `${successCount} of ${files.length} banners uploaded successfully` 
+    });
+    
+    fetchCategories();
+  };
+
   const openEdit = (category: Category) => {
     setEditingCategory(category);
     setFormData({
@@ -175,79 +303,164 @@ export default function Categories() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="font-display text-3xl font-bold">Categories</h1>
           <p className="text-muted-foreground">Manage product categories and banners</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Category
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{editingCategory ? 'Edit Category' : 'Add New Category'}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 mt-4">
-              {/* Banner Image Upload */}
-              <div>
-                <Label className="mb-2 block">Category Banner Image</Label>
-                <p className="text-xs text-muted-foreground mb-2">
-                  Upload a custom banner to override the default AI-generated image
-                </p>
-                <ImageUpload
-                  images={formData.image_url ? [formData.image_url] : []}
-                  onImagesChange={(images) => setFormData({ ...formData, image_url: images[0] || '' })}
-                  maxImages={1}
-                  folder="categories"
-                  aspectRatio="aspect-[4/3]"
-                />
-                <p className="text-xs text-muted-foreground mt-2">
-                  Recommended: 1024x768px (4:3 ratio) for best results on category cards
-                </p>
-              </div>
+        <div className="flex gap-2">
+          {/* Bulk Upload Dialog */}
+          <Dialog open={bulkDialogOpen} onOpenChange={setBulkDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Images className="h-4 w-4 mr-2" />
+                Bulk Upload Banners
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Bulk Upload Category Banners</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                <div className="p-4 bg-secondary/50 rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-2">
+                    <strong>How it works:</strong> Name your image files to match category names.
+                  </p>
+                  <ul className="text-xs text-muted-foreground space-y-1">
+                    <li>• <code className="bg-background px-1 rounded">shirts.jpg</code> → Shirts category</li>
+                    <li>• <code className="bg-background px-1 rounded">t-shirts.png</code> → T-Shirts category</li>
+                    <li>• <code className="bg-background px-1 rounded">caps.webp</code> → Caps category</li>
+                  </ul>
+                </div>
 
-              <div>
-                <Label>Category Name *</Label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g., T-Shirts, Caps, Accessories"
-                />
-              </div>
-
-              <div>
-                <Label>Description</Label>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Brief category description..."
-                  rows={2}
-                />
-              </div>
-
-              <div className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg">
                 <div>
-                  <Label className="font-medium">Show Sizes for Products</Label>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Enable for clothing (T-Shirts, Pants). Disable for Caps, Accessories, etc.
+                  <input
+                    ref={bulkInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleBulkUpload}
+                    className="hidden"
+                  />
+                  <Button
+                    onClick={() => bulkInputRef.current?.click()}
+                    disabled={bulkUploading}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    {bulkUploading ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4 mr-2" />
+                    )}
+                    Select Images
+                  </Button>
+                </div>
+
+                {Object.keys(bulkUploadProgress).length > 0 && (
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {Object.entries(bulkUploadProgress).map(([filename, status]) => (
+                      <div key={filename} className="flex items-center justify-between text-sm p-2 bg-background rounded">
+                        <span className="truncate flex-1">{filename}</span>
+                        <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${
+                          status === 'done' ? 'bg-green-100 text-green-700' :
+                          status === 'error' ? 'bg-red-100 text-red-700' :
+                          status === 'uploading' ? 'bg-blue-100 text-blue-700' :
+                          'bg-gray-100 text-gray-600'
+                        }`}>
+                          {status === 'done' ? 'Done' :
+                           status === 'error' ? 'No match' :
+                           status === 'uploading' ? 'Uploading...' : 'Pending'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Add Category Dialog */}
+          <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Category
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>{editingCategory ? 'Edit Category' : 'Add New Category'}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                {/* Banner Image Upload */}
+                <div>
+                  <Label className="mb-2 block">Category Banner Image</Label>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Upload a custom banner to override the default AI-generated image
+                  </p>
+                  <ImageUpload
+                    images={formData.image_url ? [formData.image_url] : []}
+                    onImagesChange={(images) => setFormData({ ...formData, image_url: images[0] || '' })}
+                    maxImages={1}
+                    folder="categories"
+                    aspectRatio="aspect-[4/3]"
+                  />
+                  {formData.image_url && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="mt-2 text-destructive hover:text-destructive"
+                      onClick={() => setFormData({ ...formData, image_url: '' })}
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Remove banner (use AI-generated)
+                    </Button>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Recommended: 1024x768px (4:3 ratio) for best results on category cards
                   </p>
                 </div>
-                <Switch
-                  checked={formData.has_sizes}
-                  onCheckedChange={(checked) => setFormData({ ...formData, has_sizes: checked })}
-                />
-              </div>
 
-              <Button onClick={handleSubmit} className="w-full">
-                {editingCategory ? 'Update Category' : 'Create Category'}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+                <div>
+                  <Label>Category Name *</Label>
+                  <Input
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="e.g., T-Shirts, Caps, Accessories"
+                  />
+                </div>
+
+                <div>
+                  <Label>Description</Label>
+                  <Textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Brief category description..."
+                    rows={2}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg">
+                  <div>
+                    <Label className="font-medium">Show Sizes for Products</Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Enable for clothing (T-Shirts, Pants). Disable for Caps, Accessories, etc.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={formData.has_sizes}
+                    onCheckedChange={(checked) => setFormData({ ...formData, has_sizes: checked })}
+                  />
+                </div>
+
+                <Button onClick={handleSubmit} className="w-full">
+                  {editingCategory ? 'Update Category' : 'Create Category'}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Search */}
@@ -278,7 +491,7 @@ export default function Categories() {
               className="bg-card rounded-xl border border-border overflow-hidden"
             >
               {/* Banner Preview */}
-              <div className="aspect-[4/1] bg-secondary/50 flex items-center justify-center relative overflow-hidden">
+              <div className="aspect-[4/1] bg-secondary/50 flex items-center justify-center relative overflow-hidden group">
                 {category.image_url ? (
                   <>
                     <img 
@@ -287,11 +500,19 @@ export default function Categories() {
                       className="w-full h-full object-cover" 
                     />
                     <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-transparent" />
+                    {/* Remove banner button on hover */}
+                    <button
+                      onClick={() => handleRemoveBanner(category.id)}
+                      className="absolute top-2 right-2 p-1.5 bg-destructive/90 text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive"
+                      title="Remove banner (revert to AI-generated)"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
                   </>
                 ) : (
                   <div className="flex flex-col items-center text-muted-foreground/50">
                     <ImageIcon className="h-8 w-8" />
-                    <span className="text-xs mt-1">No banner</span>
+                    <span className="text-xs mt-1">AI-generated</span>
                   </div>
                 )}
                 {category.image_url && (
