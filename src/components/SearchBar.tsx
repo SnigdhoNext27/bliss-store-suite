@@ -18,7 +18,7 @@ export function SearchBar({ isOpen, onClose }: SearchBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
-  const trendingSearches = ['T-Shirts', 'Shirts', 'Pants', 'Jackets', 'New Arrivals', 'Sale'];
+  const trendingSearches = ['T-Shirts', 'Shirts', 'Pants', 'Jackets', 'New Arrivals'];
   const categories = ['T-Shirts', 'Shirts', 'Pants', 'Jackets', 'Accessories'];
 
   useEffect(() => {
@@ -57,12 +57,22 @@ export function SearchBar({ isOpen, onClose }: SearchBarProps) {
     navigate(`/shop?search=${encodeURIComponent(searchTerm)}`);
     onClose();
     setQuery('');
+    
+    // Scroll to products after navigation
+    setTimeout(() => {
+      document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
+    }, 300);
   };
 
   const handleCategoryClick = (category: string) => {
     navigate(`/shop?category=${encodeURIComponent(category)}`);
     onClose();
     setQuery('');
+    
+    // Scroll to products after navigation
+    setTimeout(() => {
+      document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
+    }, 300);
   };
 
   const handleProductClick = (productId: string) => {

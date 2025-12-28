@@ -206,17 +206,20 @@ export function ProductsSection() {
   // Initialize from URL params
   const urlSearch = searchParams.get('search') || '';
   const urlCategory = searchParams.get('category') || '';
+  const urlSale = searchParams.get('sale') === 'true';
   
   const [searchQuery, setSearchQuery] = useState(urlSearch);
   const [categoryData, setCategoryData] = useState<Record<string, CategoryData>>({});
   const [sortBy, setSortBy] = useState('newest');
   const [activeCategory, setActiveCategory] = useState(urlCategory || 'all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [showSaleOnly, setShowSaleOnly] = useState(urlSale);
   
   // Sync URL params with state
   useEffect(() => {
     const search = searchParams.get('search') || '';
     const category = searchParams.get('category') || '';
+    const sale = searchParams.get('sale') === 'true';
     
     if (search !== searchQuery) {
       setSearchQuery(search);
@@ -225,6 +228,9 @@ export function ProductsSection() {
       setActiveCategory(category);
     } else if (!category && !search && activeCategory !== 'all') {
       // Don't reset if user manually selected a category
+    }
+    if (sale !== showSaleOnly) {
+      setShowSaleOnly(sale);
     }
   }, [searchParams]);
   
@@ -320,6 +326,11 @@ export function ProductsSection() {
   const filteredProducts = useMemo(() => {
     let result = [...products];
 
+    // Sale filter - show only products with sale badge
+    if (showSaleOnly) {
+      result = result.filter(p => p.badge === 'sale' || p.originalPrice);
+    }
+
     // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -371,7 +382,7 @@ export function ProductsSection() {
     }
 
     return result;
-  }, [products, searchQuery, activeCategory, sortBy, filters]);
+  }, [products, searchQuery, activeCategory, sortBy, filters, showSaleOnly]);
 
   // Count active filters
   const activeFiltersCount = useMemo(() => {
@@ -390,6 +401,7 @@ export function ProductsSection() {
     });
     setSearchQuery('');
     setActiveCategory('all');
+    setShowSaleOnly(false);
     setSearchParams({}, { replace: true });
   };
 
@@ -407,7 +419,7 @@ export function ProductsSection() {
     document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const isFiltering = searchQuery || activeCategory !== 'all' || activeFiltersCount > 0;
+  const isFiltering = searchQuery || activeCategory !== 'all' || activeFiltersCount > 0 || showSaleOnly;
   const showCategorySections = !isFiltering && filteredProducts.length > 0;
 
   if (loading) {
