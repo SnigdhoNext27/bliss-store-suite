@@ -1,12 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, Check, Package, Megaphone, ShoppingBag, Sparkles, Volume2, VolumeX, Trash2 } from 'lucide-react';
+import { Bell, Check, Package, Megaphone, ShoppingBag, Sparkles, Volume2, VolumeX, Trash2, Settings, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+
 interface Notification {
   id: string;
   title: string;
@@ -16,6 +19,13 @@ interface Notification {
   link: string | null;
   is_read: boolean;
   created_at: string;
+}
+
+interface NotificationPreferences {
+  info: boolean;
+  product: boolean;
+  order: boolean;
+  promo: boolean;
 }
 
 const notificationIcons: Record<string, React.ReactNode> = {
@@ -32,19 +42,63 @@ const notificationColors: Record<string, string> = {
   promo: 'bg-purple-500/10 text-purple-500',
 };
 
-// Local storage key for tracking read notifications (for guests)
+const notificationLabels: Record<string, string> = {
+  info: 'General Announcements',
+  product: 'New Products',
+  order: 'Order Updates',
+  promo: 'Promotions & Sales',
+};
+
+// Local storage keys
 const READ_NOTIFICATIONS_KEY = 'alman_read_notifications';
+const NOTIFICATION_PREFS_KEY = 'alman_notification_prefs';
+
+const defaultPreferences: NotificationPreferences = {
+  info: true,
+  product: true,
+  order: true,
+  promo: true,
+};
 
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [preferences, setPreferences] = useState<NotificationPreferences>(defaultPreferences);
   const panelRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Load preferences from local storage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(NOTIFICATION_PREFS_KEY);
+      if (stored) {
+        setPreferences({ ...defaultPreferences, ...JSON.parse(stored) });
+      }
+    } catch {
+      // Use defaults
+    }
+  }, []);
+
+  // Save preferences to local storage
+  const savePreferences = useCallback((newPrefs: NotificationPreferences) => {
+    setPreferences(newPrefs);
+    try {
+      localStorage.setItem(NOTIFICATION_PREFS_KEY, JSON.stringify(newPrefs));
+    } catch {
+      // Ignore storage errors
+    }
+  }, []);
+
+  const togglePreference = (type: keyof NotificationPreferences) => {
+    const newPrefs = { ...preferences, [type]: !preferences[type] };
+    savePreferences(newPrefs);
+  };
 
   // Get locally read notification IDs (for guests)
   const getLocalReadIds = useCallback((): string[] => {
@@ -105,11 +159,16 @@ export function NotificationBell() {
     };
   }, []);
 
-  // Calculate unread count considering local storage for guests
+  // Filter notifications based on preferences
+  const filteredNotifications = notifications.filter(n => preferences[n.type as keyof NotificationPreferences] !== false);
+
+  // Calculate unread count considering local storage for guests and preferences
   const calculateUnreadCount = useCallback((notifs: Notification[]) => {
     const localReadIds = getLocalReadIds();
-    return notifs.filter(n => !n.is_read && !localReadIds.includes(n.id)).length;
-  }, [getLocalReadIds]);
+    return notifs
+      .filter(n => preferences[n.type as keyof NotificationPreferences] !== false)
+      .filter(n => !n.is_read && !localReadIds.includes(n.id)).length;
+  }, [getLocalReadIds, preferences]);
 
   // Fetch notifications
   const fetchNotifications = useCallback(async () => {
@@ -343,107 +402,175 @@ export function NotificationBell() {
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-border bg-card sticky top-0 z-10">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-foreground">Notifications</h3>
-                  {unreadCount > 0 && (
+                  {showSettings ? (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 -ml-2"
+                      onClick={() => setShowSettings(false)}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                  ) : null}
+                  <h3 className="font-semibold text-foreground">
+                    {showSettings ? 'Preferences' : 'Notifications'}
+                  </h3>
+                  {!showSettings && unreadCount > 0 && (
                     <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                       {unreadCount} new
                     </span>
                   )}
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setSoundEnabled(!soundEnabled)}
-                    title={soundEnabled ? 'Mute sounds' : 'Enable sounds'}
-                  >
-                    {soundEnabled ? (
-                      <Volume2 className="h-4 w-4" />
-                    ) : (
-                      <VolumeX className="h-4 w-4 opacity-50" />
-                    )}
-                  </Button>
-                  {unreadCount > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={markAllAsRead}
-                      className="text-xs text-primary h-8"
-                    >
-                      <Check className="h-3 w-3 mr-1" />
-                      Mark all read
-                    </Button>
-                  )}
-                  {notifications.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={clearAllNotifications}
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                      title="Clear all notifications"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                  {!showSettings && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setSoundEnabled(!soundEnabled)}
+                        title={soundEnabled ? 'Mute sounds' : 'Enable sounds'}
+                      >
+                        {soundEnabled ? (
+                          <Volume2 className="h-4 w-4" />
+                        ) : (
+                          <VolumeX className="h-4 w-4 opacity-50" />
+                        )}
+                      </Button>
+                      {unreadCount > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={markAllAsRead}
+                          className="text-xs text-primary h-8"
+                        >
+                          <Check className="h-3 w-3 mr-1" />
+                          Mark all read
+                        </Button>
+                      )}
+                      {filteredNotifications.length > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={clearAllNotifications}
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          title="Clear all notifications"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setShowSettings(true)}
+                        title="Notification preferences"
+                      >
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
 
-              {/* Notifications List */}
-              <ScrollArea className="h-[400px] md:h-[400px]">
-                {notifications.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                    <Bell className="h-12 w-12 mb-4 opacity-20" />
-                    <p className="text-sm">No notifications yet</p>
+              {/* Settings View */}
+              {showSettings ? (
+                <div className="p-4 space-y-4">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Choose which types of notifications you want to receive:
+                  </p>
+                  {(Object.keys(notificationLabels) as Array<keyof NotificationPreferences>).map((type) => (
+                    <div key={type} className="flex items-center justify-between py-2">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${notificationColors[type]}`}>
+                          {notificationIcons[type]}
+                        </div>
+                        <Label htmlFor={`pref-${type}`} className="text-sm font-medium cursor-pointer">
+                          {notificationLabels[type]}
+                        </Label>
+                      </div>
+                      <Switch
+                        id={`pref-${type}`}
+                        checked={preferences[type]}
+                        onCheckedChange={() => togglePreference(type)}
+                      />
+                    </div>
+                  ))}
+                  <div className="pt-4 border-t border-border">
+                    <div className="flex items-center justify-between py-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-muted">
+                          <Volume2 className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <Label htmlFor="sound-pref" className="text-sm font-medium cursor-pointer">
+                          Notification sounds
+                        </Label>
+                      </div>
+                      <Switch
+                        id="sound-pref"
+                        checked={soundEnabled}
+                        onCheckedChange={setSoundEnabled}
+                      />
+                    </div>
                   </div>
-                ) : (
-                  <div className="divide-y divide-border">
-                    {notifications.map((notification) => {
-                      const isRead = isNotificationRead(notification);
-                      return (
-                        <motion.button
-                          key={notification.id}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          onClick={() => handleNotificationClick(notification)}
-                          className={`w-full p-4 text-left hover:bg-muted/50 transition-colors ${
-                            !isRead ? 'bg-primary/5' : ''
-                          }`}
-                        >
-                          <div className="flex gap-3">
-                            {/* Icon */}
-                            <div className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
-                              notificationColors[notification.type] || notificationColors.info
-                            }`}>
-                              {notificationIcons[notification.type] || notificationIcons.info}
-                            </div>
-
-                            {/* Content */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between gap-2">
-                                <p className={`text-sm font-medium line-clamp-1 ${
-                                  !isRead ? 'text-foreground' : 'text-muted-foreground'
-                                }`}>
-                                  {notification.title}
-                                </p>
-                                {!isRead && (
-                                  <span className="shrink-0 w-2 h-2 bg-primary rounded-full mt-1.5" />
-                                )}
+                </div>
+              ) : (
+                /* Notifications List */
+                <ScrollArea className="h-[400px] md:h-[400px]">
+                  {filteredNotifications.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                      <Bell className="h-12 w-12 mb-4 opacity-20" />
+                      <p className="text-sm">No notifications yet</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-border">
+                      {filteredNotifications.map((notification) => {
+                        const isRead = isNotificationRead(notification);
+                        return (
+                          <motion.button
+                            key={notification.id}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            onClick={() => handleNotificationClick(notification)}
+                            className={`w-full p-4 text-left hover:bg-muted/50 transition-colors ${
+                              !isRead ? 'bg-primary/5' : ''
+                            }`}
+                          >
+                            <div className="flex gap-3">
+                              {/* Icon */}
+                              <div className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                                notificationColors[notification.type] || notificationColors.info
+                              }`}>
+                                {notificationIcons[notification.type] || notificationIcons.info}
                               </div>
-                              <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
-                                {notification.message}
-                              </p>
-                              <p className="text-[10px] text-muted-foreground/70 mt-1">
-                                {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                              </p>
+
+                              {/* Content */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2">
+                                  <p className={`text-sm font-medium line-clamp-1 ${
+                                    !isRead ? 'text-foreground' : 'text-muted-foreground'
+                                  }`}>
+                                    {notification.title}
+                                  </p>
+                                  {!isRead && (
+                                    <span className="shrink-0 w-2 h-2 bg-primary rounded-full mt-1.5" />
+                                  )}
+                                </div>
+                                <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+                                  {notification.message}
+                                </p>
+                                <p className="text-[10px] text-muted-foreground/70 mt-1">
+                                  {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                )}
-              </ScrollArea>
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </ScrollArea>
+              )}
             </motion.div>
           </>
         )}
