@@ -7,6 +7,7 @@ import { Product, useCartStore } from '@/lib/store';
 import { useProducts } from '@/hooks/useProducts';
 import { useWishlist } from '@/hooks/useWishlist';
 import { ProductQuickView } from './ProductQuickView';
+import { FeaturedCarouselSkeleton } from './FeaturedCarouselSkeleton';
 import { haptics } from '@/lib/haptics';
 
 export function FeaturedCarousel() {
@@ -17,7 +18,7 @@ export function FeaturedCarousel() {
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [showSwipeHint, setShowSwipeHint] = useState(true);
   const [hasSwiped, setHasSwiped] = useState(false);
-  const { products } = useProducts();
+  const { products, loading } = useProducts();
   const { addItem } = useCartStore();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const navigate = useNavigate();
@@ -82,6 +83,11 @@ export function FeaturedCarousel() {
     const timer = setInterval(nextSlide, 4000);
     return () => clearInterval(timer);
   }, [isPaused, nextSlide, featuredProducts.length, itemsPerView]);
+
+  // Show skeleton while loading
+  if (loading) {
+    return <FeaturedCarouselSkeleton count={4} />;
+  }
 
   if (featuredProducts.length === 0) return null;
 
