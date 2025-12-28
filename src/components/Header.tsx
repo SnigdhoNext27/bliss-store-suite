@@ -15,9 +15,21 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
 import { useCartStore } from '@/lib/store';
 import { useAuth } from '@/lib/auth';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+
 const navLinks = [
   { name: 'Home', href: '/' },
   { name: 'Shop', href: '/shop' },
@@ -27,9 +39,11 @@ const navLinks = [
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showSignOutDialog, setShowSignOutDialog] = useState(false);
   const { getTotalItems, openCart } = useCartStore();
   const { user, isAdmin, signOut } = useAuth();
   const { settings } = useSiteSettings();
+  const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const totalItems = getTotalItems();
@@ -55,8 +69,17 @@ export function Header() {
     }
   };
 
-  const handleSignOut = async () => {
+  const handleSignOutClick = () => {
+    setShowSignOutDialog(true);
+  };
+
+  const handleSignOutConfirm = async () => {
     await signOut();
+    setShowSignOutDialog(false);
+    toast({
+      title: "Signed out successfully",
+      description: "You have been logged out of your account.",
+    });
     navigate('/');
   };
 
@@ -148,7 +171,7 @@ export function Header() {
                     </>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}>
+                  <DropdownMenuItem onClick={handleSignOutClick}>
                     <LogOut className="h-4 w-4 mr-2" />
                     Sign Out
                   </DropdownMenuItem>
@@ -161,7 +184,7 @@ export function Header() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={handleSignOut}
+                    onClick={handleSignOutClick}
                     className="hidden sm:flex hover:bg-destructive/10 hover:text-destructive transition-colors"
                   >
                     <LogOut className="h-5 w-5" />
@@ -261,7 +284,7 @@ export function Header() {
                         Admin
                       </Button>
                     )}
-                    <Button variant="default" className="flex-1" onClick={handleSignOut}>
+                    <Button variant="default" className="flex-1" onClick={handleSignOutClick}>
                       Sign Out
                     </Button>
                   </>
@@ -281,6 +304,24 @@ export function Header() {
         )}
       </AnimatePresence>
     </header>
+
+      {/* Sign Out Confirmation Dialog */}
+      <AlertDialog open={showSignOutDialog} onOpenChange={setShowSignOutDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sign out of your account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to sign out? You'll need to log in again to access your account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSignOutConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Sign Out
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
