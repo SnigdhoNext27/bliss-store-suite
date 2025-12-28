@@ -16,6 +16,7 @@ const menuItems = [
     items: [
       { id: 'profile', label: 'Profile', icon: User },
       { id: 'addresses', label: 'Addresses', icon: MapPin },
+      { id: 'notifications', label: 'Notifications', icon: Bell },
       { id: 'security', label: 'Security', icon: Shield },
     ],
   },
