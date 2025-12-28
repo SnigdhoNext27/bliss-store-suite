@@ -45,18 +45,16 @@ export default function Category() {
   useEffect(() => {
     const fetchCategory = async () => {
       if (!slug) return;
-      
+
       const { data } = await supabase
         .from('categories')
         .select('*')
         .eq('slug', slug)
-        .single();
-      
-      if (data) {
-        setCategory(data as CategoryInfo);
-      }
+        .maybeSingle();
+
+      setCategory((data as CategoryInfo) ?? null);
     };
-    
+
     fetchCategory();
   }, [slug]);
 
@@ -113,6 +111,9 @@ export default function Category() {
       <Helmet>
         <title>{category.name} - Almans | Premium Fashion</title>
         <meta name="description" content={category.description || `Shop our ${category.name} collection at Almans.`} />
+        {slug && (
+          <link rel="canonical" href={`${window.location.origin}/category/${slug}`} />
+        )}
       </Helmet>
 
       <PullToRefresh onRefresh={handleRefresh} />
