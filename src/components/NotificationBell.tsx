@@ -6,7 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { formatDistanceToNow } from 'date-fns';
-
+import { useNavigate } from 'react-router-dom';
 interface Notification {
   id: string;
   title: string;
@@ -44,6 +44,7 @@ export function NotificationBell() {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   // Get locally read notification IDs (for guests)
   const getLocalReadIds = useCallback((): string[] => {
@@ -226,10 +227,35 @@ export function NotificationBell() {
 
   const handleNotificationClick = (notification: Notification) => {
     markAsRead(notification.id);
-    if (notification.link) {
-      window.location.href = notification.link;
-    }
     setIsOpen(false);
+    
+    if (notification.link) {
+      // Check if it's an internal link (starts with /) or external
+      if (notification.link.startsWith('/')) {
+        navigate(notification.link);
+      } else if (notification.link.startsWith('http')) {
+        window.open(notification.link, '_blank');
+      } else {
+        // Treat as internal link
+        navigate(`/${notification.link}`);
+      }
+    } else {
+      // Default navigation based on notification type
+      switch (notification.type) {
+        case 'promo':
+          navigate('/sales');
+          break;
+        case 'product':
+          navigate('/shop');
+          break;
+        case 'order':
+          navigate('/account');
+          break;
+        default:
+          navigate('/shop');
+          break;
+      }
+    }
   };
 
   // Check if notification is read (considering local storage)
