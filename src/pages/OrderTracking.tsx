@@ -11,6 +11,8 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { CartSlide } from '@/components/CartSlide';
 import { InvoiceDownloadButton } from '@/components/InvoiceDownloadButton';
+import { DeliveryEstimation } from '@/components/DeliveryEstimation';
+import { OrderCancelButton } from '@/components/OrderCancelButton';
 
 interface OrderItem {
   id: string;
@@ -295,7 +297,30 @@ export default function OrderTracking() {
                   minute: '2-digit',
                 })}
               </p>
+              
+              {/* Cancel Order Button - Only for pending orders */}
+              {order.status === 'pending' && (
+                <div className="mt-4">
+                  <OrderCancelButton
+                    orderId={order.id}
+                    orderNumber={order.order_number}
+                    status={order.status}
+                    onCancelled={() => fetchOrder(true)}
+                  />
+                </div>
+              )}
             </div>
+
+            {/* Delivery Estimation */}
+            {order.status !== 'delivered' && order.status !== 'cancelled' && (
+              <div className="mb-6">
+                <DeliveryEstimation
+                  orderDate={order.created_at}
+                  status={order.status}
+                  area={order.shipping_address?.area}
+                />
+              </div>
+            )}
 
             {/* Order Status Timeline */}
             {order.status === 'cancelled' ? (
