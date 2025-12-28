@@ -1,7 +1,12 @@
 import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingBag, DollarSign, Users, TrendingUp, Package, Clock, ArrowUpRight, ArrowDownRight, Activity, Zap, BarChart3, PieChart } from 'lucide-react';
+import { ShoppingBag, DollarSign, Users, TrendingUp, Package, Clock, ArrowUpRight, ArrowDownRight, Activity, Zap, BarChart3, PieChart, Calendar, Trophy, Layers } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { format, subDays, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
+import { cn } from '@/lib/utils';
 import {
   AreaChart,
   Area,
@@ -33,7 +38,38 @@ interface OrderData {
   order_number: string;
 }
 
-const COLORS = ['hsl(24, 35%, 49%)', 'hsl(38, 60%, 55%)', 'hsl(30, 40%, 82%)', 'hsl(18, 22%, 27%)'];
+interface OrderItemData {
+  product_id: string | null;
+  product_name: string;
+  quantity: number;
+  price: number;
+  order_id: string;
+}
+
+interface ProductData {
+  id: string;
+  name: string;
+  category_id: string | null;
+}
+
+interface CategoryData {
+  id: string;
+  name: string;
+}
+
+interface DateRange {
+  from: Date | undefined;
+  to: Date | undefined;
+}
+
+const COLORS = ['hsl(24, 35%, 49%)', 'hsl(38, 60%, 55%)', 'hsl(30, 40%, 82%)', 'hsl(18, 22%, 27%)', 'hsl(200, 60%, 50%)', 'hsl(150, 50%, 45%)'];
+
+const DATE_PRESETS = [
+  { label: 'Last 7 days', days: 7 },
+  { label: 'Last 14 days', days: 14 },
+  { label: 'Last 30 days', days: 30 },
+  { label: 'Last 90 days', days: 90 },
+];
 
 export default function Dashboard() {
   const [stats, setStats] = useState<Stats>({
@@ -43,8 +79,15 @@ export default function Dashboard() {
     totalCustomers: 0,
   });
   const [allOrders, setAllOrders] = useState<OrderData[]>([]);
+  const [orderItems, setOrderItems] = useState<OrderItemData[]>([]);
+  const [products, setProducts] = useState<ProductData[]>([]);
+  const [categories, setCategories] = useState<CategoryData[]>([]);
   const [recentOrders, setRecentOrders] = useState<OrderData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: subDays(new Date(), 7),
+    to: new Date(),
+  });
 
   useEffect(() => {
     fetchDashboardData();
@@ -55,36 +98,57 @@ export default function Dashboard() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // Fetch more orders for analytics
-      const { data: orders } = await supabase
-        .from('orders')
-        .select('id, created_at, total, status, order_number')
-        .order('created_at', { ascending: false })
-        .limit(100);
+      // Fetch orders, order items, products, and categories in parallel
+      const [ordersRes, orderItemsRes, productsRes, categoriesRes, profilesRes] = await Promise.all([
+        supabase
+          .from('orders')
+          .select('id, created_at, total, status, order_number')
+          .order('created_at', { ascending: false })
+          .limit(500),
+        supabase
+          .from('order_items')
+          .select('product_id, product_name, quantity, price, order_id')
+          .limit(1000),
+        supabase
+          .from('products')
+          .select('id, name, category_id'),
+        supabase
+          .from('categories')
+          .select('id, name'),
+        supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true }),
+      ]);
 
-      if (orders) {
-        setAllOrders(orders as OrderData[]);
-        const ordersToday = orders.filter(
+      if (ordersRes.data) {
+        setAllOrders(ordersRes.data as OrderData[]);
+        const ordersToday = ordersRes.data.filter(
           o => new Date(o.created_at) >= today
         ).length;
-        const pendingOrders = orders.filter(o => o.status === 'pending').length;
-        const totalRevenue = orders.reduce((sum, o) => sum + Number(o.total), 0);
+        const pendingOrders = ordersRes.data.filter(o => o.status === 'pending').length;
+        const totalRevenue = ordersRes.data.reduce((sum, o) => sum + Number(o.total), 0);
 
         setStats({
           ordersToday,
           pendingOrders,
           totalRevenue,
-          totalCustomers: 0,
+          totalCustomers: profilesRes.count || 0,
         });
 
-        setRecentOrders(orders.slice(0, 5));
+        setRecentOrders(ordersRes.data.slice(0, 5));
       }
 
-      const { count } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
+      if (orderItemsRes.data) {
+        setOrderItems(orderItemsRes.data as OrderItemData[]);
+      }
 
-      setStats(prev => ({ ...prev, totalCustomers: count || 0 }));
+      if (productsRes.data) {
+        setProducts(productsRes.data as ProductData[]);
+      }
+
+      if (categoriesRes.data) {
+        setCategories(categoriesRes.data as CategoryData[]);
+      }
     } catch (error) {
       console.error('Dashboard fetch error:', error);
     } finally {
@@ -92,35 +156,62 @@ export default function Dashboard() {
     }
   };
 
-  // Process data for sales trend chart (last 7 days)
-  const salesTrendData = useMemo(() => {
-    const last7Days: { date: string; revenue: number; orders: number }[] = [];
-    const today = new Date();
+  // Filter orders by date range
+  const filteredOrders = useMemo(() => {
+    if (!dateRange.from || !dateRange.to) return allOrders;
     
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
+    return allOrders.filter(order => {
+      const orderDate = new Date(order.created_at);
+      return isWithinInterval(orderDate, {
+        start: startOfDay(dateRange.from!),
+        end: endOfDay(dateRange.to!),
+      });
+    });
+  }, [allOrders, dateRange]);
+
+  // Get order IDs in date range for filtering order items
+  const filteredOrderIds = useMemo(() => {
+    return new Set(filteredOrders.map(o => o.id));
+  }, [filteredOrders]);
+
+  // Process data for sales trend chart
+  const salesTrendData = useMemo(() => {
+    if (!dateRange.from || !dateRange.to) return [];
+    
+    const days: { date: string; revenue: number; orders: number }[] = [];
+    const dayCount = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
+    const step = dayCount > 30 ? Math.ceil(dayCount / 15) : 1;
+    
+    for (let i = 0; i <= dayCount; i += step) {
+      const date = new Date(dateRange.from);
+      date.setDate(date.getDate() + i);
       
-      const dayOrders = allOrders.filter(o => {
+      const endDate = new Date(date);
+      endDate.setDate(endDate.getDate() + step - 1);
+      
+      const dateStr = dayCount > 30 
+        ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        : date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
+      
+      const dayOrders = filteredOrders.filter(o => {
         const orderDate = new Date(o.created_at);
-        return orderDate.toDateString() === date.toDateString();
+        return orderDate >= startOfDay(date) && orderDate <= endOfDay(endDate);
       });
       
-      last7Days.push({
+      days.push({
         date: dateStr,
         revenue: dayOrders.reduce((sum, o) => sum + Number(o.total), 0),
         orders: dayOrders.length,
       });
     }
     
-    return last7Days;
-  }, [allOrders]);
+    return days;
+  }, [filteredOrders, dateRange]);
 
   // Process data for order status pie chart
   const orderStatusData = useMemo(() => {
     const statusCounts: Record<string, number> = {};
-    allOrders.forEach(order => {
+    filteredOrders.forEach(order => {
       statusCounts[order.status] = (statusCounts[order.status] || 0) + 1;
     });
     
@@ -128,13 +219,13 @@ export default function Dashboard() {
       name: name.charAt(0).toUpperCase() + name.slice(1),
       value,
     }));
-  }, [allOrders]);
+  }, [filteredOrders]);
 
   // Process data for hourly activity
   const hourlyActivityData = useMemo(() => {
     const hours: { hour: string; orders: number }[] = [];
     for (let i = 0; i < 24; i += 3) {
-      const hourOrders = allOrders.filter(o => {
+      const hourOrders = filteredOrders.filter(o => {
         const orderHour = new Date(o.created_at).getHours();
         return orderHour >= i && orderHour < i + 3;
       }).length;
@@ -145,7 +236,58 @@ export default function Dashboard() {
       });
     }
     return hours;
-  }, [allOrders]);
+  }, [filteredOrders]);
+
+  // Top selling products
+  const topProductsData = useMemo(() => {
+    const productSales: Record<string, { name: string; quantity: number; revenue: number }> = {};
+    
+    orderItems
+      .filter(item => filteredOrderIds.has(item.order_id))
+      .forEach(item => {
+        const key = item.product_name;
+        if (!productSales[key]) {
+          productSales[key] = { name: item.product_name, quantity: 0, revenue: 0 };
+        }
+        productSales[key].quantity += item.quantity;
+        productSales[key].revenue += Number(item.price) * item.quantity;
+      });
+    
+    return Object.values(productSales)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5);
+  }, [orderItems, filteredOrderIds]);
+
+  // Category performance
+  const categoryPerformanceData = useMemo(() => {
+    const categoryMap = new Map(categories.map(c => [c.id, c.name]));
+    const productCategoryMap = new Map(products.map(p => [p.id, p.category_id]));
+    
+    const categorySales: Record<string, { name: string; quantity: number; revenue: number }> = {};
+    
+    orderItems
+      .filter(item => filteredOrderIds.has(item.order_id))
+      .forEach(item => {
+        const categoryId = item.product_id ? productCategoryMap.get(item.product_id) : null;
+        const categoryName = categoryId ? categoryMap.get(categoryId) || 'Uncategorized' : 'Uncategorized';
+        
+        if (!categorySales[categoryName]) {
+          categorySales[categoryName] = { name: categoryName, quantity: 0, revenue: 0 };
+        }
+        categorySales[categoryName].quantity += item.quantity;
+        categorySales[categoryName].revenue += Number(item.price) * item.quantity;
+      });
+    
+    return Object.values(categorySales)
+      .sort((a, b) => b.revenue - a.revenue);
+  }, [orderItems, products, categories, filteredOrderIds]);
+
+  const handlePresetClick = (days: number) => {
+    setDateRange({
+      from: subDays(new Date(), days),
+      to: new Date(),
+    });
+  };
 
   const statCards = [
     {
@@ -204,15 +346,60 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground">Welcome back! Here's your system overview.</p>
         </div>
-        <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full">
-          <Zap className="h-4 w-4" />
-          <span className="text-sm font-medium">Live</span>
-          <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+        <div className="flex items-center gap-3">
+          {/* Date Range Filter */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Calendar className="h-4 w-4" />
+                <span className="hidden sm:inline">
+                  {dateRange.from && dateRange.to
+                    ? `${format(dateRange.from, 'MMM d')} - ${format(dateRange.to, 'MMM d, yyyy')}`
+                    : 'Select dates'}
+                </span>
+                <span className="sm:hidden">
+                  {dateRange.from && dateRange.to
+                    ? `${format(dateRange.from, 'M/d')} - ${format(dateRange.to, 'M/d')}`
+                    : 'Dates'}
+                </span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <div className="p-3 border-b border-border">
+                <div className="flex flex-wrap gap-2">
+                  {DATE_PRESETS.map(preset => (
+                    <Button
+                      key={preset.days}
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => handlePresetClick(preset.days)}
+                    >
+                      {preset.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <CalendarComponent
+                mode="range"
+                selected={{ from: dateRange.from, to: dateRange.to }}
+                onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })}
+                numberOfMonths={2}
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+          
+          <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full">
+            <Zap className="h-4 w-4" />
+            <span className="text-sm font-medium">Live</span>
+            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+          </div>
         </div>
       </div>
 
@@ -266,7 +453,9 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="font-display text-lg font-semibold">Sales Trend</h3>
-              <p className="text-sm text-muted-foreground">Revenue over the last 7 days</p>
+              <p className="text-sm text-muted-foreground">
+                Revenue for selected period ({filteredOrders.length} orders)
+              </p>
             </div>
             <div className="p-2 rounded-lg bg-primary/10">
               <TrendingUp className="h-5 w-5 text-primary" />
@@ -370,13 +559,119 @@ export default function Dashboard() {
         </motion.div>
       </div>
 
+      {/* Product Sales Analytics */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Top Selling Products */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+          className="bg-card rounded-2xl border border-border p-6"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="font-display text-lg font-semibold">Top Selling Products</h3>
+              <p className="text-sm text-muted-foreground">Best performers by revenue</p>
+            </div>
+            <div className="p-2 rounded-lg bg-yellow-500/10">
+              <Trophy className="h-5 w-5 text-yellow-500" />
+            </div>
+          </div>
+          {topProductsData.length > 0 ? (
+            <div className="space-y-4">
+              {topProductsData.map((product, index) => (
+                <div key={product.name} className="flex items-center gap-4">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
+                    index === 0 ? 'bg-yellow-500/20 text-yellow-500' :
+                    index === 1 ? 'bg-gray-400/20 text-gray-400' :
+                    index === 2 ? 'bg-orange-600/20 text-orange-600' :
+                    'bg-muted text-muted-foreground'
+                  }`}>
+                    {index + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{product.name}</p>
+                    <p className="text-xs text-muted-foreground">{product.quantity} sold</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-sm">৳{product.revenue.toLocaleString()}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
+              <Package className="h-10 w-10 mb-2 opacity-50" />
+              <p className="text-sm">No sales data for this period</p>
+            </div>
+          )}
+        </motion.div>
+
+        {/* Category Performance */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="bg-card rounded-2xl border border-border p-6"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="font-display text-lg font-semibold">Category Performance</h3>
+              <p className="text-sm text-muted-foreground">Revenue by product category</p>
+            </div>
+            <div className="p-2 rounded-lg bg-purple-500/10">
+              <Layers className="h-5 w-5 text-purple-500" />
+            </div>
+          </div>
+          {categoryPerformanceData.length > 0 ? (
+            <div className="h-[220px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={categoryPerformanceData} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis 
+                    type="number"
+                    tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                    axisLine={{ stroke: 'hsl(var(--border))' }}
+                    tickFormatter={(value) => `৳${value.toLocaleString()}`}
+                  />
+                  <YAxis 
+                    dataKey="name"
+                    type="category"
+                    tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                    axisLine={{ stroke: 'hsl(var(--border))' }}
+                    width={80}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '12px',
+                    }}
+                    formatter={(value: number, name) => [
+                      name === 'revenue' ? `৳${value.toLocaleString()}` : value,
+                      name === 'revenue' ? 'Revenue' : 'Quantity'
+                    ]}
+                  />
+                  <Bar dataKey="revenue" fill="hsl(24, 35%, 49%)" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
+              <Layers className="h-10 w-10 mb-2 opacity-50" />
+              <p className="text-sm">No category data for this period</p>
+            </div>
+          )}
+        </motion.div>
+      </div>
+
       {/* Hourly Activity & Recent Orders */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Hourly Activity */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
+          transition={{ delay: 0.9 }}
           className="bg-card rounded-2xl border border-border p-6"
         >
           <div className="flex items-center justify-between mb-6">
@@ -419,7 +714,7 @@ export default function Dashboard() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
+          transition={{ delay: 1.0 }}
           className="lg:col-span-2 bg-card rounded-2xl border border-border overflow-hidden"
         >
           <div className="p-6 border-b border-border flex items-center justify-between">
@@ -445,7 +740,7 @@ export default function Dashboard() {
                     key={order.id}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.9 + idx * 0.05 }}
+                    transition={{ delay: 1.1 + idx * 0.05 }}
                     className="flex items-center justify-between p-3 rounded-xl bg-secondary/30 hover:bg-secondary/50 transition-colors"
                   >
                     <div className="flex items-center gap-3">
