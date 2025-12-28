@@ -22,6 +22,7 @@ import { AccountSidebar } from '@/components/account/AccountSidebar';
 import { TwoFactorAuth } from '@/components/account/TwoFactorAuth';
 import { DeleteAccount } from '@/components/account/DeleteAccount';
 import { NotificationPreferencesCard } from '@/components/account/NotificationPreferencesCard';
+import { LoyaltyPointsCard } from '@/components/account/LoyaltyPointsCard';
 
 interface Order {
   id: string;
@@ -727,6 +728,11 @@ export default function Account() {
               {/* Notifications Tab */}
               {activeTab === 'notifications' && (
                 <NotificationPreferencesCard />
+              )}
+
+              {/* Loyalty Points Tab */}
+              {activeTab === 'loyalty' && (
+                <LoyaltyPointsCard />
               )}
 
               {/* Security Tab */}
