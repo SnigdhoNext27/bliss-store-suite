@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Clock, Flame } from 'lucide-react';
 
 interface SaleCountdownProps {
@@ -15,18 +15,21 @@ export function SaleCountdown({ endDate, className = '', compact = false }: Sale
   });
   const [isExpired, setIsExpired] = useState(false);
 
-  // Default to end of current day if no endDate provided
-  const targetDate = endDate || (() => {
+  // Memoize the target date to prevent infinite loops
+  const targetTimestamp = useMemo(() => {
+    if (endDate) {
+      return new Date(endDate).getTime();
+    }
+    // Default to end of current day
     const today = new Date();
     today.setHours(23, 59, 59, 999);
-    return today;
-  })();
+    return today.getTime();
+  }, [endDate?.getTime?.()]);
 
   useEffect(() => {
     const calculateTimeLeft = () => {
       const now = new Date().getTime();
-      const target = new Date(targetDate).getTime();
-      const difference = target - now;
+      const difference = targetTimestamp - now;
 
       if (difference <= 0) {
         setIsExpired(true);
@@ -44,7 +47,7 @@ export function SaleCountdown({ endDate, className = '', compact = false }: Sale
     const timer = setInterval(calculateTimeLeft, 1000);
 
     return () => clearInterval(timer);
-  }, [targetDate]);
+  }, [targetTimestamp]);
 
   if (isExpired) return null;
 
