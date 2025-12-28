@@ -7,12 +7,16 @@ interface SwipeNavigationWrapperProps {
   children: ReactNode;
 }
 
+const routes = ['/', '/shop', '/wishlist', '/account'];
+
 export function SwipeNavigationWrapper({ children }: SwipeNavigationWrapperProps) {
   const location = useLocation();
-  const { onTouchStart, onTouchMove, onTouchEnd, currentIndex } = useSwipeNavigation({
+  const { onTouchStart, onTouchMove, onTouchEnd, currentIndex, totalRoutes } = useSwipeNavigation({
     threshold: 80,
     enabled: !location.pathname.startsWith('/admin') && !location.pathname.startsWith('/product'),
   });
+
+  const showIndicators = routes.includes(location.pathname);
 
   return (
     <div
@@ -32,6 +36,26 @@ export function SwipeNavigationWrapper({ children }: SwipeNavigationWrapperProps
           {children}
         </motion.div>
       </AnimatePresence>
+
+      {/* Page Indicator Dots - Mobile only */}
+      {showIndicators && (
+        <div className="fixed bottom-[4.5rem] left-1/2 -translate-x-1/2 z-40 flex gap-1.5 md:hidden">
+          {Array.from({ length: totalRoutes }).map((_, index) => (
+            <motion.div
+              key={index}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                index === currentIndex 
+                  ? 'w-4 bg-primary' 
+                  : 'w-1.5 bg-muted-foreground/30'
+              }`}
+              initial={false}
+              animate={{ 
+                scale: index === currentIndex ? 1 : 0.8,
+              }}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

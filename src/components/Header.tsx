@@ -277,10 +277,11 @@ export function Header() {
             </Button>
           )}
 
+          {/* My Bag - hidden on mobile since it's in bottom nav */}
           <Button
             variant="ghost"
             size="sm"
-            className="relative gap-2"
+            className="relative gap-2 hidden md:flex"
             onClick={openCart}
           >
             <ShoppingBag className="h-5 w-5" />

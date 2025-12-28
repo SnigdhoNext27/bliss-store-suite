@@ -156,16 +156,16 @@ export function LiveChatWidget() {
 
   return (
     <>
-      {/* Chat Button */}
+      {/* Chat Button - positioned above WhatsApp on mobile */}
       <motion.button
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.5, type: 'spring', stiffness: 260, damping: 20 }}
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-24 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors"
+        className="fixed bottom-24 right-3 z-50 flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors md:bottom-24 md:right-6 md:h-14 md:w-14"
         aria-label="Open live chat"
       >
-        <MessageCircle className="h-6 w-6" />
+        <MessageCircle className="h-4 w-4 md:h-6 md:w-6" />
       </motion.button>
 
       {/* Chat Window */}
@@ -175,7 +175,7 @@ export function LiveChatWidget() {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-24 right-6 z-50 w-[360px] max-w-[calc(100vw-3rem)] bg-card rounded-2xl shadow-2xl border border-border overflow-hidden"
+            className="fixed bottom-24 right-3 z-50 w-[360px] max-w-[calc(100vw-3rem)] bg-card rounded-2xl shadow-2xl border border-border overflow-hidden md:right-6"
           >
             {/* Header */}
             <div className="bg-primary text-primary-foreground p-4 flex items-center justify-between">

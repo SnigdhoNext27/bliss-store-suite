@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, TouchEvent } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { haptics } from '@/lib/haptics';
 
 const routes = ['/', '/shop', '/wishlist', '/account'];
 
@@ -49,10 +50,12 @@ export function useSwipeNavigation({ threshold = 80, enabled = true }: SwipeConf
     const isRightSwipe = distance < -threshold;
 
     if (isLeftSwipe && currentIndex < routes.length - 1 && currentIndex !== -1) {
+      haptics.medium(); // Haptic feedback on successful swipe
       navigate(routes[currentIndex + 1]);
     }
     
     if (isRightSwipe && currentIndex > 0) {
+      haptics.medium(); // Haptic feedback on successful swipe
       navigate(routes[currentIndex - 1]);
     }
 
