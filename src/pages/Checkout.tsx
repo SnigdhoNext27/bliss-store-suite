@@ -22,7 +22,8 @@ import { GiftWrapOption } from '@/components/GiftWrapOption';
 import { SavedPaymentMethods } from '@/components/SavedPaymentMethods';
 import { useSavedPaymentMethods } from '@/hooks/useSavedPaymentMethods';
 import { SavedAddressSelector } from '@/components/SavedAddressSelector';
-import { useSavedAddresses, SavedAddress } from '@/hooks/useSavedAddresses';
+import { useSavedAddresses, SavedAddress, NewAddressData } from '@/hooks/useSavedAddresses';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const deliverySchema = z.object({
   fullName: z.string().min(2, 'Name is required').max(100),
@@ -65,8 +66,9 @@ export default function Checkout() {
   const [selectedSavedPayment, setSelectedSavedPayment] = useState<string | null>(null);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [useNewAddress, setUseNewAddress] = useState(false);
+  const [saveNewAddress, setSaveNewAddress] = useState(true);
   const { methods: savedPaymentMethods } = useSavedPaymentMethods();
-  const { addresses: savedAddresses, loading: addressesLoading, getDefaultAddress } = useSavedAddresses();
+  const { addresses: savedAddresses, loading: addressesLoading, getDefaultAddress, saveAddress, updateAddress, setDefaultAddress, deleteAddress } = useSavedAddresses();
 
   // Auto-select default address when addresses load
   useEffect(() => {
@@ -223,6 +225,31 @@ export default function Checkout() {
 
       setOrderNumber(result?.order_number || orderNum);
       clearCart();
+      
+      // Save new address if checkbox is checked and using new address
+      if (saveNewAddress && useNewAddress && formData.fullName && formData.phone && formData.address) {
+        try {
+          // Parse the address into components
+          const addressParts = formData.address.split(',').map(p => p.trim());
+          const addressLine1 = addressParts[0] || formData.address;
+          const city = addressParts.length > 1 ? addressParts[addressParts.length - 1] : formData.deliveryArea === 'dhaka' ? 'Dhaka' : '';
+          
+          await saveAddress({
+            label: 'Home',
+            full_name: formData.fullName,
+            phone: formData.phone,
+            address_line1: addressLine1,
+            address_line2: addressParts.length > 2 ? addressParts.slice(1, -1).join(', ') : undefined,
+            city: city,
+            district: formData.deliveryArea === 'dhaka' ? 'Dhaka' : undefined,
+            is_default: savedAddresses.length === 0, // Make default if first address
+          });
+        } catch (saveError) {
+          console.error('Error saving address:', saveError);
+          // Don't fail the order if address save fails
+        }
+      }
+      
       setStep(4);
       
       // Send WhatsApp notification to admin
@@ -476,6 +503,9 @@ export default function Checkout() {
                         selectedAddressId={selectedAddressId}
                         onSelectAddress={handleSelectSavedAddress}
                         onAddNewAddress={() => handleSelectSavedAddress(null)}
+                        onSetDefault={setDefaultAddress}
+                        onUpdateAddress={updateAddress}
+                        onDeleteAddress={deleteAddress}
                       />
                     </div>
                   )}
@@ -516,12 +546,24 @@ export default function Checkout() {
                           value={formData.address}
                           onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                           placeholder="House, Road, Area, City"
-                          rows={3}
-                        />
-                        {errors.address && <p className="text-destructive text-sm">{errors.address}</p>}
-                      </div>
-                    </>
-                  )}
+                        rows={3}
+                      />
+                      {errors.address && <p className="text-destructive text-sm">{errors.address}</p>}
+                    </div>
+
+                    {/* Save Address Checkbox */}
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="saveAddress"
+                        checked={saveNewAddress}
+                        onCheckedChange={(checked) => setSaveNewAddress(checked as boolean)}
+                      />
+                      <Label htmlFor="saveAddress" className="text-sm cursor-pointer">
+                        Save this address for future orders
+                      </Label>
+                    </div>
+                  </>
+                )}
 
                   <div className="space-y-3">
                     <Label className="flex items-center gap-2">
