@@ -1,6 +1,15 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Shirt, Clock, Sparkles } from 'lucide-react';
+import { Clock } from 'lucide-react';
+
+// Import AI-generated category banners
+import categoryShirts from '@/assets/category-shirts.jpg';
+import categoryTshirts from '@/assets/category-tshirts.jpg';
+import categoryPants from '@/assets/category-pants.jpg';
+import categoryTrousers from '@/assets/category-trousers.jpg';
+import categoryCaps from '@/assets/category-caps.jpg';
+import categoryGadgets from '@/assets/category-gadgets.jpg';
+import categoryAccessories from '@/assets/category-accessories.jpg';
 
 interface CategoryCardProps {
   name: string;
@@ -11,14 +20,15 @@ interface CategoryCardProps {
   index: number;
 }
 
-const CATEGORY_ICONS: Record<string, React.ReactNode> = {
-  'shirts': <Shirt className="h-8 w-8" />,
-  't-shirts': <Shirt className="h-8 w-8" />,
-  'pants': <Shirt className="h-8 w-8 rotate-180" />,
-  'trousers': <Shirt className="h-8 w-8 rotate-180" />,
-  'caps': <Sparkles className="h-8 w-8" />,
-  'accessories': <Sparkles className="h-8 w-8" />,
-  'gadgets': <Sparkles className="h-8 w-8" />,
+// Map slugs to imported banner images
+const CATEGORY_BANNERS: Record<string, string> = {
+  'shirts': categoryShirts,
+  't-shirts': categoryTshirts,
+  'pants': categoryPants,
+  'trousers': categoryTrousers,
+  'caps': categoryCaps,
+  'gadgets': categoryGadgets,
+  'accessories': categoryAccessories,
 };
 
 export function CategoryCard({ name, slug, image, productCount, isComingSoon, index }: CategoryCardProps) {
@@ -29,6 +39,9 @@ export function CategoryCard({ name, slug, image, productCount, isComingSoon, in
       navigate(`/category/${slug}`);
     }
   };
+
+  // Use database image first, then fallback to generated banners
+  const bannerImage = image || CATEGORY_BANNERS[slug];
 
   return (
     <motion.div
@@ -46,29 +59,27 @@ export function CategoryCard({ name, slug, image, productCount, isComingSoon, in
         ${isComingSoon ? 'opacity-80' : 'hover:shadow-2xl hover:border-primary/30'}
       `}
     >
-      {/* Background Image or Gradient */}
+      {/* Background Image */}
       <div className="aspect-[4/3] relative overflow-hidden">
-        {image ? (
-          <img
-            src={image}
-            alt={name}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-primary/20 via-secondary to-accent/30 flex items-center justify-center">
-            {CATEGORY_ICONS[slug] || <Sparkles className="h-12 w-12 text-primary/60" />}
-          </div>
-        )}
+        <img
+          src={bannerImage}
+          alt={name}
+          className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${isComingSoon ? 'grayscale' : ''}`}
+        />
         
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent" />
+        {/* Soft Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/30 to-transparent" />
         
         {/* Coming Soon Badge */}
         {isComingSoon && (
-          <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-primary/90 text-primary-foreground px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="absolute top-3 right-3 flex items-center gap-1.5 bg-primary/90 text-primary-foreground px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg"
+          >
             <Clock className="h-3 w-3" />
             Coming Soon
-          </div>
+          </motion.div>
         )}
         
         {/* Product Count Badge */}
@@ -80,7 +91,7 @@ export function CategoryCard({ name, slug, image, productCount, isComingSoon, in
       </div>
 
       {/* Content */}
-      <div className="p-5">
+      <div className="p-5 bg-gradient-to-b from-card/80 to-card">
         <h3 className="font-display text-xl font-bold text-foreground group-hover:text-primary transition-colors">
           {name}
         </h3>
