@@ -2,3 +2,6 @@ project_id = "zoincmqtqugkmvakepra"
 
 [functions.order-notification]
 verify_jwt = false
+
+[functions.sale-notification]
+verify_jwt = false

@@ -3,12 +3,12 @@ import { Helmet } from 'react-helmet-async';
 import { useQueryClient } from '@tanstack/react-query';
 import { Header } from '@/components/Header';
 import { Hero } from '@/components/Hero';
+import { SaleCountdownWidget } from '@/components/SaleCountdownWidget';
 import { AboutSection } from '@/components/AboutSection';
 import { RecentlyViewedProducts } from '@/components/RecentlyViewedProducts';
 import { Footer } from '@/components/Footer';
 import { CartSlide } from '@/components/CartSlide';
 import { PullToRefresh } from '@/components/PullToRefresh';
-
 const Index = () => {
   const queryClient = useQueryClient();
 
@@ -40,6 +40,7 @@ const Index = () => {
         <Header />
         <main>
           <Hero />
+          <SaleCountdownWidget />
           <RecentlyViewedProducts />
           <AboutSection />
         </main>
