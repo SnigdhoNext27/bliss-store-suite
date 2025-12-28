@@ -97,10 +97,32 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
+    // Create a notification record in the database for in-app notification
+    try {
+      const { error: notifError } = await supabase
+        .from("notifications")
+        .insert({
+          title: `🔥 Flash Sale: ${discountPercent}% OFF!`,
+          message: `${productName} is now on sale! Don't miss out on this amazing deal.`,
+          type: "promo",
+          link: `/product/${productSlug}`,
+          is_global: true,
+          user_id: null,
+        });
+
+      if (notifError) {
+        console.error("Error creating notification:", notifError);
+      } else {
+        console.log("In-app notification created successfully");
+      }
+    } catch (notifInsertError) {
+      console.error("Failed to insert notification:", notifInsertError);
+    }
+
     if (!subscribers || subscribers.length === 0) {
       console.log("No active subscribers found");
       return new Response(
-        JSON.stringify({ success: true, message: "No subscribers to notify", count: 0 }),
+        JSON.stringify({ success: true, message: "No subscribers to notify (in-app notification created)", count: 0 }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }

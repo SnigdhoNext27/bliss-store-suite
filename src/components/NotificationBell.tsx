@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, Check, Package, Megaphone, ShoppingBag, Sparkles, Volume2, VolumeX } from 'lucide-react';
+import { Bell, Check, Package, Megaphone, ShoppingBag, Sparkles, Volume2, VolumeX, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
@@ -225,6 +225,23 @@ export function NotificationBell() {
     }
   };
 
+  const clearAllNotifications = async () => {
+    // Clear local state immediately
+    setNotifications([]);
+    setUnreadCount(0);
+    
+    // Clear local storage
+    saveLocalReadIds([]);
+    
+    // If logged in as admin, delete from database
+    if (user) {
+      await supabase
+        .from('notifications')
+        .delete()
+        .eq('is_global', true);
+    }
+  };
+
   const handleNotificationClick = (notification: Notification) => {
     markAsRead(notification.id);
     setIsOpen(false);
@@ -356,6 +373,17 @@ export function NotificationBell() {
                     >
                       <Check className="h-3 w-3 mr-1" />
                       Mark all read
+                    </Button>
+                  )}
+                  {notifications.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={clearAllNotifications}
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      title="Clear all notifications"
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   )}
                 </div>
