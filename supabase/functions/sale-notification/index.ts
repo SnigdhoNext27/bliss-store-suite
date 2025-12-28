@@ -107,9 +107,22 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Found ${subscribers.length} subscribers to notify`);
 
+    // Helper function to generate unsubscribe token
+    async function generateToken(email: string): Promise<string> {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(email + "almans-newsletter-secret");
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, "0")).join("").substring(0, 32);
+    }
+
     // Send emails to all subscribers using Resend API
     const emailPromises = subscribers.map(async (subscriber) => {
       try {
+        // Generate unsubscribe link for this subscriber
+        const unsubscribeToken = await generateToken(subscriber.email);
+        const unsubscribeUrl = `${supabaseUrl}/functions/v1/newsletter-unsubscribe?email=${encodeURIComponent(subscriber.email)}&token=${unsubscribeToken}`;
+
         const response = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
@@ -159,6 +172,11 @@ const handler = async (req: Request): Promise<Response> => {
                       </p>
                       <p style="color: #cccccc; margin: 10px 0 0 0; font-size: 11px;">
                         © 2024 Almans. All rights reserved.
+                      </p>
+                      <p style="margin: 15px 0 0 0;">
+                        <a href="${unsubscribeUrl}" style="color: #999999; font-size: 11px; text-decoration: underline;">
+                          Unsubscribe from this newsletter
+                        </a>
                       </p>
                     </td>
                   </tr>

@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.sale-notification]
 verify_jwt = false
+
+[functions.newsletter-unsubscribe]
+verify_jwt = false
