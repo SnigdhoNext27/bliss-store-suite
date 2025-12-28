@@ -17,7 +17,10 @@ import {
   Zap,
   Gift,
   Truck,
-  Star
+  Star,
+  Eye,
+  MousePointerClick,
+  BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,6 +47,9 @@ interface Notification {
   is_sent: boolean;
   scheduled_at: string | null;
   created_at: string;
+  delivered_count?: number;
+  opened_count?: number;
+  clicked_count?: number;
 }
 
 const notificationTypes = [
@@ -432,6 +438,10 @@ export default function Notifications() {
             <CalendarClock className="h-4 w-4" />
             Scheduled ({scheduledNotifications.length})
           </TabsTrigger>
+          <TabsTrigger value="analytics" className="gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Analytics
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="sent" className="mt-4">
@@ -478,9 +488,19 @@ export default function Notifications() {
                         <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
                           {notification.message}
                         </p>
-                        <p className="text-xs text-muted-foreground/70 mt-1">
-                          {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                        </p>
+                        <div className="flex items-center gap-4 mt-2">
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Eye className="h-3 w-3" />
+                            <span>{notification.opened_count || 0} opened</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <MousePointerClick className="h-3 w-3" />
+                            <span>{notification.clicked_count || 0} clicks</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground/70">
+                            {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                          </span>
+                        </div>
                       </div>
 
                       <Button
@@ -576,6 +596,95 @@ export default function Notifications() {
                       </div>
                     </motion.div>
                   ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="analytics" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Notification Analytics</CardTitle>
+              <CardDescription>Track open rates and click-through rates</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {sentNotifications.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                  <p>No analytics data yet</p>
+                  <p className="text-xs mt-1">Send notifications to start tracking engagement</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Summary Stats */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="p-4 rounded-lg bg-muted/50 text-center">
+                      <p className="text-2xl font-bold text-foreground">
+                        {sentNotifications.reduce((sum, n) => sum + (n.opened_count || 0), 0)}
+                      </p>
+                      <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                        <Eye className="h-3 w-3" /> Total Opens
+                      </p>
+                    </div>
+                    <div className="p-4 rounded-lg bg-muted/50 text-center">
+                      <p className="text-2xl font-bold text-foreground">
+                        {sentNotifications.reduce((sum, n) => sum + (n.clicked_count || 0), 0)}
+                      </p>
+                      <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                        <MousePointerClick className="h-3 w-3" /> Total Clicks
+                      </p>
+                    </div>
+                    <div className="p-4 rounded-lg bg-muted/50 text-center">
+                      <p className="text-2xl font-bold text-foreground">
+                        {(() => {
+                          const totalOpened = sentNotifications.reduce((sum, n) => sum + (n.opened_count || 0), 0);
+                          const totalClicked = sentNotifications.reduce((sum, n) => sum + (n.clicked_count || 0), 0);
+                          return totalOpened > 0 ? Math.round((totalClicked / totalOpened) * 100) : 0;
+                        })()}%
+                      </p>
+                      <p className="text-xs text-muted-foreground">Click Rate</p>
+                    </div>
+                  </div>
+
+                  {/* Top Performing Notifications */}
+                  <div className="border-t border-border pt-4">
+                    <h4 className="text-sm font-medium text-foreground mb-3">Top Performing Notifications</h4>
+                    <div className="space-y-2">
+                      {sentNotifications
+                        .filter(n => (n.opened_count || 0) > 0 || (n.clicked_count || 0) > 0)
+                        .sort((a, b) => ((b.clicked_count || 0) + (b.opened_count || 0)) - ((a.clicked_count || 0) + (a.opened_count || 0)))
+                        .slice(0, 5)
+                        .map((notification) => (
+                          <div key={notification.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">{notification.title}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {format(new Date(notification.created_at), 'MMM d, yyyy')}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-4 text-xs">
+                              <span className="flex items-center gap-1 text-muted-foreground">
+                                <Eye className="h-3 w-3" /> {notification.opened_count || 0}
+                              </span>
+                              <span className="flex items-center gap-1 text-muted-foreground">
+                                <MousePointerClick className="h-3 w-3" /> {notification.clicked_count || 0}
+                              </span>
+                              <span className="text-primary font-medium">
+                                {(notification.opened_count || 0) > 0 
+                                  ? Math.round(((notification.clicked_count || 0) / (notification.opened_count || 1)) * 100) 
+                                  : 0}% CTR
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      {sentNotifications.filter(n => (n.opened_count || 0) > 0 || (n.clicked_count || 0) > 0).length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          No engagement data yet. Analytics will appear as users interact with notifications.
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </CardContent>
