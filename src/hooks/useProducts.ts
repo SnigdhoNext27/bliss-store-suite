@@ -20,6 +20,7 @@ interface DBProduct {
   is_active: boolean | null;
   category_id: string | null;
   slug: string;
+  video_url: string | null;
   category?: { name: string } | null;
 }
 
@@ -46,6 +47,7 @@ function mapDBProductToProduct(dbProduct: DBProduct): Product {
     sizes: dbProduct.sizes || ['S', 'M', 'L', 'XL'],
     stock: dbProduct.stock,
     badge,
+    video_url: dbProduct.video_url || undefined,
   };
 }
 
@@ -67,6 +69,7 @@ async function fetchAllProducts(): Promise<Product[]> {
       is_active,
       category_id,
       slug,
+      video_url,
       category:categories(name)
     `)
     .eq('is_active', true)
@@ -97,6 +100,7 @@ async function fetchSingleProduct(id: string): Promise<Product | null> {
       is_active,
       category_id,
       slug,
+      video_url,
       category:categories(name)
     `)
     .eq('id', id)

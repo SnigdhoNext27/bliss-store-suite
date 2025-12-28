@@ -12,6 +12,7 @@ export interface Product {
   sizes: string[];
   stock: number;
   badge?: 'new' | 'sale' | 'limited';
+  video_url?: string;
 }
 
 export interface CartItem {
