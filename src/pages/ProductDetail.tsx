@@ -18,6 +18,9 @@ import { ProductShareButton } from '@/components/ProductShareButton';
 import { SizeGuideModal } from '@/components/SizeGuideModal';
 import { ProductImageZoom } from '@/components/ProductImageZoom';
 import { LowStockWarning } from '@/components/LowStockWarning';
+import { ProductQA } from '@/components/ProductQA';
+import { SizeRecommendationQuiz } from '@/components/SizeRecommendationQuiz';
+import { PriceDisplay } from '@/components/PriceDisplay';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -228,14 +231,12 @@ export default function ProductDetail() {
                 </div>
 
                 <div className="flex items-baseline gap-3">
-                  <span className="font-display text-3xl font-bold text-foreground">
-                    ৳{product.price.toFixed(0)}
-                  </span>
-                  {product.originalPrice && (
-                    <span className="text-lg text-muted-foreground line-through">
-                      ৳{product.originalPrice.toFixed(0)}
-                    </span>
-                  )}
+                  <PriceDisplay 
+                    price={product.price} 
+                    originalPrice={product.originalPrice}
+                    size="xl"
+                    showSavings
+                  />
                 </div>
               </div>
 
@@ -248,7 +249,10 @@ export default function ProductDetail() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="font-medium">Size</span>
-                    <SizeGuideModal category={product.category} />
+                    <div className="flex items-center gap-2">
+                      <SizeRecommendationQuiz onSizeSelected={(size) => setSelectedSize(size)} />
+                      <SizeGuideModal category={product.category} />
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-3">
                     {product.sizes.map((size) => (
@@ -373,6 +377,9 @@ export default function ProductDetail() {
             productRating={4.5} 
             reviewCount={24} 
           />
+
+          {/* Product Q&A */}
+          <ProductQA productId={product.id} />
         </div>
       </main>
 
