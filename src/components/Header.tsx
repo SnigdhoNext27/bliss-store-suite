@@ -27,6 +27,7 @@ import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { Logo } from './Logo';
 import { SearchBar } from './SearchBar';
 import { cn } from '@/lib/utils';
+import { useWishlist } from '@/hooks/useWishlist';
 
 const navLinks = [
   { name: 'Home', href: '/' },
@@ -47,6 +48,8 @@ export function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const totalItems = getTotalItems();
+  const { wishlistIds } = useWishlist();
+  const wishlistCount = wishlistIds.length;
 
   // Track scroll position for header effects
   useEffect(() => {
@@ -173,14 +176,19 @@ export function Header() {
             <span className="sr-only">Search</span>
           </Button>
 
-          {/* Wishlist */}
+          {/* Wishlist with badge */}
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={() => navigate('/wishlist')}
-            className="hidden sm:flex"
+            className="hidden sm:flex relative"
           >
             <Heart className="h-5 w-5" />
+            {wishlistCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs font-medium text-destructive-foreground">
+                {wishlistCount > 9 ? '9+' : wishlistCount}
+              </span>
+            )}
             <span className="sr-only">Wishlist</span>
           </Button>
 
