@@ -16,6 +16,10 @@ const currencies: Currency[] = [
   { code: 'INR', symbol: '₹', name: 'Indian Rupee', rate: 0.76 },
   { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham', rate: 0.033 },
   { code: 'SAR', symbol: '﷼', name: 'Saudi Riyal', rate: 0.034 },
+  { code: 'AUD', symbol: 'A$', name: 'Australian Dollar', rate: 0.014 },
+  { code: 'IDR', symbol: 'Rp', name: 'Indonesian Rupiah', rate: 144.5 },
+  { code: 'THB', symbol: '฿', name: 'Thai Baht', rate: 0.31 },
+  { code: 'VND', symbol: '₫', name: 'Vietnamese Dong', rate: 227.5 },
 ];
 
 interface CurrencyStore {
@@ -48,11 +52,16 @@ export const useCurrency = create<CurrencyStore>()(
         const { selectedCurrency, convert } = get();
         const converted = convert(amount);
         
+        // For currencies with high values like IDR and VND, don't show decimals
+        const noDecimalCurrencies = ['BDT', 'IDR', 'VND', 'INR'];
+        const minFractionDigits = noDecimalCurrencies.includes(selectedCurrency.code) ? 0 : 2;
+        const maxFractionDigits = noDecimalCurrencies.includes(selectedCurrency.code) ? 0 : 2;
+        
         return new Intl.NumberFormat('en-US', {
           style: 'currency',
           currency: selectedCurrency.code,
-          minimumFractionDigits: selectedCurrency.code === 'BDT' ? 0 : 2,
-          maximumFractionDigits: 2,
+          minimumFractionDigits: minFractionDigits,
+          maximumFractionDigits: maxFractionDigits,
         }).format(converted);
       },
     }),

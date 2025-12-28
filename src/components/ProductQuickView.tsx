@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Product, useCartStore } from '@/lib/store';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrency } from '@/hooks/useCurrency';
 
 interface ProductQuickViewProps {
   product: Product | null;
@@ -24,6 +25,7 @@ export function ProductQuickView({ product, isOpen, onClose }: ProductQuickViewP
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { format } = useCurrency();
 
   if (!product) return null;
 
@@ -149,11 +151,11 @@ export function ProductQuickView({ product, isOpen, onClose }: ProductQuickViewP
 
             {/* Price */}
             <div className="flex items-center gap-3 mb-6">
-              <span className="text-2xl font-bold text-primary">৳{product.price.toFixed(0)}</span>
+              <span className="text-2xl font-bold text-primary">{format(product.price)}</span>
               {product.originalPrice && (
                 <>
                   <span className="text-lg text-muted-foreground line-through">
-                    ৳{product.originalPrice.toFixed(0)}
+                    {format(product.originalPrice)}
                   </span>
                   <span className="px-2 py-1 bg-destructive/10 text-destructive text-xs font-semibold rounded">
                     Save {Math.round((1 - product.price / product.originalPrice) * 100)}%

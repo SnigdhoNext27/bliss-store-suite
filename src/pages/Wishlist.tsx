@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useCartStore } from '@/lib/store';
+import { useCurrency } from '@/hooks/useCurrency';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { CartSlide } from '@/components/CartSlide';
@@ -27,6 +28,7 @@ export default function Wishlist() {
   const { user, loading: authLoading } = useAuth();
   const { wishlistIds, removeFromWishlist } = useWishlist();
   const { addItem } = useCartStore();
+  const { format } = useCurrency();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -158,11 +160,11 @@ export default function Wishlist() {
                       </h3>
                       <div className="flex items-center gap-2 mb-4">
                         <span className="font-bold text-primary">
-                          ৳{(product.sale_price || product.price).toLocaleString()}
+                          {format(product.sale_price || product.price)}
                         </span>
                         {product.sale_price && (
                           <span className="text-sm text-muted-foreground line-through">
-                            ৳{product.price.toLocaleString()}
+                            {format(product.price)}
                           </span>
                         )}
                       </div>
