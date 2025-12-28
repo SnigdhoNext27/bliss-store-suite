@@ -121,23 +121,23 @@ export default function Category() {
         <Header />
         
         <main>
-          {/* Hero Section - Simple and clean */}
-          <div className="bg-gradient-to-b from-secondary/50 to-background py-12 md:py-16">
+          {/* Compact Hero Section */}
+          <div className="bg-gradient-to-b from-secondary/30 to-background py-6 md:py-8">
             <div className="container px-4 text-center">
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
+                transition={{ duration: 0.4 }}
               >
-                <h1 className="font-display text-4xl md:text-5xl font-bold text-foreground mb-3">
+                <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-1">
                   {category.name}
                 </h1>
                 {category.description && (
-                  <p className="text-muted-foreground max-w-xl mx-auto">
+                  <p className="text-sm text-muted-foreground max-w-md mx-auto">
                     {category.description}
                   </p>
                 )}
-                <p className="mt-3 text-primary font-medium">
+                <p className="mt-2 text-primary text-sm font-medium">
                   {categoryProducts.length} {categoryProducts.length === 1 ? 'Product' : 'Products'}
                 </p>
               </motion.div>
@@ -145,7 +145,7 @@ export default function Category() {
           </div>
 
           {/* Breadcrumb & Controls */}
-          <div className="container px-4 py-6">
+          <div className="container px-4 py-4">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               {/* Breadcrumb */}
               <div className="flex items-center gap-2">
