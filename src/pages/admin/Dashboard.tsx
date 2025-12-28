@@ -5,8 +5,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format, subDays, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { CustomerAnalytics } from '@/components/admin/CustomerAnalytics';
+import { AnalyticsExport } from '@/components/admin/AnalyticsExport';
 import {
   AreaChart,
   Area,
@@ -36,6 +39,7 @@ interface OrderData {
   total: number;
   status: string;
   order_number: string;
+  user_id: string | null;
 }
 
 interface OrderItemData {
@@ -102,7 +106,7 @@ export default function Dashboard() {
       const [ordersRes, orderItemsRes, productsRes, categoriesRes, profilesRes] = await Promise.all([
         supabase
           .from('orders')
-          .select('id, created_at, total, status, order_number')
+          .select('id, created_at, total, status, order_number, user_id')
           .order('created_at', { ascending: false })
           .limit(500),
         supabase
@@ -352,6 +356,23 @@ export default function Dashboard() {
           <p className="text-muted-foreground">Welcome back! Here's your system overview.</p>
         </div>
         <div className="flex items-center gap-3">
+          {/* Export Button */}
+          <AnalyticsExport 
+            data={{
+              salesTrend: salesTrendData,
+              orderStatus: orderStatusData,
+              topProducts: topProductsData,
+              categoryPerformance: categoryPerformanceData,
+              customerAnalytics: {
+                newCustomers: 0,
+                returningCustomers: 0,
+                avgOrderValue: filteredOrders.length > 0 ? filteredOrders.reduce((s, o) => s + Number(o.total), 0) / filteredOrders.length : 0,
+                avgLifetimeValue: 0,
+              },
+              dateRange: { from: dateRange.from!, to: dateRange.to! },
+            }}
+          />
+          
           {/* Date Range Filter */}
           <Popover>
             <PopoverTrigger asChild>
@@ -664,6 +685,20 @@ export default function Dashboard() {
           )}
         </motion.div>
       </div>
+
+
+      {/* Customer Analytics Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.1 }}
+      >
+        <div className="mb-4">
+          <h2 className="font-display text-xl font-semibold">Customer Analytics</h2>
+          <p className="text-sm text-muted-foreground">New vs returning customers and lifetime value</p>
+        </div>
+        <CustomerAnalytics orders={allOrders} filteredOrderIds={filteredOrderIds} />
+      </motion.div>
 
       {/* Hourly Activity & Recent Orders */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

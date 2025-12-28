@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, Edit, Trash2, Grid3X3, ImageIcon, Upload, X, Loader2, Images, GripVertical, Package, TrendingUp } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Grid3X3, ImageIcon, Upload, X, Loader2, Images, GripVertical, Package, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,6 +16,7 @@ import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ImageUpload } from '@/components/admin/ImageUpload';
+import { CategoryProductsSection } from '@/components/admin/CategoryProductsSection';
 import { logAdminAction } from '@/lib/auditLog';
 import {
   DndContext,
@@ -34,6 +35,11 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
 interface Category {
   id: string;
@@ -67,6 +73,7 @@ function SortableCategoryCard({
   onDelete: (id: string) => void;
   onRemoveBanner: (id: string) => void;
 }) {
+  const [isProductsOpen, setIsProductsOpen] = useState(false);
   const {
     attributes,
     listeners,
@@ -173,6 +180,26 @@ function SortableCategoryCard({
             {category.description}
           </p>
         )}
+
+        {/* Products Section */}
+        <Collapsible open={isProductsOpen} onOpenChange={setIsProductsOpen}>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm" className="w-full justify-between mb-2">
+              <span className="flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Manage Products
+              </span>
+              {isProductsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="border-t border-border pt-3">
+            <CategoryProductsSection 
+              categoryId={category.id} 
+              categoryName={category.name}
+              hasSizes={category.has_sizes}
+            />
+          </CollapsibleContent>
+        </Collapsible>
 
         <div className="flex gap-2 justify-end">
           <Button variant="ghost" size="sm" onClick={() => onEdit(category)}>
