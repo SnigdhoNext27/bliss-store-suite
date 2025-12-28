@@ -8,9 +8,11 @@ interface ImageUploadProps {
   images: string[];
   onImagesChange: (images: string[]) => void;
   maxImages?: number;
+  folder?: string;
+  aspectRatio?: string;
 }
 
-export function ImageUpload({ images, onImagesChange, maxImages = 5 }: ImageUploadProps) {
+export function ImageUpload({ images, onImagesChange, maxImages = 5, folder = 'products', aspectRatio = 'aspect-square' }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -54,7 +56,7 @@ export function ImageUpload({ images, onImagesChange, maxImages = 5 }: ImageUplo
         // Generate cryptographically secure random filename
         const randomName = crypto.randomUUID();
         const fileName = `${randomName}.${fileExt}`;
-        const filePath = `products/${fileName}`;
+        const filePath = `${folder}/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from('product-images')
@@ -102,10 +104,10 @@ export function ImageUpload({ images, onImagesChange, maxImages = 5 }: ImageUplo
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-3 gap-2">
+      <div className={`grid ${maxImages === 1 ? 'grid-cols-1' : 'grid-cols-3'} gap-2`}>
         {images.map((url, index) => (
-          <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-secondary">
-            <img src={url} alt={`Product ${index + 1}`} className="w-full h-full object-cover" />
+          <div key={index} className={`relative ${aspectRatio} rounded-lg overflow-hidden bg-secondary`}>
+            <img src={url} alt={`Image ${index + 1}`} className="w-full h-full object-cover" />
             <button
               type="button"
               onClick={() => removeImage(index)}
@@ -121,14 +123,14 @@ export function ImageUpload({ images, onImagesChange, maxImages = 5 }: ImageUplo
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="aspect-square rounded-lg border-2 border-dashed border-border hover:border-primary/50 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+            className={`${aspectRatio} rounded-lg border-2 border-dashed border-border hover:border-primary/50 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-foreground transition-colors`}
           >
             {uploading ? (
               <Loader2 className="h-6 w-6 animate-spin" />
             ) : (
               <>
                 <Upload className="h-6 w-6" />
-                <span className="text-xs">Upload</span>
+                <span className="text-xs">Upload Banner</span>
               </>
             )}
           </button>

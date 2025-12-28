@@ -195,13 +195,18 @@ export default function Categories() {
               {/* Banner Image Upload */}
               <div>
                 <Label className="mb-2 block">Category Banner Image</Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Upload a custom banner to override the default AI-generated image
+                </p>
                 <ImageUpload
                   images={formData.image_url ? [formData.image_url] : []}
                   onImagesChange={(images) => setFormData({ ...formData, image_url: images[0] || '' })}
                   maxImages={1}
+                  folder="categories"
+                  aspectRatio="aspect-[4/3]"
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Recommended: 1200x300px for best results
+                <p className="text-xs text-muted-foreground mt-2">
+                  Recommended: 1024x768px (4:3 ratio) for best results on category cards
                 </p>
               </div>
 

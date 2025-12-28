@@ -54,6 +54,7 @@ export function ShopCategoriesGrid() {
       id: dbCategory?.id || staticCat.slug,
       name: staticCat.name,
       slug: dbCategory?.slug || staticCat.slug,
+      // Use database image_url if uploaded by admin, otherwise null (CategoryCard will use AI fallback)
       image_url: dbCategory?.image_url || null,
       productCount,
       isComingSoon: staticCat.isComingSoon || false,
