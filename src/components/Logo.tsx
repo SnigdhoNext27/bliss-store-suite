@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import wolfIcon from '@/assets/almans-wolf-icon.jpg';
 
 interface LogoProps {
   className?: string;
@@ -20,40 +21,14 @@ export function Logo({ className, showText = true, size = 'md' }: LogoProps) {
     <Link to="/" className={cn('flex items-center gap-2 group', className)}>
       {/* Wolf Logo Icon */}
       <div className={cn(
-        'relative flex items-center justify-center transition-all duration-300 group-hover:scale-105',
+        'relative flex items-center justify-center rounded-full overflow-hidden transition-all duration-300 group-hover:scale-105 bg-foreground',
         sizes.icon
       )}>
-        <svg viewBox="0 0 100 100" className="w-full h-full">
-          <defs>
-            <linearGradient id="wolfGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="hsl(var(--primary))" />
-              <stop offset="50%" stopColor="hsl(var(--almans-gold))" />
-              <stop offset="100%" stopColor="hsl(var(--primary))" />
-            </linearGradient>
-          </defs>
-          {/* Wolf head silhouette */}
-          <path
-            d="M50 10
-               L65 35 L80 20 L75 45
-               L85 50 L75 55
-               L80 80 L65 70
-               L50 90
-               L35 70 L20 80
-               L25 55 L15 50
-               L25 45 L20 20
-               L35 35 Z"
-            fill="url(#wolfGradient)"
-            className="transition-all duration-300"
-          />
-          {/* Inner details - eyes */}
-          <circle cx="40" cy="45" r="3" fill="hsl(var(--background))" />
-          <circle cx="60" cy="45" r="3" fill="hsl(var(--background))" />
-          {/* Inner detail - nose */}
-          <path
-            d="M50 55 L45 65 L50 70 L55 65 Z"
-            fill="hsl(var(--background))"
-          />
-        </svg>
+        <img 
+          src={wolfIcon} 
+          alt="Almans Logo" 
+          className="w-full h-full object-cover"
+        />
       </div>
 
       {/* Brand Name */}

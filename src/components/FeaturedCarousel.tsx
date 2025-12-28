@@ -7,6 +7,7 @@ import { Product, useCartStore } from '@/lib/store';
 import { useProducts } from '@/hooks/useProducts';
 import { useWishlist } from '@/hooks/useWishlist';
 import { ProductQuickView } from './ProductQuickView';
+import { haptics } from '@/lib/haptics';
 
 export function FeaturedCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -56,6 +57,7 @@ export function FeaturedCarousel() {
     const isSwipe = Math.abs(distance) > minSwipeDistance;
     
     if (isSwipe) {
+      haptics.light();
       setHasSwiped(true);
       setShowSwipeHint(false);
       if (distance > 0) {
