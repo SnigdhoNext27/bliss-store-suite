@@ -6,6 +6,7 @@ import { ShopCategoriesGrid } from '@/components/ShopCategoriesGrid';
 import { ProductsSection } from '@/components/ProductsSection';
 import { PromotionalBanner } from '@/components/PromotionalBanner';
 import { FeaturedCarousel } from '@/components/FeaturedCarousel';
+import { CollectionSection } from '@/components/CollectionSection';
 import { Footer } from '@/components/Footer';
 import { CartSlide } from '@/components/CartSlide';
 import { PullToRefresh } from '@/components/PullToRefresh';
@@ -77,6 +78,9 @@ const Shop = () => {
           
           {/* All Products Section */}
           <ProductsSection />
+          
+          {/* Collection Section */}
+          <CollectionSection />
         </main>
         <Footer />
         <CartSlide />

@@ -44,7 +44,7 @@ export function CollectionSection() {
               Autumn / Winter
             </h2>
             <h3 className="font-display text-3xl md:text-4xl font-bold text-foreground">
-              collection 2025
+              collection 2026
             </h3>
           </div>
           <p className="text-muted-foreground max-w-sm">
