@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { CategoryCard } from './CategoryCard';
+import { CategoriesGridSkeleton } from './CategoryCardSkeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useProducts } from '@/hooks/useProducts';
 
@@ -24,10 +25,12 @@ const STATIC_CATEGORIES = [
 
 export function ShopCategoriesGrid() {
   const [categories, setCategories] = useState<Category[]>([]);
-  const { products } = useProducts();
+  const [loading, setLoading] = useState(true);
+  const { products, loading: productsLoading } = useProducts();
 
   useEffect(() => {
     const fetchCategories = async () => {
+      setLoading(true);
       const { data } = await supabase
         .from('categories')
         .select('id, name, slug, image_url, display_order')
@@ -36,6 +39,7 @@ export function ShopCategoriesGrid() {
       if (data) {
         setCategories(data);
       }
+      setLoading(false);
     };
     
     fetchCategories();
@@ -61,6 +65,11 @@ export function ShopCategoriesGrid() {
       isComingSoon: staticCat.isComingSoon || false,
     };
   });
+
+  // Show skeleton while loading
+  if (loading || productsLoading) {
+    return <CategoriesGridSkeleton count={7} />;
+  }
 
   return (
     <section className="py-16 bg-gradient-to-b from-secondary/30 via-accent/10 to-background relative overflow-hidden">

@@ -1,22 +1,14 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { SlidersHorizontal, X, ChevronDown, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-  SheetFooter,
-} from '@/components/ui/sheet';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { MobileFiltersSheet } from '@/components/MobileFiltersSheet';
 
 export interface ProductFilters {
   priceRange: [number, number];
@@ -227,38 +219,17 @@ export function ProductFiltersPanel({
 
   return (
     <>
-      {/* Mobile Filter Sheet */}
-      <Sheet>
-        <SheetTrigger asChild>
-          <Button variant="outline" size="sm" className="gap-2 lg:hidden">
-            <SlidersHorizontal className="h-4 w-4" />
-            Filters
-            {activeFiltersCount > 0 && (
-              <span className="ml-1 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">
-                {activeFiltersCount}
-              </span>
-            )}
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left" className="w-[300px] sm:w-[350px]">
-          <SheetHeader>
-            <SheetTitle className="flex items-center justify-between">
-              <span>Filters</span>
-              {activeFiltersCount > 0 && (
-                <Button variant="ghost" size="sm" onClick={onClearAll} className="text-destructive">
-                  Clear all
-                </Button>
-              )}
-            </SheetTitle>
-          </SheetHeader>
-          <div className="mt-6 overflow-y-auto max-h-[calc(100vh-180px)]">
-            <FilterContent />
-          </div>
-          <SheetFooter className="mt-6">
-            <Button className="w-full">Apply Filters</Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+      {/* Mobile Filter Bottom-Sheet */}
+      <MobileFiltersSheet
+        filters={filters}
+        onFiltersChange={onFiltersChange}
+        maxPrice={maxPrice}
+        availableSizes={availableSizes}
+        availableColors={availableColors}
+        activeFiltersCount={activeFiltersCount}
+        onClearAll={onClearAll}
+        onApply={() => {}}
+      />
 
       {/* Desktop Filters Sidebar */}
       <div className="hidden lg:block w-64 shrink-0">
