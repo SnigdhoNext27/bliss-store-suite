@@ -7,6 +7,7 @@ import { Product, useCartStore } from '@/lib/store';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useProductComparison } from '@/hooks/useProductComparison';
 import { useToast } from '@/hooks/use-toast';
+import { SaleCountdown } from '@/components/SaleCountdown';
 
 interface ProductCardProps {
   product: Product;
@@ -91,7 +92,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
 
         {/* Badge */}
         {product.badge && (
-          <div className="absolute left-3 top-3">
+          <div className="absolute left-3 top-3 flex flex-col gap-2">
             <span
               className={`inline-block rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
                 product.badge === 'new'
@@ -103,6 +104,10 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
             >
               {product.badge === 'limited' ? 'Low Stock' : product.badge}
             </span>
+            {/* Sale Countdown for sale items */}
+            {product.badge === 'sale' && (
+              <SaleCountdown compact className="bg-background/90 backdrop-blur-sm rounded-full px-2 py-1" />
+            )}
           </div>
         )}
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, MapPin, Phone, Truck, Check, PartyPopper, MessageCircle, Mail, AlertTriangle, Banknote, CreditCard, Smartphone } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Phone, Truck, Check, PartyPopper, MessageCircle, Mail, AlertTriangle, Banknote, CreditCard, Smartphone, Award } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { LoyaltyPointsRedemption } from '@/components/LoyaltyPointsRedemption';
 
 const deliverySchema = z.object({
   fullName: z.string().min(2, 'Name is required').max(100),
@@ -50,12 +51,19 @@ export default function Checkout() {
     notes: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [redeemedPoints, setRedeemedPoints] = useState(0);
+  const [pointsDiscount, setPointsDiscount] = useState(0);
 
   const subtotal = liveSubtotal;
   const deliveryFeeDhaka = parseInt(settings.delivery_fee_dhaka) || 60;
   const deliveryFeeOutside = parseInt(settings.delivery_fee_outside) || 120;
   const deliveryFee = formData.deliveryArea === 'dhaka' ? deliveryFeeDhaka : deliveryFeeOutside;
-  const total = subtotal + deliveryFee;
+  const total = subtotal + deliveryFee - pointsDiscount;
+
+  const handlePointsRedemption = (pointsUsed: number, discountAmount: number) => {
+    setRedeemedPoints(pointsUsed);
+    setPointsDiscount(discountAmount);
+  };
 
   // Require login to checkout
   if (!authLoading && !user) {
@@ -506,8 +514,15 @@ export default function Checkout() {
               >
                 <h2 className="font-display text-2xl font-bold mb-6">Confirm Your Order</h2>
                 
+                {/* Loyalty Points Redemption */}
+                <LoyaltyPointsRedemption
+                  subtotal={subtotal}
+                  onPointsRedemption={handlePointsRedemption}
+                  redeemedPoints={redeemedPoints}
+                />
+
                 {/* Order Summary */}
-                <div className="bg-card rounded-xl p-6 mb-6 space-y-4">
+                <div className="bg-card rounded-xl p-6 mb-6 space-y-4 mt-6">
                   <h3 className="font-medium">Order Summary</h3>
                   {items.filter(item => !item.productUnavailable).map((item) => (
                     <div key={`${item.product.id}-${item.size}`} className="flex justify-between text-sm">
@@ -524,6 +539,15 @@ export default function Checkout() {
                     <span>Delivery ({formData.deliveryArea === 'dhaka' ? 'Dhaka' : 'Outside'})</span>
                     <span>৳{deliveryFee}</span>
                   </div>
+                  {pointsDiscount > 0 && (
+                    <div className="flex justify-between text-primary">
+                      <span className="flex items-center gap-1">
+                        <Award className="h-4 w-4" />
+                        Points Discount ({redeemedPoints} pts)
+                      </span>
+                      <span>-৳{pointsDiscount}</span>
+                    </div>
+                  )}
                   <hr className="border-border" />
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total Payable</span>
