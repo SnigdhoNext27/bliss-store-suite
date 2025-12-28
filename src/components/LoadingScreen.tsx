@@ -73,9 +73,14 @@ export function LoadingScreen({ onSkip, duration = 2500 }: LoadingScreenProps) {
         transition={{ delay: 1, duration: 0.3 }}
       >
         <motion.div
-          className="h-full bg-primary rounded-full"
-          style={{ width: `${progress}%` }}
-          transition={{ duration: 0.1 }}
+          className="h-full bg-primary rounded-full origin-left"
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: progress / 100 }}
+          transition={{ 
+            duration: 0.3, 
+            ease: [0.4, 0, 0.2, 1] 
+          }}
+          style={{ transformOrigin: 'left' }}
         />
       </motion.div>
 

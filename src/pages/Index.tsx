@@ -4,7 +4,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Header } from '@/components/Header';
 import { Hero } from '@/components/Hero';
 import { AboutSection } from '@/components/AboutSection';
-import { CollectionSection } from '@/components/CollectionSection';
 import { Footer } from '@/components/Footer';
 import { CartSlide } from '@/components/CartSlide';
 import { PullToRefresh } from '@/components/PullToRefresh';
@@ -41,7 +40,6 @@ const Index = () => {
         <main>
           <Hero />
           <AboutSection />
-          <CollectionSection />
         </main>
         <Footer />
         <CartSlide />
