@@ -2,18 +2,22 @@ import { motion, type Easing } from 'framer-motion';
 import { WolfLogoIcon } from './WolfLogoIcon';
 
 interface LoadingScreenProps {
-  onComplete?: () => void;
+  onSkip?: () => void;
 }
 
-export function LoadingScreen({ onComplete }: LoadingScreenProps) {
+export function LoadingScreen({ onSkip }: LoadingScreenProps) {
+  const handleSkip = () => {
+    // Store preference to skip loading screen in future
+    localStorage.setItem('skipLoadingScreen', 'true');
+    onSkip?.();
+  };
+
   return (
     <motion.div
       className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background"
       initial={{ opacity: 1 }}
-      animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.5, ease: 'easeOut' as Easing }}
-      onAnimationComplete={onComplete}
+      transition={{ duration: 0.4, ease: 'easeOut' as Easing }}
     >
       {/* Animated Wolf Logo */}
       <motion.div
@@ -66,6 +70,17 @@ export function LoadingScreen({ onComplete }: LoadingScreenProps) {
           transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
         />
       </motion.div>
+
+      {/* Skip button */}
+      <motion.button
+        className="mt-10 px-6 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors border border-border/50 rounded-full hover:border-border hover:bg-muted/30"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.5 }}
+        onClick={handleSkip}
+      >
+        Skip & don't show again
+      </motion.button>
     </motion.div>
   );
 }
