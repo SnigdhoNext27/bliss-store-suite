@@ -10,10 +10,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useCartStore } from '@/lib/store';
 import { useAuth } from '@/lib/auth';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
-
 const navLinks = [
   { name: 'Home', href: '/' },
   { name: 'Shop', href: '/shop' },
@@ -117,38 +121,58 @@ export function Header() {
 
           {/* User Menu */}
           {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <User className="h-5 w-5" />
-                  <span className="hidden sm:inline">Hi, {user.email?.split('@')[0]}</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => navigate('/account')}>
-                  <User className="h-4 w-4 mr-2" />
-                  My Account
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/account?tab=orders')}>
-                  <Package className="h-4 w-4 mr-2" />
-                  My Orders
-                </DropdownMenuItem>
-                {isAdmin && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate('/admin')}>
-                      <Settings className="h-4 w-4 mr-2" />
-                      Admin Dashboard
-                    </DropdownMenuItem>
-                  </>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <User className="h-5 w-5" />
+                    <span className="hidden sm:inline">Hi, {user.email?.split('@')[0]}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => navigate('/account')}>
+                    <User className="h-4 w-4 mr-2" />
+                    My Account
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/account?tab=orders')}>
+                    <Package className="h-4 w-4 mr-2" />
+                    My Orders
+                  </DropdownMenuItem>
+                  {isAdmin && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => navigate('/admin')}>
+                        <Settings className="h-4 w-4 mr-2" />
+                        Admin Dashboard
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              {/* Dedicated Sign Out Button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleSignOut}
+                    className="hidden sm:flex hover:bg-destructive/10 hover:text-destructive transition-colors"
+                  >
+                    <LogOut className="h-5 w-5" />
+                    <span className="sr-only">Sign Out</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Sign Out</p>
+                </TooltipContent>
+              </Tooltip>
+            </>
           ) : (
             <Button variant="ghost" size="sm" onClick={() => navigate('/auth')}>
               <User className="h-5 w-5 mr-2" />
