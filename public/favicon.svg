@@ -1,37 +1,42 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
   <defs>
-    <linearGradient id="wolfBodyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#c9973a"/>
-      <stop offset="50%" stop-color="#9e7044"/>
-      <stop offset="100%" stop-color="#7a5633"/>
-    </linearGradient>
-    <linearGradient id="wolfAccentGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+    <linearGradient id="borderGradient" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#9e7044"/>
-      <stop offset="100%" stop-color="#d4a84a"/>
+      <stop offset="100%" stop-color="#c9973a"/>
     </linearGradient>
   </defs>
   
-  <g>
-    <path d="M30 45 L20 15 L38 35 Z" fill="url(#wolfAccentGradient)"/>
-    <path d="M70 45 L80 15 L62 35 Z" fill="url(#wolfAccentGradient)"/>
-    <path d="M32 40 L25 22 L36 34 Z" fill="#f5f2ed" opacity="0.3"/>
-    <path d="M68 40 L75 22 L64 34 Z" fill="#f5f2ed" opacity="0.3"/>
+  <!-- White circular background with brown border -->
+  <circle cx="50" cy="50" r="46" fill="#f5f2ed" stroke="url(#borderGradient)" stroke-width="3"/>
+  
+  <!-- Wolf head outline - geometric style in brown -->
+  <g fill="none" stroke="#9e7044" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Left ear - outer -->
+    <path d="M32 50 L22 25 L35 40"/>
+    <!-- Left ear - inner detail -->
+    <path d="M30 45 L26 32 L33 42" stroke-width="1.5"/>
     
-    <path d="M50 85 L30 70 L22 55 L25 45 L35 40 L40 35 L50 30 L60 35 L65 40 L75 45 L78 55 L70 70 Z" fill="url(#wolfBodyGradient)"/>
+    <!-- Right ear - outer -->
+    <path d="M68 50 L78 25 L65 40"/>
+    <!-- Right ear - inner detail -->
+    <path d="M70 45 L74 32 L67 42" stroke-width="1.5"/>
     
-    <path d="M35 40 L50 30 L65 40 L60 38 L50 33 L40 38 Z" fill="#d4a84a" opacity="0.6"/>
+    <!-- Head top connecting ears -->
+    <path d="M35 40 L42 38 L50 35 L58 38 L65 40"/>
     
-    <ellipse cx="40" cy="50" rx="5" ry="4" fill="#453830"/>
-    <ellipse cx="41" cy="49" rx="2" ry="1.5" fill="#f5f2ed" opacity="0.4"/>
+    <!-- Left side of face -->
+    <path d="M32 50 L28 55 L30 62 L38 70"/>
     
-    <ellipse cx="60" cy="50" rx="5" ry="4" fill="#453830"/>
-    <ellipse cx="61" cy="49" rx="2" ry="1.5" fill="#f5f2ed" opacity="0.4"/>
+    <!-- Right side of face -->
+    <path d="M68 50 L72 55 L70 62 L62 70"/>
     
-    <path d="M50 55 L45 58 L50 75 L55 58 Z" fill="#7a5633"/>
+    <!-- Snout/chin - V shape -->
+    <path d="M38 70 L50 82 L62 70"/>
     
-    <ellipse cx="50" cy="68" rx="6" ry="4" fill="#453830"/>
-    <ellipse cx="51" cy="67" rx="2" ry="1" fill="#f5f2ed" opacity="0.3"/>
+    <!-- Inner face details - nose bridge -->
+    <path d="M50 35 L50 55" stroke-width="1.5"/>
     
-    <path d="M50 72 L50 78 M46 76 Q50 80 54 76" stroke="#453830" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <!-- Nose area -->
+    <path d="M44 58 L50 55 L56 58 L50 68 Z" stroke-width="2"/>
   </g>
 </svg>

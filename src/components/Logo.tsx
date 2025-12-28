@@ -18,97 +18,58 @@ export function Logo({ className, showText = true, size = 'md' }: LogoProps) {
 
   return (
     <Link to="/" className={cn('flex items-center gap-2 group', className)}>
-      {/* Wolf Logo Icon - SVG with gradient colors matching site theme */}
+      {/* Wolf Logo Icon - Original design with brown on white */}
       <div className={cn(
         'relative flex items-center justify-center transition-all duration-300 group-hover:scale-105',
         sizes.icon
       )}>
-        <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-sm">
+        <svg viewBox="0 0 100 100" className="w-full h-full">
           <defs>
-            {/* Main gradient for wolf - gold to brown */}
-            <linearGradient id="wolfBodyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="hsl(38, 60%, 55%)" /> {/* almans-gold */}
-              <stop offset="50%" stopColor="hsl(24, 35%, 49%)" /> {/* primary/brown */}
-              <stop offset="100%" stopColor="hsl(24, 40%, 40%)" /> {/* darker brown */}
-            </linearGradient>
-            {/* Accent gradient for ears */}
-            <linearGradient id="wolfAccentGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+            <linearGradient id="borderGradient" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="hsl(24, 35%, 49%)" />
-              <stop offset="100%" stopColor="hsl(38, 60%, 60%)" />
+              <stop offset="100%" stopColor="hsl(38, 60%, 55%)" />
             </linearGradient>
-            {/* Subtle shadow filter */}
-            <filter id="wolfShadow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="1" stdDeviation="1" floodOpacity="0.15"/>
-            </filter>
           </defs>
           
-          {/* Wolf head - geometric/angular style matching the reference */}
-          <g filter="url(#wolfShadow)">
-            {/* Left ear */}
-            <path
-              d="M30 45 L20 15 L38 35 Z"
-              fill="url(#wolfAccentGradient)"
-            />
-            {/* Right ear */}
-            <path
-              d="M70 45 L80 15 L62 35 Z"
-              fill="url(#wolfAccentGradient)"
-            />
-            {/* Left ear inner detail */}
-            <path
-              d="M32 40 L25 22 L36 34 Z"
-              fill="hsl(30, 25%, 96%)"
-              opacity="0.3"
-            />
-            {/* Right ear inner detail */}
-            <path
-              d="M68 40 L75 22 L64 34 Z"
-              fill="hsl(30, 25%, 96%)"
-              opacity="0.3"
-            />
+          {/* White/cream circular background with brown border */}
+          <circle 
+            cx="50" 
+            cy="50" 
+            r="46" 
+            fill="hsl(30, 25%, 96%)"
+            stroke="url(#borderGradient)"
+            strokeWidth="3"
+          />
+          
+          {/* Wolf head outline - matching original geometric style */}
+          <g fill="none" stroke="hsl(24, 35%, 49%)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            {/* Left ear - outer */}
+            <path d="M32 50 L22 25 L35 40" />
+            {/* Left ear - inner detail */}
+            <path d="M30 45 L26 32 L33 42" strokeWidth="1.5" />
             
-            {/* Main head shape */}
-            <path
-              d="M50 85 
-                 L30 70 L22 55 L25 45 L35 40 
-                 L40 35 L50 30 L60 35 L65 40 
-                 L75 45 L78 55 L70 70 Z"
-              fill="url(#wolfBodyGradient)"
-            />
+            {/* Right ear - outer */}
+            <path d="M68 50 L78 25 L65 40" />
+            {/* Right ear - inner detail */}
+            <path d="M70 45 L74 32 L67 42" strokeWidth="1.5" />
             
-            {/* Forehead/crown */}
-            <path
-              d="M35 40 L50 30 L65 40 L60 38 L50 33 L40 38 Z"
-              fill="hsl(38, 60%, 58%)"
-              opacity="0.6"
-            />
+            {/* Head top connecting ears */}
+            <path d="M35 40 L42 38 L50 35 L58 38 L65 40" />
             
-            {/* Left eye */}
-            <ellipse cx="40" cy="50" rx="5" ry="4" fill="hsl(18, 22%, 27%)" />
-            <ellipse cx="41" cy="49" rx="2" ry="1.5" fill="hsl(30, 25%, 96%)" opacity="0.4" />
+            {/* Left side of face */}
+            <path d="M32 50 L28 55 L30 62 L38 70" />
             
-            {/* Right eye */}
-            <ellipse cx="60" cy="50" rx="5" ry="4" fill="hsl(18, 22%, 27%)" />
-            <ellipse cx="61" cy="49" rx="2" ry="1.5" fill="hsl(30, 25%, 96%)" opacity="0.4" />
+            {/* Right side of face */}
+            <path d="M68 50 L72 55 L70 62 L62 70" />
             
-            {/* Nose bridge */}
-            <path
-              d="M50 55 L45 58 L50 75 L55 58 Z"
-              fill="hsl(24, 40%, 42%)"
-            />
+            {/* Snout/chin - V shape */}
+            <path d="M38 70 L50 82 L62 70" />
             
-            {/* Nose */}
-            <ellipse cx="50" cy="68" rx="6" ry="4" fill="hsl(18, 22%, 27%)" />
-            <ellipse cx="51" cy="67" rx="2" ry="1" fill="hsl(30, 25%, 96%)" opacity="0.3" />
+            {/* Inner face details - nose bridge */}
+            <path d="M50 35 L50 55" strokeWidth="1.5" />
             
-            {/* Mouth/muzzle line */}
-            <path
-              d="M50 72 L50 78 M46 76 Q50 80 54 76"
-              stroke="hsl(18, 22%, 27%)"
-              strokeWidth="1.5"
-              fill="none"
-              strokeLinecap="round"
-            />
+            {/* Nose area */}
+            <path d="M44 58 L50 55 L56 58 L50 68 Z" strokeWidth="2" />
           </g>
         </svg>
       </div>
@@ -116,9 +77,7 @@ export function Logo({ className, showText = true, size = 'md' }: LogoProps) {
       {/* Brand Name */}
       {showText && (
         <span className={cn(
-          'hidden font-display font-semibold tracking-wide sm:inline-block transition-colors',
-          'bg-gradient-to-r from-primary via-almans-gold to-primary bg-clip-text text-transparent',
-          'group-hover:from-almans-gold group-hover:via-primary group-hover:to-almans-gold',
+          'hidden font-display font-semibold tracking-wide sm:inline-block transition-colors text-foreground group-hover:text-primary',
           sizes.text
         )}>
           ALMANS
