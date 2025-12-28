@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, ChevronRight, Shirt, Package, Sparkles, Filter, Search, X, LayoutGrid, LayoutList } from 'lucide-react';
+import { Loader2, ChevronRight, Shirt, Package, Sparkles, Search, X, LayoutGrid, LayoutList } from 'lucide-react';
 import { ProductCard } from './ProductCard';
+import { ProductGridSkeleton } from './ProductCardSkeleton';
 import { useProducts, Product } from '@/hooks/useProducts';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -367,11 +368,23 @@ export function ProductsSection() {
   if (loading) {
     return (
       <section id="products" className="py-20 bg-gradient-to-b from-background to-secondary/20">
-        <div className="container px-4 md:px-8 flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-            <p className="text-muted-foreground">Loading products...</p>
-          </div>
+        <div className="container px-4 md:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-10 text-center"
+          >
+            <span className="text-primary font-medium text-sm tracking-widest uppercase mb-2 block">
+              Our Collection
+            </span>
+            <h2 className="font-display text-4xl md:text-5xl font-bold text-foreground mb-4 tracking-wide">
+              ALL PRODUCTS
+            </h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              Loading our premium fashion collection...
+            </p>
+          </motion.div>
+          <ProductGridSkeleton count={8} />
         </div>
       </section>
     );
