@@ -34,6 +34,7 @@ import { useWishlist } from '@/hooks/useWishlist';
 const navLinks = [
   { name: 'Home', href: '/' },
   { name: 'Shop', href: '/shop' },
+  { name: 'Sales', href: '/sales', highlight: true },
   { name: 'About Us', href: '/shop#about' },
   { name: 'Contact', href: '/shop#contact' },
 ];
@@ -135,11 +136,17 @@ export function Header() {
         {/* Desktop Navigation */}
         <nav className="hidden items-center gap-6 md:flex">
           {navLinks.map((link) => (
-            <button
+          <button
               key={link.name}
               onClick={() => handleNavClick(link.href)}
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+              className={cn(
+                "text-sm font-medium transition-colors hover:text-primary",
+                link.highlight 
+                  ? "text-destructive font-semibold animate-pulse" 
+                  : "text-muted-foreground"
+              )}
             >
+              {link.highlight && <span className="mr-1">🔥</span>}
               {link.name}
             </button>
           ))}

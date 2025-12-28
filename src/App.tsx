@@ -16,6 +16,7 @@ import { ProductComparisonBar } from "@/components/ProductComparisonBar";
 import { ProductComparisonModal } from "@/components/ProductComparisonModal";
 import Index from "./pages/Index";
 import Shop from "./pages/Shop";
+import Sales from "./pages/Sales";
 import Auth from "./pages/Auth";
 import ProductDetail from "./pages/ProductDetail";
 import Checkout from "./pages/Checkout";
@@ -90,6 +91,7 @@ const App = () => {
                       <Routes>
                         <Route path="/" element={<Index />} />
                         <Route path="/shop" element={<Shop />} />
+                        <Route path="/sales" element={<Sales />} />
                         <Route path="/auth" element={<Auth />} />
                         <Route path="/product/:id" element={<ProductDetail />} />
                         <Route path="/category/:slug" element={<Category />} />
