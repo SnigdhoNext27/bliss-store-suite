@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { haptics } from '@/lib/haptics';
 
 interface UsePullToRefreshOptions {
   onRefresh: () => Promise<void>;
@@ -53,11 +54,13 @@ export function usePullToRefresh({
     }
 
     if (pullDistance >= threshold && !isRefreshing) {
+      haptics.medium();
       setIsRefreshing(true);
       setPullDistance(threshold * 0.6); // Keep a smaller indicator while refreshing
       
       try {
         await onRefresh();
+        haptics.success();
       } finally {
         setIsRefreshing(false);
       }

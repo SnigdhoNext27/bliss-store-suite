@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, MoveHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { haptics } from '@/lib/haptics';
 import heroImage1 from '@/assets/hero-1.jpg';
 import heroImage2 from '@/assets/hero-2.jpg';
 import heroImage3 from '@/assets/hero-3.jpg';
@@ -123,6 +124,7 @@ export function Hero() {
     const isSwipe = Math.abs(distance) > minSwipeDistance;
     
     if (isSwipe) {
+      haptics.light();
       setHasSwiped(true);
       setShowSwipeHint(false);
       if (distance > 0) {
