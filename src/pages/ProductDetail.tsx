@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Minus, Plus, Heart, Share2, ChevronLeft, Star, Truck, Shield, RefreshCw, Loader2, MessageCircle, Mail, AlertTriangle } from 'lucide-react';
+import { Minus, Plus, Heart, ChevronLeft, Star, Truck, Shield, RefreshCw, Loader2, MessageCircle, Mail, AlertTriangle } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/lib/store';
@@ -13,6 +13,9 @@ import { Footer } from '@/components/Footer';
 import { CartSlide } from '@/components/CartSlide';
 import { RecentlyViewedProducts } from '@/components/RecentlyViewedProducts';
 import { RestockAlertButton } from '@/components/RestockAlertButton';
+import { ProductReviews } from '@/components/ProductReviews';
+import { ProductShareButton } from '@/components/ProductShareButton';
+import { useWishlist } from '@/hooks/useWishlist';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -24,10 +27,10 @@ export default function ProductDetail() {
   const { product, loading, error } = useProduct(id);
   const { settings } = useSiteSettings();
   const { addToRecentlyViewed } = useRecentlyViewed();
+  const { isInWishlist, toggleWishlist, loading: wishlistLoading } = useWishlist();
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const [categoryHasSizes, setCategoryHasSizes] = useState(true);
 
   // Fetch category's has_sizes setting
@@ -331,16 +334,14 @@ export default function ProductDetail() {
 
               <div className="flex items-center gap-4 pt-2">
                 <button
-                  onClick={() => setIsWishlisted(!isWishlisted)}
+                  onClick={() => product && toggleWishlist(product.id)}
+                  disabled={wishlistLoading}
                   className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <Heart className={`h-5 w-5 ${isWishlisted ? 'fill-destructive text-destructive' : ''}`} />
-                  Add to Wishlist
+                  <Heart className={`h-5 w-5 ${product && isInWishlist(product.id) ? 'fill-destructive text-destructive' : ''}`} />
+                  {product && isInWishlist(product.id) ? 'In Wishlist' : 'Add to Wishlist'}
                 </button>
-                <button className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-                  <Share2 className="h-5 w-5" />
-                  Share
-                </button>
+                <ProductShareButton productName={product.name} />
               </div>
 
               {/* Features */}
@@ -360,6 +361,13 @@ export default function ProductDetail() {
               </div>
             </motion.div>
           </div>
+
+          {/* Customer Reviews */}
+          <ProductReviews 
+            productId={product.id} 
+            productRating={4.5} 
+            reviewCount={24} 
+          />
         </div>
       </main>
 

@@ -14,6 +14,7 @@ import { BackToTop } from "@/components/BackToTop";
 import { AnimatedRoutes } from "@/components/AnimatedRoutes";
 import { ProductComparisonBar } from "@/components/ProductComparisonBar";
 import { ProductComparisonModal } from "@/components/ProductComparisonModal";
+import { AbandonedCartTracker } from "@/components/AbandonedCartTracker";
 import Index from "./pages/Index";
 import Shop from "./pages/Shop";
 import Sales from "./pages/Sales";
@@ -76,6 +77,7 @@ const App = () => {
                   <LiveChatWidget />
                   <BackToTop />
                   <BrowserRouter>
+                    <AbandonedCartTracker />
                     <ProductComparisonBar />
                     <ProductComparisonModal />
                     <AnimatedRoutes>
