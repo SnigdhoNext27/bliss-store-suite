@@ -76,11 +76,15 @@ export function NotificationBell() {
 
   // Fetch notifications
   const fetchNotifications = async () => {
-    const { data, error } = await supabase
+    // Build query - for logged in users, get their notifications + global ones
+    // For guests, only global notifications are visible via RLS
+    let query = supabase
       .from('notifications')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(20);
+
+    const { data, error } = await query;
 
     if (!error && data) {
       setNotifications(data as Notification[]);
