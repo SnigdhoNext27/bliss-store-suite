@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Save, Store, Truck, Bell, Share2 } from 'lucide-react';
+import { Save, Store, Truck, Bell, Share2, Flame } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { logAdminAction } from '@/lib/auditLog';
@@ -19,6 +20,9 @@ interface Settings {
   social_facebook: string;
   social_instagram: string;
   social_whatsapp: string;
+  flash_sale_enabled: string;
+  flash_sale_discount: string;
+  flash_sale_end_date: string;
 }
 
 export default function Settings() {
@@ -33,6 +37,9 @@ export default function Settings() {
     social_facebook: '',
     social_instagram: '',
     social_whatsapp: '',
+    flash_sale_enabled: 'true',
+    flash_sale_discount: '50',
+    flash_sale_end_date: '',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -140,6 +147,57 @@ export default function Settings() {
               placeholder="Where your vibes meet our vision"
               className="mt-1"
             />
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Flash Sale Settings */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="bg-card rounded-xl border border-border p-6 space-y-6"
+      >
+        <div className="flex items-center gap-3 mb-4">
+          <Flame className="h-5 w-5 text-destructive" />
+          <h2 className="font-display text-xl font-semibold">Flash Sale</h2>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Enable Flash Sale Banner</Label>
+              <p className="text-xs text-muted-foreground">Show the flash sale banner on the shop page</p>
+            </div>
+            <Switch
+              checked={settings.flash_sale_enabled === 'true'}
+              onCheckedChange={(checked) => setSettings({ ...settings, flash_sale_enabled: checked ? 'true' : 'false' })}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="discount">Discount Percentage (%)</Label>
+              <Input
+                id="discount"
+                type="number"
+                min="1"
+                max="100"
+                value={settings.flash_sale_discount}
+                onChange={(e) => setSettings({ ...settings, flash_sale_discount: e.target.value })}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="end_date">Sale End Date & Time</Label>
+              <Input
+                id="end_date"
+                type="datetime-local"
+                value={settings.flash_sale_end_date ? settings.flash_sale_end_date.slice(0, 16) : ''}
+                onChange={(e) => setSettings({ ...settings, flash_sale_end_date: new Date(e.target.value).toISOString() })}
+                className="mt-1"
+              />
+            </div>
           </div>
         </div>
       </motion.div>

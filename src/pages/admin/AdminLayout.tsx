@@ -15,7 +15,8 @@ import {
   Grid3X3,
   Home,
   MessageCircle,
-  Mail
+  Mail,
+  Bell
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
@@ -43,6 +44,7 @@ const allNavItems: NavItem[] = [
   { to: '/admin/coupons', icon: Tag, label: 'Coupons', permission: 'coupons' },
   { to: '/admin/banners', icon: Image, label: 'Banners', permission: 'banners' },
   { to: '/admin/newsletter', icon: Mail, label: 'Newsletter', permission: 'customers' },
+  { to: '/admin/notifications', icon: Bell, label: 'Notifications', permission: 'settings' },
   { to: '/admin/settings', icon: Settings, label: 'Settings', permission: 'settings' },
   { to: '/admin/team', icon: Shield, label: 'Team', permission: 'team' },
   { to: '/admin/chats', icon: MessageCircle, label: 'Live Chats', permission: 'orders' },

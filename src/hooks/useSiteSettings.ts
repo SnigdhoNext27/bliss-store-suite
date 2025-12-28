@@ -12,6 +12,11 @@ interface SiteSettings {
   social_facebook: string;
   social_instagram: string;
   social_whatsapp: string;
+  flash_sale_enabled: string;
+  flash_sale_discount: string;
+  flash_sale_end_date: string;
+  whatsapp_notification_phone: string;
+  [key: string]: string; // Allow dynamic keys
 }
 
 const defaultSettings: SiteSettings = {
@@ -24,6 +29,10 @@ const defaultSettings: SiteSettings = {
   social_facebook: 'https://www.facebook.com/profile.php?id=61584375982557',
   social_instagram: 'https://www.instagram.com/almans.bd',
   social_whatsapp: '8801930278877',
+  flash_sale_enabled: 'true',
+  flash_sale_discount: '50',
+  flash_sale_end_date: '',
+  whatsapp_notification_phone: '+8801930278877',
 };
 
 async function fetchSiteSettings(): Promise<SiteSettings> {

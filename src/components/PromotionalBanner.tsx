@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Flame, Clock, ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 interface TimeLeft {
   days: number;
@@ -13,18 +14,21 @@ interface TimeLeft {
 
 export function PromotionalBanner() {
   const navigate = useNavigate();
-  
-  // Set sale end date to 3 days from now
-  const [saleEndDate] = useState(() => {
-    const date = new Date();
-    date.setDate(date.getDate() + 3);
-    return date;
-  });
+  const { settings, loading } = useSiteSettings();
   
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [isExpired, setIsExpired] = useState(false);
+
+  // Get settings from database
+  const flashSaleEnabled = settings.flash_sale_enabled === 'true';
+  const discount = settings.flash_sale_discount || '50';
+  const saleEndDateStr = settings.flash_sale_end_date;
 
   useEffect(() => {
+    if (!saleEndDateStr) return;
+
     const calculateTimeLeft = () => {
+      const saleEndDate = new Date(saleEndDateStr);
       const difference = saleEndDate.getTime() - new Date().getTime();
       
       if (difference > 0) {
@@ -34,13 +38,29 @@ export function PromotionalBanner() {
           minutes: Math.floor((difference / 1000 / 60) % 60),
           seconds: Math.floor((difference / 1000) % 60),
         });
+        setIsExpired(false);
+      } else {
+        setIsExpired(true);
       }
     };
 
     calculateTimeLeft();
     const timer = setInterval(calculateTimeLeft, 1000);
     return () => clearInterval(timer);
-  }, [saleEndDate]);
+  }, [saleEndDateStr]);
+
+  const handleShopSale = () => {
+    navigate('/shop?sale=true');
+    // Scroll to products section after navigation
+    setTimeout(() => {
+      document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
+
+  // Don't show if disabled, expired, or loading
+  if (loading || !flashSaleEnabled || isExpired) {
+    return null;
+  }
 
   const TimeBlock = ({ value, label }: { value: number; label: string }) => (
     <div className="flex flex-col items-center">
@@ -110,7 +130,7 @@ export function PromotionalBanner() {
             </div>
             <div className="text-center lg:text-left">
               <p className="text-2xl md:text-3xl font-display font-bold text-primary-foreground">
-                Up to <span className="text-almans-gold">50% OFF</span>
+                Up to <span className="text-almans-gold">{discount}% OFF</span>
               </p>
               <p className="text-primary-foreground/80 text-sm">
                 On selected premium items
@@ -150,7 +170,7 @@ export function PromotionalBanner() {
           >
             <Button
               size="lg"
-              onClick={() => navigate('/shop')}
+              onClick={handleShopSale}
               className="bg-almans-gold hover:bg-almans-gold/90 text-almans-chocolate font-semibold group"
             >
               Shop Sale Now

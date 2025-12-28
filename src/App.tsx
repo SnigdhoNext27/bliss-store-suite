@@ -35,6 +35,7 @@ import Settings from "./pages/admin/Settings";
 import Team from "./pages/admin/Team";
 import AdminChats from "./pages/admin/Chats";
 import Newsletter from "./pages/admin/Newsletter";
+import AdminNotifications from "./pages/admin/Notifications";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -110,6 +111,7 @@ const App = () => {
                           <Route path="team" element={<Team />} />
                           <Route path="chats" element={<AdminChats />} />
                           <Route path="newsletter" element={<Newsletter />} />
+                          <Route path="notifications" element={<AdminNotifications />} />
                         </Route>
                         
                         <Route path="*" element={<NotFound />} />

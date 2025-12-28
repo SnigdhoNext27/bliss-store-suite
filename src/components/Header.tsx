@@ -27,6 +27,7 @@ import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { Logo } from './Logo';
 import { SearchBar } from './SearchBar';
 import { MobileMenuOverlay } from '@/components/MobileMenuOverlay';
+import { NotificationBell } from '@/components/NotificationBell';
 import { cn } from '@/lib/utils';
 import { useWishlist } from '@/hooks/useWishlist';
 
@@ -171,6 +172,9 @@ export function Header() {
 
         {/* Right Actions - Shopee Style */}
         <div className="flex items-center gap-1">
+          {/* Notification Bell */}
+          <NotificationBell />
+
           {/* Search Button */}
           <Button 
             variant="ghost" 
