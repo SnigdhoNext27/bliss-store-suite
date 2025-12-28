@@ -10,6 +10,7 @@ import { AuthProvider } from "@/lib/auth";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { LiveChatWidget } from "@/components/chat/LiveChatWidget";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import { BackToTop } from "@/components/BackToTop";
 import Index from "./pages/Index";
 import Shop from "./pages/Shop";
 import Auth from "./pages/Auth";
@@ -76,6 +77,7 @@ const App = () => {
                 >
                   <WhatsAppButton />
                   <LiveChatWidget />
+                  <BackToTop />
                   <BrowserRouter>
                     <Routes>
                       <Route path="/" element={<Index />} />
