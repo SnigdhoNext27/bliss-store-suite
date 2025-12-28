@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Minus, Plus, Heart, Share2, ChevronLeft, Star, Truck, Shield, RefreshCw, Loader2, MessageCircle, Mail } from 'lucide-react';
+import { Minus, Plus, Heart, Share2, ChevronLeft, Star, Truck, Shield, RefreshCw, Loader2, MessageCircle, Mail, AlertTriangle } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/lib/store';
@@ -12,6 +12,7 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { CartSlide } from '@/components/CartSlide';
 import { RecentlyViewedProducts } from '@/components/RecentlyViewedProducts';
+import { RestockAlertButton } from '@/components/RestockAlertButton';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -287,14 +288,26 @@ export default function ProductDetail() {
               </div>
 
               {/* Actions */}
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <Button onClick={handleAddToCart} size="lg" variant="outline" className="flex-1">
-                  ADD TO BAG
-                </Button>
-                <Button onClick={handleBuyNow} size="lg" className="flex-1">
-                  BUY NOW
-                </Button>
-              </div>
+              {product.stock > 0 ? (
+                <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                  <Button onClick={handleAddToCart} size="lg" variant="outline" className="flex-1">
+                    ADD TO BAG
+                  </Button>
+                  <Button onClick={handleBuyNow} size="lg" className="flex-1">
+                    BUY NOW
+                  </Button>
+                </div>
+              ) : (
+                <div className="pt-4 space-y-4">
+                  <div className="flex items-center gap-2 p-4 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800">
+                    <AlertTriangle className="h-5 w-5 text-amber-600" />
+                    <span className="text-amber-700 dark:text-amber-400 font-medium">
+                      Currently out of stock
+                    </span>
+                  </div>
+                  <RestockAlertButton productId={product.id} productName={product.name} />
+                </div>
+              )}
 
               {/* WhatsApp / Email Order Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
