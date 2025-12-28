@@ -42,25 +42,16 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => {
-  const [isLoading, setIsLoading] = useState(() => {
-    // Check localStorage for skip preference
-    return localStorage.getItem('skipLoadingScreen') !== 'true';
-  });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!isLoading) return;
-    
     // Show loading screen for 2.5 seconds on initial load
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 2500);
 
     return () => clearTimeout(timer);
-  }, [isLoading]);
-
-  const handleSkipLoading = () => {
-    setIsLoading(false);
-  };
+  }, []);
 
   return (
     <HelmetProvider>
@@ -71,7 +62,7 @@ const App = () => {
             <Sonner />
             
             <AnimatePresence mode="wait">
-              {isLoading && <LoadingScreen onSkip={handleSkipLoading} />}
+              {isLoading && <LoadingScreen />}
             </AnimatePresence>
             
             <AnimatePresence>

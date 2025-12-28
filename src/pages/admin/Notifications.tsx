@@ -12,7 +12,12 @@ import {
   Loader2,
   Clock,
   Calendar,
-  CalendarClock
+  CalendarClock,
+  Tag,
+  Zap,
+  Gift,
+  Truck,
+  Star
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,6 +51,54 @@ const notificationTypes = [
   { value: 'product', label: 'New Product', icon: Package },
   { value: 'order', label: 'Order Update', icon: ShoppingBag },
   { value: 'promo', label: 'Promotion', icon: Sparkles },
+];
+
+const notificationTemplates = [
+  { 
+    id: 'flash-sale', 
+    name: 'Flash Sale', 
+    icon: Zap,
+    type: 'promo',
+    title: '⚡ Flash Sale - Limited Time!',
+    message: 'Hurry! Get up to 50% off on selected items. Sale ends tonight!',
+    link: '/sales'
+  },
+  { 
+    id: 'new-arrivals', 
+    name: 'New Arrivals', 
+    icon: Star,
+    type: 'product',
+    title: '✨ New Collection Just Dropped!',
+    message: 'Check out our latest arrivals. Fresh styles for the new season!',
+    link: '/shop'
+  },
+  { 
+    id: 'free-shipping', 
+    name: 'Free Shipping', 
+    icon: Truck,
+    type: 'promo',
+    title: '🚚 Free Shipping This Weekend!',
+    message: 'Enjoy free delivery on all orders. No minimum purchase required!',
+    link: '/shop'
+  },
+  { 
+    id: 'discount-code', 
+    name: 'Discount Code', 
+    icon: Tag,
+    type: 'promo',
+    title: '🎫 Exclusive Discount Code Inside!',
+    message: 'Use code SAVE20 to get 20% off your next order. Limited time offer!',
+    link: '/shop'
+  },
+  { 
+    id: 'seasonal-sale', 
+    name: 'Seasonal Sale', 
+    icon: Gift,
+    type: 'promo',
+    title: '🎉 Seasonal Clearance Sale!',
+    message: 'Massive discounts on seasonal items. Shop now before stock runs out!',
+    link: '/sales'
+  },
 ];
 
 export default function Notifications() {
@@ -215,48 +268,73 @@ export default function Notifications() {
             </DialogHeader>
             
             <div className="space-y-4 py-4">
+              {/* Quick Templates */}
               <div className="space-y-2">
-                <Label htmlFor="type">Notification Type</Label>
-                <Select value={formData.type} onValueChange={(v) => setFormData(p => ({ ...p, type: v }))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {notificationTypes.map(t => (
-                      <SelectItem key={t.value} value={t.value}>
-                        <div className="flex items-center gap-2">
-                          <t.icon className="h-4 w-4" />
-                          {t.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Quick Templates</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {notificationTemplates.map((template) => (
+                    <button
+                      key={template.id}
+                      type="button"
+                      onClick={() => setFormData(p => ({
+                        ...p,
+                        title: template.title,
+                        message: template.message,
+                        type: template.type,
+                        link: template.link,
+                      }))}
+                      className="flex items-center gap-2 p-2 text-xs border border-border rounded-lg hover:bg-muted/50 transition-colors text-left"
+                    >
+                      <template.icon className="h-4 w-4 text-primary shrink-0" />
+                      <span className="truncate">{template.name}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  placeholder="e.g., New Collection Arrived!"
-                  value={formData.title}
-                  onChange={(e) => setFormData(p => ({ ...p, title: e.target.value }))}
-                />
-              </div>
+              <div className="border-t border-border pt-4 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="type">Notification Type</Label>
+                  <Select value={formData.type} onValueChange={(v) => setFormData(p => ({ ...p, type: v }))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {notificationTypes.map(t => (
+                        <SelectItem key={t.value} value={t.value}>
+                          <div className="flex items-center gap-2">
+                            <t.icon className="h-4 w-4" />
+                            {t.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="message">Message</Label>
-                <Textarea
-                  id="message"
-                  placeholder="Write your notification message..."
-                  value={formData.message}
-                  onChange={(e) => setFormData(p => ({ ...p, message: e.target.value }))}
-                  rows={3}
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="title">Title</Label>
+                  <Input
+                    id="title"
+                    placeholder="e.g., New Collection Arrived!"
+                    value={formData.title}
+                    onChange={(e) => setFormData(p => ({ ...p, title: e.target.value }))}
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="link">Link (Optional)</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="message">Message</Label>
+                  <Textarea
+                    id="message"
+                    placeholder="Write your notification message..."
+                    value={formData.message}
+                    onChange={(e) => setFormData(p => ({ ...p, message: e.target.value }))}
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="link">Link (Optional)</Label>
                 <Input
                   id="link"
                   placeholder="e.g., /shop or /product/123"
@@ -322,8 +400,8 @@ export default function Notifications() {
                   </div>
                 )}
               </div>
+              </div>
             </div>
-
             <DialogFooter>
               <Button variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancel
