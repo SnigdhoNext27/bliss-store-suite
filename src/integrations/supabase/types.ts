@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      abandoned_carts: {
+        Row: {
+          cart_data: Json
+          created_at: string
+          guest_id: string | null
+          id: string
+          last_reminder_at: string | null
+          recovered: boolean | null
+          reminder_count: number | null
+          reminder_sent: boolean | null
+          total_value: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          cart_data: Json
+          created_at?: string
+          guest_id?: string | null
+          id?: string
+          last_reminder_at?: string | null
+          recovered?: boolean | null
+          reminder_count?: number | null
+          reminder_sent?: boolean | null
+          total_value?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          cart_data?: Json
+          created_at?: string
+          guest_id?: string | null
+          id?: string
+          last_reminder_at?: string | null
+          recovered?: boolean | null
+          reminder_count?: number | null
+          reminder_sent?: boolean | null
+          total_value?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       addresses: {
         Row: {
           address_line1: string
@@ -330,19 +372,103 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          abandoned_cart: boolean | null
+          created_at: string
+          email_enabled: boolean | null
+          id: string
+          new_products: boolean | null
+          order_updates: boolean | null
+          promotions: boolean | null
+          push_enabled: boolean | null
+          restock_alerts: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          abandoned_cart?: boolean | null
+          created_at?: string
+          email_enabled?: boolean | null
+          id?: string
+          new_products?: boolean | null
+          order_updates?: boolean | null
+          promotions?: boolean | null
+          push_enabled?: boolean | null
+          restock_alerts?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          abandoned_cart?: boolean | null
+          created_at?: string
+          email_enabled?: boolean | null
+          id?: string
+          new_products?: boolean | null
+          order_updates?: boolean | null
+          promotions?: boolean | null
+          push_enabled?: boolean | null
+          restock_alerts?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notification_triggers: {
+        Row: {
+          created_at: string
+          delay_minutes: number | null
+          id: string
+          is_active: boolean | null
+          message_template: string
+          send_email: boolean | null
+          send_push: boolean | null
+          title_template: string
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delay_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          message_template: string
+          send_email?: boolean | null
+          send_push?: boolean | null
+          title_template: string
+          trigger_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delay_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          message_template?: string
+          send_email?: boolean | null
+          send_push?: boolean | null
+          title_template?: string
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
+          ab_test_name: string | null
           clicked_count: number | null
           created_at: string
           delivered_count: number | null
           id: string
           image_url: string | null
+          is_ab_test: boolean | null
           is_global: boolean | null
           is_read: boolean | null
           is_sent: boolean | null
           link: string | null
           message: string
           opened_count: number | null
+          parent_id: string | null
           scheduled_at: string | null
           send_email: boolean | null
           target_criteria: Json | null
@@ -350,19 +476,23 @@ export type Database = {
           title: string
           type: string
           user_id: string | null
+          variant_id: string | null
         }
         Insert: {
+          ab_test_name?: string | null
           clicked_count?: number | null
           created_at?: string
           delivered_count?: number | null
           id?: string
           image_url?: string | null
+          is_ab_test?: boolean | null
           is_global?: boolean | null
           is_read?: boolean | null
           is_sent?: boolean | null
           link?: string | null
           message: string
           opened_count?: number | null
+          parent_id?: string | null
           scheduled_at?: string | null
           send_email?: boolean | null
           target_criteria?: Json | null
@@ -370,19 +500,23 @@ export type Database = {
           title: string
           type?: string
           user_id?: string | null
+          variant_id?: string | null
         }
         Update: {
+          ab_test_name?: string | null
           clicked_count?: number | null
           created_at?: string
           delivered_count?: number | null
           id?: string
           image_url?: string | null
+          is_ab_test?: boolean | null
           is_global?: boolean | null
           is_read?: boolean | null
           is_sent?: boolean | null
           link?: string | null
           message?: string
           opened_count?: number | null
+          parent_id?: string | null
           scheduled_at?: string | null
           send_email?: boolean | null
           target_criteria?: Json | null
@@ -390,8 +524,17 @@ export type Database = {
           title?: string
           type?: string
           user_id?: string | null
+          variant_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notifications_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       order_items: {
         Row: {
@@ -613,6 +756,74 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth_key: string
+          created_at: string
+          endpoint: string
+          id: string
+          is_active: boolean | null
+          p256dh_key: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          auth_key: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          is_active?: boolean | null
+          p256dh_key: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          auth_key?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          is_active?: boolean | null
+          p256dh_key?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      restock_alerts: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          notified: boolean | null
+          product_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          notified?: boolean | null
+          product_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          notified?: boolean | null
+          product_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restock_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reviews: {
         Row: {
