@@ -12,6 +12,7 @@ import { CollectionSection } from '@/components/CollectionSection';
 import { RecentlyViewedProducts } from '@/components/RecentlyViewedProducts';
 import { Footer } from '@/components/Footer';
 import { CartSlide } from '@/components/CartSlide';
+import { ProductBundles } from '@/components/ProductBundles';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -349,6 +350,9 @@ const Shop = () => {
           <div id="products">
             <ProductsSection />
           </div>
+          
+          {/* Product Bundles Section */}
+          <ProductBundles />
           
           {/* Recently Viewed Products */}
           <RecentlyViewedProducts />
