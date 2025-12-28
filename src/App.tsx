@@ -11,6 +11,7 @@ import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { LiveChatWidget } from "@/components/chat/LiveChatWidget";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { BackToTop } from "@/components/BackToTop";
+import { AnimatedRoutes } from "@/components/AnimatedRoutes";
 import Index from "./pages/Index";
 import Shop from "./pages/Shop";
 import Auth from "./pages/Auth";
@@ -79,33 +80,35 @@ const App = () => {
                   <LiveChatWidget />
                   <BackToTop />
                   <BrowserRouter>
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/shop" element={<Shop />} />
-                      <Route path="/auth" element={<Auth />} />
-                      <Route path="/product/:id" element={<ProductDetail />} />
-                      <Route path="/category/:slug" element={<Category />} />
-                      <Route path="/checkout" element={<Checkout />} />
-                      <Route path="/wishlist" element={<Wishlist />} />
-                      <Route path="/account" element={<Account />} />
-                      <Route path="/orders/:orderNumber" element={<OrderTracking />} />
-                      
-                      {/* Admin Routes */}
-                      <Route path="/admin" element={<AdminLayout />}>
-                        <Route index element={<Dashboard />} />
-                        <Route path="orders" element={<Orders />} />
-                        <Route path="products" element={<Products />} />
-                        <Route path="categories" element={<Categories />} />
-                        <Route path="customers" element={<Customers />} />
-                        <Route path="coupons" element={<Coupons />} />
-                        <Route path="banners" element={<Banners />} />
-                        <Route path="settings" element={<Settings />} />
-                        <Route path="team" element={<Team />} />
-                        <Route path="chats" element={<AdminChats />} />
-                      </Route>
-                      
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
+                    <AnimatedRoutes>
+                      <Routes>
+                        <Route path="/" element={<Index />} />
+                        <Route path="/shop" element={<Shop />} />
+                        <Route path="/auth" element={<Auth />} />
+                        <Route path="/product/:id" element={<ProductDetail />} />
+                        <Route path="/category/:slug" element={<Category />} />
+                        <Route path="/checkout" element={<Checkout />} />
+                        <Route path="/wishlist" element={<Wishlist />} />
+                        <Route path="/account" element={<Account />} />
+                        <Route path="/orders/:orderNumber" element={<OrderTracking />} />
+                        
+                        {/* Admin Routes */}
+                        <Route path="/admin" element={<AdminLayout />}>
+                          <Route index element={<Dashboard />} />
+                          <Route path="orders" element={<Orders />} />
+                          <Route path="products" element={<Products />} />
+                          <Route path="categories" element={<Categories />} />
+                          <Route path="customers" element={<Customers />} />
+                          <Route path="coupons" element={<Coupons />} />
+                          <Route path="banners" element={<Banners />} />
+                          <Route path="settings" element={<Settings />} />
+                          <Route path="team" element={<Team />} />
+                          <Route path="chats" element={<AdminChats />} />
+                        </Route>
+                        
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </AnimatedRoutes>
                   </BrowserRouter>
                 </motion.div>
               )}
