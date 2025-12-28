@@ -18,63 +18,67 @@ export function Logo({ className, showText = true, size = 'md' }: LogoProps) {
 
   return (
     <Link to="/" className={cn('flex items-center gap-2 group', className)}>
-      {/* Wolf Logo Icon - Original design with brown on white */}
+      {/* Wolf Logo - Exact design from reference with color swap */}
       <div className={cn(
         'relative flex items-center justify-center transition-all duration-300 group-hover:scale-105',
         sizes.icon
       )}>
-        <svg viewBox="0 0 100 100" className="w-full h-full">
-          <defs>
-            <linearGradient id="borderGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="hsl(24, 35%, 49%)" />
-              <stop offset="100%" stopColor="hsl(38, 60%, 55%)" />
-            </linearGradient>
-          </defs>
-          
-          {/* White/cream circular background with brown border */}
+        <svg viewBox="0 0 120 120" className="w-full h-full">
+          {/* White circular background with brown border */}
           <circle 
-            cx="50" 
-            cy="50" 
-            r="46" 
+            cx="60" 
+            cy="60" 
+            r="56" 
             fill="hsl(30, 25%, 96%)"
-            stroke="url(#borderGradient)"
+            stroke="hsl(24, 35%, 49%)"
             strokeWidth="3"
           />
           
-          {/* Wolf head outline - matching original geometric style */}
-          <g fill="none" stroke="hsl(24, 35%, 49%)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            {/* Left ear - outer */}
-            <path d="M32 50 L22 25 L35 40" />
-            {/* Left ear - inner detail */}
-            <path d="M30 45 L26 32 L33 42" strokeWidth="1.5" />
+          {/* Wolf head - exact trace of original design in brown */}
+          <g 
+            fill="none" 
+            stroke="hsl(24, 35%, 49%)" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+            transform="translate(60, 62) scale(0.38)"
+          >
+            {/* Left ear outer */}
+            <path d="M-45 10 L-70 -75 L-30 -25" />
+            {/* Left ear inner */}
+            <path d="M-42 -5 L-55 -50 L-35 -15" strokeWidth="1.5" />
             
-            {/* Right ear - outer */}
-            <path d="M68 50 L78 25 L65 40" />
-            {/* Right ear - inner detail */}
-            <path d="M70 45 L74 32 L67 42" strokeWidth="1.5" />
+            {/* Right ear outer */}
+            <path d="M45 10 L70 -75 L30 -25" />
+            {/* Right ear inner */}
+            <path d="M42 -5 L55 -50 L35 -15" strokeWidth="1.5" />
             
-            {/* Head top connecting ears */}
-            <path d="M35 40 L42 38 L50 35 L58 38 L65 40" />
+            {/* Head top - crown connecting ears */}
+            <path d="M-30 -25 L-15 -35 L0 -40 L15 -35 L30 -25" />
             
-            {/* Left side of face */}
-            <path d="M32 50 L28 55 L30 62 L38 70" />
+            {/* Left cheek/jaw */}
+            <path d="M-45 10 L-55 30 L-45 55 L-25 75" />
             
-            {/* Right side of face */}
-            <path d="M68 50 L72 55 L70 62 L62 70" />
+            {/* Right cheek/jaw */}
+            <path d="M45 10 L55 30 L45 55 L25 75" />
             
-            {/* Snout/chin - V shape */}
-            <path d="M38 70 L50 82 L62 70" />
+            {/* Chin - V shape */}
+            <path d="M-25 75 L0 105 L25 75" />
             
-            {/* Inner face details - nose bridge */}
-            <path d="M50 35 L50 55" strokeWidth="1.5" />
+            {/* Center line - forehead to nose */}
+            <path d="M0 -40 L0 25" strokeWidth="1.5" />
             
-            {/* Nose area */}
-            <path d="M44 58 L50 55 L56 58 L50 68 Z" strokeWidth="2" />
+            {/* Nose diamond shape */}
+            <path d="M-12 30 L0 20 L12 30 L0 50 Z" />
+            
+            {/* Inner face lines - below ears */}
+            <path d="M-30 -25 L-25 5" strokeWidth="1.5" />
+            <path d="M30 -25 L25 5" strokeWidth="1.5" />
           </g>
         </svg>
       </div>
 
-      {/* Brand Name */}
+      {/* Brand Name - ALMANS text */}
       {showText && (
         <span className={cn(
           'hidden font-display font-semibold tracking-wide sm:inline-block transition-colors text-foreground group-hover:text-primary',
