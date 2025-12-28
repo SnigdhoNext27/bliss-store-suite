@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Loader2, ChevronRight, Shirt, Package, Sparkles, Search, X, LayoutGrid, LayoutList } from 'lucide-react';
 import { ProductCard } from './ProductCard';
@@ -200,11 +201,54 @@ function CategoryNav({
 
 export function ProductsSection() {
   const { products, loading, error } = useProducts();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Initialize from URL params
+  const urlSearch = searchParams.get('search') || '';
+  const urlCategory = searchParams.get('category') || '';
+  
+  const [searchQuery, setSearchQuery] = useState(urlSearch);
   const [categoryData, setCategoryData] = useState<Record<string, CategoryData>>({});
   const [sortBy, setSortBy] = useState('newest');
-  const [activeCategory, setActiveCategory] = useState('all');
+  const [activeCategory, setActiveCategory] = useState(urlCategory || 'all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  
+  // Sync URL params with state
+  useEffect(() => {
+    const search = searchParams.get('search') || '';
+    const category = searchParams.get('category') || '';
+    
+    if (search !== searchQuery) {
+      setSearchQuery(search);
+    }
+    if (category && category !== activeCategory) {
+      setActiveCategory(category);
+    } else if (!category && !search && activeCategory !== 'all') {
+      // Don't reset if user manually selected a category
+    }
+  }, [searchParams]);
+  
+  // Update URL when filters change
+  const updateUrlParams = (newSearch?: string, newCategory?: string) => {
+    const params = new URLSearchParams();
+    const searchVal = newSearch !== undefined ? newSearch : searchQuery;
+    const catVal = newCategory !== undefined ? newCategory : activeCategory;
+    
+    if (searchVal) params.set('search', searchVal);
+    if (catVal && catVal !== 'all') params.set('category', catVal);
+    
+    setSearchParams(params, { replace: true });
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    updateUrlParams(value, undefined);
+  };
+
+  const handleCategoryChange = (category: string) => {
+    setActiveCategory(category);
+    updateUrlParams(undefined, category);
+  };
   
   // Advanced filters state
   const [filters, setFilters] = useState<ProductFilters>({
@@ -346,6 +390,7 @@ export function ProductsSection() {
     });
     setSearchQuery('');
     setActiveCategory('all');
+    setSearchParams({}, { replace: true });
   };
 
   // Group products by category
@@ -432,7 +477,7 @@ export function ProductsSection() {
         <CategoryNav 
           categories={categories}
           activeCategory={activeCategory}
-          onSelect={setActiveCategory}
+          onSelect={handleCategoryChange}
         />
 
         {/* Search & Filter Bar */}
@@ -448,12 +493,12 @@ export function ProductsSection() {
               type="text"
               placeholder="Search products..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-12 pr-10 h-12 rounded-xl border-border/50 bg-background/50"
             />
             {searchQuery && (
               <button
-                onClick={() => setSearchQuery('')}
+                onClick={() => handleSearchChange('')}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 <X className="h-4 w-4" />

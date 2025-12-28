@@ -12,6 +12,8 @@ import { LiveChatWidget } from "@/components/chat/LiveChatWidget";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { BackToTop } from "@/components/BackToTop";
 import { AnimatedRoutes } from "@/components/AnimatedRoutes";
+import { ProductComparisonBar } from "@/components/ProductComparisonBar";
+import { ProductComparisonModal } from "@/components/ProductComparisonModal";
 import Index from "./pages/Index";
 import Shop from "./pages/Shop";
 import Auth from "./pages/Auth";
@@ -80,6 +82,8 @@ const App = () => {
                   <WhatsAppButton />
                   <LiveChatWidget />
                   <BackToTop />
+                  <ProductComparisonBar />
+                  <ProductComparisonModal />
                   <BrowserRouter>
                     <AnimatedRoutes>
                       <Routes>
