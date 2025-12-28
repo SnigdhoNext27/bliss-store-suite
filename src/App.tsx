@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { AnimatePresence, motion } from "framer-motion";
+import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/lib/auth";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { LiveChatWidget } from "@/components/chat/LiveChatWidget";
@@ -56,11 +57,12 @@ const App = () => {
 
   return (
     <HelmetProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
             
             <AnimatePresence mode="wait">
               {isLoading && <LoadingScreen />}
@@ -119,6 +121,7 @@ const App = () => {
           </TooltipProvider>
         </AuthProvider>
       </QueryClientProvider>
+    </ThemeProvider>
     </HelmetProvider>
   );
 };

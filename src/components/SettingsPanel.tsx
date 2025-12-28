@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Settings, Globe, Palette, Check, Moon, Sun, Monitor } from 'lucide-react';
+import { Settings, Globe, Palette, Check, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -24,15 +24,14 @@ export function SettingsPanel() {
   const themeOptions = [
     { value: 'light', label: t('light'), icon: Sun },
     { value: 'dark', label: t('dark'), icon: Moon },
-    { value: 'system', label: t('system'), icon: Monitor },
   ];
 
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-2 h-9 px-3">
-          <Settings className="h-4 w-4" />
-          <span className="hidden sm:inline">{t('settings')}</span>
+        <Button variant="ghost" size="icon" className="h-9 w-9">
+          <Settings className="h-5 w-5" />
+          <span className="sr-only">{t('settings')}</span>
         </Button>
       </SheetTrigger>
       <SheetContent className="w-full sm:max-w-md">
@@ -54,7 +53,7 @@ export function SettingsPanel() {
                 <Palette className="h-4 w-4 text-muted-foreground" />
                 {t('theme')}
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {themeOptions.map((option) => (
                   <button
                     key={option.value}

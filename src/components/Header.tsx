@@ -28,18 +28,16 @@ import { Logo } from './Logo';
 import { SearchBar } from './SearchBar';
 import { MobileMenuOverlay } from '@/components/MobileMenuOverlay';
 import { NotificationBell } from '@/components/NotificationBell';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { CurrencySelector } from '@/components/CurrencySelector';
 import { SettingsPanel } from '@/components/SettingsPanel';
+import { useLanguage } from '@/hooks/useLanguage';
 import { cn } from '@/lib/utils';
 import { useWishlist } from '@/hooks/useWishlist';
-
 const navLinks = [
-  { name: 'Home', href: '/' },
-  { name: 'Shop', href: '/shop' },
-  { name: 'Sales', href: '/sales', highlight: true },
-  { name: 'About Us', href: '/shop#about' },
-  { name: 'Contact', href: '/shop#contact' },
+  { name: 'Home', key: 'home', href: '/' },
+  { name: 'Shop', key: 'shop', href: '/shop' },
+  { name: 'Sales', key: 'sales', href: '/sales', highlight: true },
+  { name: 'About Us', key: 'aboutUs', href: '/shop#about' },
+  { name: 'Contact', key: 'contact', href: '/shop#contact' },
 ];
 
 export function Header() {
@@ -56,6 +54,7 @@ export function Header() {
   const totalItems = getTotalItems();
   const { wishlistIds } = useWishlist();
   const wishlistCount = wishlistIds.length;
+  const { t } = useLanguage();
 
   // Track scroll position for header effects
   useEffect(() => {
@@ -140,7 +139,7 @@ export function Header() {
         <nav className="hidden items-center gap-6 md:flex">
           {navLinks.map((link) => (
           <button
-              key={link.name}
+              key={link.key}
               onClick={() => handleNavClick(link.href)}
               className={cn(
                 "text-sm font-medium transition-colors hover:text-primary",
@@ -150,13 +149,13 @@ export function Header() {
               )}
             >
               {link.highlight && <span className="mr-1">🔥</span>}
-              {link.name}
+              {t(link.key)}
             </button>
           ))}
           
           {/* Follow Us Section */}
           <div className="flex items-center gap-2 border-l border-border pl-6">
-            <span className="text-xs text-muted-foreground">Follow us</span>
+            <span className="text-xs text-muted-foreground">{t('followUs')}</span>
             <div className="flex items-center gap-1">
               {socialLinks.map((social) => (
                 <a
@@ -182,12 +181,6 @@ export function Header() {
 
         {/* Right Actions - Shopee Style */}
         <div className="flex items-center gap-1">
-          {/* Theme Toggle */}
-          <ThemeToggle />
-          
-          {/* Settings Panel (Language, Currency, Theme) */}
-          <SettingsPanel />
-          
           {/* Notification Bell */}
           <NotificationBell />
 
@@ -238,20 +231,20 @@ export function Header() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 p-2">
                 <div className="px-2 py-3 border-b border-border mb-2">
-                  <p className="text-sm font-medium">Welcome back!</p>
+                  <p className="text-sm font-medium">{t('welcomeBack')}</p>
                   <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                 </div>
                 <DropdownMenuItem onClick={() => navigate('/account')} className="py-2.5">
                   <User className="h-4 w-4 mr-3" />
-                  My Account
+                  {t('myAccount')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/account?tab=orders')} className="py-2.5">
                   <Package className="h-4 w-4 mr-3" />
-                  My Orders
+                  {t('myOrders')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/wishlist')} className="py-2.5">
                   <Heart className="h-4 w-4 mr-3" />
-                  My Wishlist
+                  {t('myWishlist')}
                 </DropdownMenuItem>
                 {isAdmin && (
                   <>
@@ -268,7 +261,7 @@ export function Header() {
                   className="py-2.5 text-destructive focus:text-destructive"
                 >
                   <LogOut className="h-4 w-4 mr-3" />
-                  Sign Out
+                  {t('signOut')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -280,7 +273,7 @@ export function Header() {
               className="gap-2"
             >
               <User className="h-5 w-5" />
-              <span className="hidden sm:inline">Login</span>
+              <span className="hidden sm:inline">{t('login')}</span>
             </Button>
           )}
 
@@ -291,13 +284,16 @@ export function Header() {
             onClick={openCart}
           >
             <ShoppingBag className="h-5 w-5" />
-            <span className="hidden sm:inline">My Bag</span>
+            <span className="hidden sm:inline">{t('myBag')}</span>
             {totalItems > 0 && (
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
                 {totalItems}
               </span>
             )}
           </Button>
+
+          {/* Settings Panel (Language, Currency, Theme) */}
+          <SettingsPanel />
 
           {/* Mobile Menu Toggle */}
           <Button
