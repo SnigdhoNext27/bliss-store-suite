@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Sparkles, TrendingUp, Zap, Star, ArrowRight, MapPin, Phone, Mail, Clock, Send, Users, Award, Heart, Quote } from 'lucide-react';
+import { Sparkles, TrendingUp, Zap, Star, ArrowRight, MapPin, Phone, Mail, Clock, Send, Users, Award, Heart, Quote, ChevronDown, Loader2 } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { ShopCategoriesGrid } from '@/components/ShopCategoriesGrid';
 import { ProductsSection } from '@/components/ProductsSection';
@@ -15,9 +15,11 @@ import { PullToRefresh } from '@/components/PullToRefresh';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useNavigate } from 'react-router-dom';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 
 const Shop = () => {
@@ -26,6 +28,8 @@ const Shop = () => {
   const { settings } = useSiteSettings();
   const { toast } = useToast();
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterLoading, setNewsletterLoading] = useState(false);
 
   // Contact form validation schema
   const contactSchema = z.object({
@@ -79,6 +83,82 @@ const Shop = () => {
     // Reset form
     (e.target as HTMLFormElement).reset();
   };
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const emailSchema = z.string().email('Please enter a valid email');
+    const result = emailSchema.safeParse(newsletterEmail);
+    
+    if (!result.success) {
+      toast({
+        title: 'Invalid email',
+        description: 'Please enter a valid email address.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setNewsletterLoading(true);
+    try {
+      const { error } = await supabase
+        .from('newsletter_subscribers')
+        .insert({ email: newsletterEmail });
+
+      if (error) {
+        if (error.code === '23505') {
+          toast({
+            title: 'Already subscribed!',
+            description: 'This email is already on our newsletter list.',
+          });
+        } else {
+          throw error;
+        }
+      } else {
+        toast({
+          title: 'Subscribed!',
+          description: 'Thanks for subscribing to our newsletter.',
+        });
+        setNewsletterEmail('');
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to subscribe. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setNewsletterLoading(false);
+    }
+  };
+
+  // FAQ data
+  const faqItems = [
+    {
+      question: 'What payment methods do you accept?',
+      answer: 'We accept Cash on Delivery (COD) across Bangladesh. Payment is made when you receive your order.',
+    },
+    {
+      question: 'How long does delivery take?',
+      answer: 'Delivery within Dhaka takes 1-2 business days. For orders outside Dhaka, delivery takes 3-5 business days.',
+    },
+    {
+      question: 'What is your return policy?',
+      answer: 'We offer a 7-day return policy for unworn items with original tags. Contact us via WhatsApp to initiate a return.',
+    },
+    {
+      question: 'How can I track my order?',
+      answer: 'Once your order is shipped, you will receive a tracking number via SMS/WhatsApp. You can also track your order on our Order Tracking page.',
+    },
+    {
+      question: 'Do you offer size exchanges?',
+      answer: 'Yes! If the size doesn\'t fit, we offer free size exchanges within 7 days of delivery. Just contact us via WhatsApp.',
+    },
+    {
+      question: 'Are your products authentic?',
+      answer: 'Absolutely! All our products are 100% authentic and sourced directly from premium manufacturers.',
+    },
+  ];
 
   const seasonBadges = [
     { icon: Sparkles, label: 'All Seasons', color: 'bg-primary/10 text-primary' },
@@ -665,6 +745,132 @@ const Shop = () => {
                     </motion.div>
                   ))}
                 </div>
+              </div>
+            </div>
+          </section>
+
+          {/* FAQ Section */}
+          <section className="py-20 md:py-32 relative overflow-hidden">
+            <div className="container px-4 md:px-8 relative z-10">
+              <div className="max-w-4xl mx-auto">
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6 }}
+                  className="text-center mb-16"
+                >
+                  <span className="inline-block px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium mb-4">
+                    FAQ
+                  </span>
+                  <h2 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6">
+                    Frequently Asked{' '}
+                    <span className="bg-gradient-to-r from-primary to-almans-gold bg-clip-text text-transparent">
+                      Questions
+                    </span>
+                  </h2>
+                  <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto">
+                    Got questions? We've got answers. Find everything you need to know about shopping with Almans.
+                  </p>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                >
+                  <Accordion type="single" collapsible className="space-y-4">
+                    {faqItems.map((item, i) => (
+                      <AccordionItem
+                        key={i}
+                        value={`item-${i}`}
+                        className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/50 px-6 overflow-hidden"
+                      >
+                        <AccordionTrigger className="text-left font-medium text-foreground hover:text-primary py-5 [&[data-state=open]>svg]:rotate-180">
+                          {item.question}
+                        </AccordionTrigger>
+                        <AccordionContent className="text-muted-foreground pb-5 leading-relaxed">
+                          {item.answer}
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                </motion.div>
+              </div>
+            </div>
+          </section>
+
+          {/* Newsletter Section */}
+          <section className="py-20 md:py-32 bg-gradient-to-br from-primary/10 via-secondary to-almans-gold/10 relative overflow-hidden">
+            {/* Background decorations */}
+            <div className="absolute inset-0 pointer-events-none">
+              <motion.div
+                className="absolute top-1/3 left-[10%] w-64 h-64 bg-primary/10 rounded-full blur-3xl"
+                animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+                transition={{ duration: 8, repeat: Infinity }}
+              />
+              <motion.div
+                className="absolute bottom-1/4 right-[15%] w-72 h-72 bg-almans-gold/10 rounded-full blur-3xl"
+                animate={{ scale: [1.1, 1, 1.1] }}
+                transition={{ duration: 10, repeat: Infinity }}
+              />
+            </div>
+
+            <div className="container px-4 md:px-8 relative z-10">
+              <div className="max-w-3xl mx-auto text-center">
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6 }}
+                >
+                  <span className="inline-block px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium mb-4">
+                    Stay Updated
+                  </span>
+                  <h2 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6">
+                    Join Our{' '}
+                    <span className="bg-gradient-to-r from-primary to-almans-gold bg-clip-text text-transparent">
+                      Newsletter
+                    </span>
+                  </h2>
+                  <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto mb-10">
+                    Subscribe to get exclusive offers, early access to new collections, and style tips delivered to your inbox.
+                  </p>
+
+                  <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto">
+                    <Input
+                      type="email"
+                      placeholder="Enter your email address"
+                      value={newsletterEmail}
+                      onChange={(e) => setNewsletterEmail(e.target.value)}
+                      className="h-14 rounded-xl border-border/50 bg-background/80 backdrop-blur-sm text-base flex-1"
+                      required
+                    />
+                    <Button 
+                      type="submit" 
+                      size="lg" 
+                      className="h-14 px-8 rounded-xl gap-2"
+                      disabled={newsletterLoading}
+                    >
+                      {newsletterLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Subscribing...
+                        </>
+                      ) : (
+                        <>
+                          <Mail className="w-4 h-4" />
+                          Subscribe
+                        </>
+                      )}
+                    </Button>
+                  </form>
+
+                  <p className="text-sm text-muted-foreground mt-4">
+                    No spam, unsubscribe anytime. By subscribing you agree to receive marketing emails.
+                  </p>
+                </motion.div>
               </div>
             </div>
           </section>
