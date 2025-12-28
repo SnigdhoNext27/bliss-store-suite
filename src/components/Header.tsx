@@ -285,29 +285,54 @@ export function Header() {
         </div>
       </div>
 
-      {/* Mobile Navigation */}
+      {/* Mobile Navigation - Full screen overlay */}
       <AnimatePresence>
         {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="border-t border-border md:hidden"
-          >
-            <nav className="container flex flex-col gap-4 px-4 py-6">
-              {navLinks.map((link) => (
-                <button
-                  key={link.name}
-                  onClick={() => handleNavClick(link.href)}
-                  className="flex items-center gap-2 text-left text-lg font-medium text-foreground transition-colors hover:text-primary"
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 md:hidden"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+            
+            {/* Menu panel */}
+            <motion.div
+              initial={{ opacity: 0, x: '100%' }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="fixed top-0 right-0 bottom-0 w-[85%] max-w-sm bg-background border-l border-border shadow-2xl z-50 md:hidden overflow-y-auto"
+            >
+              {/* Close button */}
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <Logo size="sm" animate={false} />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  {link.name === 'Home' && <Home className="h-4 w-4" />}
-                  {link.name}
-                </button>
-              ))}
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+              
+              <nav className="flex flex-col gap-2 p-4">
+                {navLinks.map((link) => (
+                  <button
+                    key={link.name}
+                    onClick={() => handleNavClick(link.href)}
+                    className="flex items-center gap-3 text-left text-lg font-semibold text-foreground transition-colors hover:text-primary py-3 px-2 rounded-lg hover:bg-muted"
+                  >
+                    {link.name === 'Home' && <Home className="h-5 w-5" />}
+                    {link.name}
+                  </button>
+                ))}
+              </nav>
               
               {/* Mobile Follow Us Section */}
-              <div className="flex items-center gap-3 pt-4 border-t border-border">
+              <div className="flex items-center gap-3 px-4 py-4 border-t border-border">
                 <span className="text-sm text-muted-foreground">Follow us</span>
                 <div className="flex items-center gap-2">
                   {socialLinks.map((social) => (
@@ -316,7 +341,7 @@ export function Header() {
                       href={social.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
                       aria-label={social.name}
                     >
                       {social.isWhatsApp ? (
@@ -331,7 +356,7 @@ export function Header() {
                 </div>
               </div>
 
-              <div className="flex gap-4 pt-4 border-t border-border">
+              <div className="flex gap-4 px-4 py-4 border-t border-border mt-auto">
                 {user ? (
                   <>
                     {isAdmin && (
@@ -354,8 +379,8 @@ export function Header() {
                   </>
                 )}
               </div>
-            </nav>
-          </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </motion.header>

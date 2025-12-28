@@ -212,6 +212,12 @@
     background: linear-gradient(90deg, transparent, hsl(var(--almans-cream) / 0.1), transparent);
     animation: scanLine 4s ease-in-out infinite;
   }
+
+  /* Skeleton shimmer animation */
+  .skeleton-shimmer {
+    animation: shimmer 1.5s infinite;
+    background-size: 200% 100%;
+  }
 }
 
 @keyframes fadeIn {
