@@ -75,7 +75,7 @@ export function useOrderNotificationSound() {
     if ('Notification' in window && Notification.permission === 'granted') {
       new Notification('🛒 New Order Received!', {
         body: 'A new order has been placed on your store.',
-        icon: '/favicon.ico',
+        icon: '/favicon.svg',
         tag: 'new-order',
       });
     }
