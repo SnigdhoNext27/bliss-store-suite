@@ -12,6 +12,8 @@ export function FeaturedCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const { products } = useProducts();
   const { addItem } = useCartStore();
   const { isInWishlist, toggleWishlist } = useWishlist();
@@ -33,6 +35,32 @@ export function FeaturedCarousel() {
   const prevSlide = useCallback(() => {
     setCurrentIndex((prev) => (prev <= 0 ? maxIndex : prev - 1));
   }, [maxIndex]);
+
+  // Touch/swipe handling
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isSwipe = Math.abs(distance) > minSwipeDistance;
+    
+    if (isSwipe) {
+      if (distance > 0) {
+        nextSlide();
+      } else {
+        prevSlide();
+      }
+    }
+  };
 
   // Auto-scroll
   useEffect(() => {
@@ -91,7 +119,12 @@ export function FeaturedCarousel() {
         </motion.div>
 
         {/* Carousel */}
-        <div className="relative overflow-hidden">
+        <div 
+          className="relative overflow-hidden touch-pan-y"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
           <motion.div
             className="flex gap-6"
             animate={{ x: -currentIndex * (100 / itemsPerView + 6) + '%' }}
