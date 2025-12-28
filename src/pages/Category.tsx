@@ -121,34 +121,23 @@ export default function Category() {
         <Header />
         
         <main>
-          {/* Hero Banner */}
-          <div className="relative h-[300px] md:h-[400px] overflow-hidden">
-            {category.image_url ? (
-              <img
-                src={category.image_url}
-                alt={category.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-primary/30 via-secondary to-accent/20" />
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-            
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+          {/* Hero Section - Simple and clean */}
+          <div className="bg-gradient-to-b from-secondary/50 to-background py-12 md:py-16">
+            <div className="container px-4 text-center">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
               >
-                <h1 className="font-display text-4xl md:text-6xl font-bold text-foreground mb-4">
+                <h1 className="font-display text-4xl md:text-5xl font-bold text-foreground mb-3">
                   {category.name}
                 </h1>
                 {category.description && (
-                  <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+                  <p className="text-muted-foreground max-w-xl mx-auto">
                     {category.description}
                   </p>
                 )}
-                <p className="mt-4 text-primary font-medium">
+                <p className="mt-3 text-primary font-medium">
                   {categoryProducts.length} {categoryProducts.length === 1 ? 'Product' : 'Products'}
                 </p>
               </motion.div>
