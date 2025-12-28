@@ -3,11 +3,10 @@ import { motion, type Easing } from 'framer-motion';
 import { WolfLogoIcon } from './WolfLogoIcon';
 
 interface LoadingScreenProps {
-  onSkip?: () => void;
   duration?: number;
 }
 
-export function LoadingScreen({ onSkip, duration = 2500 }: LoadingScreenProps) {
+export function LoadingScreen({ duration = 2500 }: LoadingScreenProps) {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -24,11 +23,6 @@ export function LoadingScreen({ onSkip, duration = 2500 }: LoadingScreenProps) {
 
     return () => clearInterval(interval);
   }, [duration]);
-
-  const handleSkip = () => {
-    localStorage.setItem('skipLoadingScreen', 'true');
-    onSkip?.();
-  };
 
   return (
     <motion.div
@@ -94,16 +88,6 @@ export function LoadingScreen({ onSkip, duration = 2500 }: LoadingScreenProps) {
         {Math.round(progress)}%
       </motion.span>
 
-      {/* Skip button */}
-      <motion.button
-        className="mt-8 px-6 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors border border-border/50 rounded-full hover:border-border hover:bg-muted/30"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.5 }}
-        onClick={handleSkip}
-      >
-        Skip & don't show again
-      </motion.button>
     </motion.div>
   );
 }
