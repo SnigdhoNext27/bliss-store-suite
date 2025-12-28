@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { User, MapPin, Lock, Package, Bell, Settings, Edit, Shield } from 'lucide-react';
+import { User, MapPin, Lock, Package, Bell, Settings, Edit, Shield, Award } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 
@@ -17,6 +17,7 @@ const menuItems = [
       { id: 'profile', label: 'Profile', icon: User },
       { id: 'addresses', label: 'Addresses', icon: MapPin },
       { id: 'notifications', label: 'Notifications', icon: Bell },
+      { id: 'loyalty', label: 'Loyalty Points', icon: Award },
       { id: 'security', label: 'Security', icon: Shield },
     ],
   },
