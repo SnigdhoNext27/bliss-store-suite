@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Save, Store, Truck, Bell, Share2, Flame, Palette } from 'lucide-react';
+import { Save, Store, Truck, Bell, Share2, Flame, Palette, Clock, ArrowRight, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -9,6 +9,97 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { logAdminAction } from '@/lib/auditLog';
+
+// Theme configurations for preview
+const themeConfigs: Record<string, { gradient: string; accent: string; badge: string; button: string }> = {
+  default: {
+    gradient: 'from-primary via-almans-brown-dark to-primary',
+    accent: 'bg-almans-gold/20',
+    badge: 'bg-destructive/90 text-destructive-foreground',
+    button: 'bg-almans-gold hover:bg-almans-gold/90 text-almans-chocolate',
+  },
+  fire: {
+    gradient: 'from-red-600 via-orange-500 to-red-600',
+    accent: 'bg-yellow-400/20',
+    badge: 'bg-yellow-500/90 text-yellow-950',
+    button: 'bg-yellow-400 hover:bg-yellow-500 text-yellow-950',
+  },
+  ocean: {
+    gradient: 'from-blue-600 via-cyan-500 to-blue-600',
+    accent: 'bg-cyan-300/20',
+    badge: 'bg-cyan-400/90 text-cyan-950',
+    button: 'bg-cyan-400 hover:bg-cyan-500 text-cyan-950',
+  },
+  midnight: {
+    gradient: 'from-purple-700 via-indigo-600 to-purple-700',
+    accent: 'bg-violet-300/20',
+    badge: 'bg-violet-400/90 text-violet-950',
+    button: 'bg-violet-400 hover:bg-violet-500 text-violet-950',
+  },
+  forest: {
+    gradient: 'from-green-700 via-emerald-500 to-green-700',
+    accent: 'bg-emerald-300/20',
+    badge: 'bg-emerald-400/90 text-emerald-950',
+    button: 'bg-emerald-400 hover:bg-emerald-500 text-emerald-950',
+  },
+};
+
+const animationConfigs: Record<string, string> = {
+  shimmer: 'animate-[shimmer_3s_linear_infinite]',
+  pulse: 'animate-pulse',
+  glow: 'animate-[glow_2s_ease-in-out_infinite]',
+  none: '',
+};
+
+// Banner Preview Component
+function BannerPreview({ theme, animation, discount }: { theme: string; animation: string; discount: string }) {
+  const themeConfig = themeConfigs[theme] || themeConfigs.default;
+  const animationClass = animationConfigs[animation] || animationConfigs.shimmer;
+
+  return (
+    <div className="relative overflow-hidden rounded-xl">
+      {/* Background */}
+      <div className={`absolute inset-0 bg-gradient-to-r ${themeConfig.gradient} bg-[length:200%_100%] ${animationClass}`} />
+      
+      {/* Decorative elements */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className={`absolute -top-10 -left-10 w-20 h-20 ${themeConfig.accent} rounded-full blur-2xl`} />
+        <Sparkles className="absolute top-2 left-[10%] w-4 h-4 text-primary-foreground/50 animate-pulse" />
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 p-4 md:p-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          {/* Left */}
+          <div className="flex items-center gap-3">
+            <div className={`flex items-center gap-1.5 ${themeConfig.badge} px-3 py-1.5 rounded-full text-xs`}>
+              <Flame className="h-3 w-3" />
+              <span className="font-bold uppercase">Flash Sale</span>
+            </div>
+            <div className="text-center sm:text-left">
+              <p className="text-lg font-display font-bold text-primary-foreground">
+                Up to <span className="text-white drop-shadow">{discount}% OFF</span>
+              </p>
+              <p className="text-primary-foreground/70 text-xs">On selected items</p>
+            </div>
+          </div>
+
+          {/* Center - Timer Preview */}
+          <div className="flex items-center gap-1 text-primary-foreground/80 text-xs">
+            <Clock className="h-3 w-3" />
+            <span>02:15:30:45</span>
+          </div>
+
+          {/* Right */}
+          <Button size="sm" className={`${themeConfig.button} font-semibold text-xs`}>
+            Shop Now
+            <ArrowRight className="ml-1 h-3 w-3" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface Settings {
   tagline: string;
@@ -280,6 +371,16 @@ export default function Settings() {
                 <SelectItem value="none">None (Static)</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Live Preview */}
+          <div className="pt-4 border-t border-border">
+            <Label className="mb-3 block">Live Preview</Label>
+            <BannerPreview 
+              theme={settings.banner_theme || 'default'} 
+              animation={settings.banner_animation || 'shimmer'}
+              discount={settings.flash_sale_discount || '50'}
+            />
           </div>
         </div>
       </motion.div>
