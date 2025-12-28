@@ -1,11 +1,18 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, ChevronRight, Shirt, Package } from 'lucide-react';
+import { Loader2, ChevronRight, Shirt, Package, Sparkles, Filter, Search, X } from 'lucide-react';
 import { ProductCard } from './ProductCard';
-import { SearchFilter, FilterState } from './SearchFilter';
 import { useProducts, Product } from '@/hooks/useProducts';
 import { Button } from './ui/button';
+import { Input } from './ui/input';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
 
 interface CategoryData {
   id: string;
@@ -21,17 +28,17 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   'Shirts': <Shirt className="h-5 w-5" />,
   'Pants': <Package className="h-5 w-5" />,
   'Trousers': <Package className="h-5 w-5" />,
-  'Caps': <Package className="h-5 w-5" />,
-  'Accessories': <Package className="h-5 w-5" />,
+  'Caps': <Sparkles className="h-5 w-5" />,
+  'Accessories': <Sparkles className="h-5 w-5" />,
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  'T-Shirts': 'from-blue-500/20 to-blue-600/10 border-blue-500/30',
-  'Shirts': 'from-emerald-500/20 to-emerald-600/10 border-emerald-500/30',
-  'Pants': 'from-amber-500/20 to-amber-600/10 border-amber-500/30',
-  'Trousers': 'from-purple-500/20 to-purple-600/10 border-purple-500/30',
-  'Caps': 'from-rose-500/20 to-rose-600/10 border-rose-500/30',
-  'Accessories': 'from-cyan-500/20 to-cyan-600/10 border-cyan-500/30',
+  'T-Shirts': 'from-blue-500/10 to-blue-600/5 border-blue-200',
+  'Shirts': 'from-emerald-500/10 to-emerald-600/5 border-emerald-200',
+  'Pants': 'from-amber-500/10 to-amber-600/5 border-amber-200',
+  'Trousers': 'from-purple-500/10 to-purple-600/5 border-purple-200',
+  'Caps': 'from-rose-500/10 to-rose-600/5 border-rose-200',
+  'Accessories': 'from-cyan-500/10 to-cyan-600/5 border-cyan-200',
 };
 
 interface CategorySectionProps {
@@ -44,7 +51,7 @@ interface CategorySectionProps {
 function CategorySection({ category, products, onViewAll, bannerImage }: CategorySectionProps) {
   if (products.length === 0) return null;
 
-  const colorClass = CATEGORY_COLORS[category] || 'from-primary/20 to-primary/10 border-primary/30';
+  const colorClass = CATEGORY_COLORS[category] || 'from-primary/10 to-primary/5 border-primary/20';
   const icon = CATEGORY_ICONS[category] || <Package className="h-5 w-5" />;
 
   return (
@@ -55,25 +62,25 @@ function CategorySection({ category, products, onViewAll, bannerImage }: Categor
       transition={{ duration: 0.6 }}
       className="mb-12"
     >
-      {/* Category Banner - Shopee Style */}
+      {/* Category Banner */}
       {bannerImage && (
-        <div className="relative h-32 md:h-40 rounded-t-lg overflow-hidden">
+        <div className="relative h-36 md:h-48 rounded-t-2xl overflow-hidden">
           <img 
             src={bannerImage} 
             alt={`${category} collection`}
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent" />
-          <div className="absolute inset-0 flex items-center justify-between px-6">
+          <div className="absolute inset-0 bg-gradient-to-r from-foreground/70 via-foreground/40 to-transparent" />
+          <div className="absolute inset-0 flex items-center justify-between px-6 md:px-8">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+              <div className="p-3 bg-background/20 backdrop-blur-md rounded-xl border border-background/30">
                 {icon}
               </div>
-              <div className="text-white">
-                <h3 className="font-display text-2xl md:text-3xl font-bold drop-shadow-lg">
+              <div className="text-primary-foreground">
+                <h3 className="font-display text-2xl md:text-4xl font-bold drop-shadow-lg">
                   {category}
                 </h3>
-                <p className="text-sm text-white/80">
+                <p className="text-sm text-primary-foreground/80">
                   {products.length} {products.length === 1 ? 'item' : 'items'} available
                 </p>
               </div>
@@ -81,7 +88,7 @@ function CategorySection({ category, products, onViewAll, bannerImage }: Categor
             <Button 
               variant="secondary" 
               size="sm" 
-              className="gap-1 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white border-white/30"
+              className="gap-1 bg-background/20 backdrop-blur-md hover:bg-background/30 text-primary-foreground border border-background/30 hidden sm:flex"
               onClick={() => onViewAll(category)}
             >
               See All <ChevronRight className="h-4 w-4" />
@@ -92,9 +99,9 @@ function CategorySection({ category, products, onViewAll, bannerImage }: Categor
       
       {/* Category Header fallback (no banner) */}
       {!bannerImage && (
-        <div className={`bg-gradient-to-r ${colorClass} border rounded-t-lg p-4 flex items-center justify-between`}>
+        <div className={`bg-gradient-to-r ${colorClass} border rounded-t-2xl p-5 flex items-center justify-between`}>
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-background/80 rounded-lg shadow-sm">
+            <div className="p-2.5 bg-background rounded-xl shadow-sm border border-border/50">
               {icon}
             </div>
             <div>
@@ -109,7 +116,7 @@ function CategorySection({ category, products, onViewAll, bannerImage }: Categor
           <Button 
             variant="ghost" 
             size="sm" 
-            className="text-primary hover:text-primary/80 gap-1"
+            className="text-primary hover:text-primary/80 gap-1 hidden sm:flex"
             onClick={() => onViewAll(category)}
           >
             See All <ChevronRight className="h-4 w-4" />
@@ -118,24 +125,32 @@ function CategorySection({ category, products, onViewAll, bannerImage }: Categor
       )}
       
       {/* Products Grid */}
-      <div className={`border ${bannerImage ? 'rounded-b-lg' : 'border-t-0 rounded-b-lg'} p-4 bg-card/50`}>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className={`border border-t-0 rounded-b-2xl p-4 md:p-6 bg-card/30 backdrop-blur-sm`}>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
           {products.slice(0, 5).map((product, index) => (
             <ProductCard key={product.id} product={product} index={index} />
           ))}
         </div>
         {products.length > 5 && (
-          <div className="text-center mt-4">
+          <div className="text-center mt-6">
             <Button 
               variant="outline" 
               onClick={() => onViewAll(category)}
-              className="gap-2"
+              className="gap-2 rounded-full px-6"
             >
               View all {products.length} items in {category}
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         )}
+        <Button 
+          variant="link" 
+          size="sm" 
+          className="text-primary gap-1 sm:hidden mt-4 w-full"
+          onClick={() => onViewAll(category)}
+        >
+          See All {category} <ChevronRight className="h-4 w-4" />
+        </Button>
       </div>
     </motion.div>
   );
@@ -161,7 +176,7 @@ function CategoryNav({
         variant={activeCategory === 'all' ? 'default' : 'outline'}
         size="sm"
         onClick={() => onSelect('all')}
-        className="rounded-full"
+        className="rounded-full px-6"
       >
         All Products
       </Button>
@@ -171,7 +186,7 @@ function CategoryNav({
           variant={activeCategory === cat ? 'default' : 'outline'}
           size="sm"
           onClick={() => onSelect(cat)}
-          className="rounded-full gap-1.5"
+          className="rounded-full gap-1.5 px-5"
         >
           {CATEGORY_ICONS[cat]}
           {cat}
@@ -185,11 +200,8 @@ export function ProductsSection() {
   const { products, loading, error } = useProducts();
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryData, setCategoryData] = useState<Record<string, CategoryData>>({});
-  const [filters, setFilters] = useState<FilterState>({
-    category: 'all',
-    priceRange: [0, 50000],
-    sortBy: 'newest',
-  });
+  const [sortBy, setSortBy] = useState('newest');
+  const [activeCategory, setActiveCategory] = useState('all');
 
   // Fetch category data including banners
   useEffect(() => {
@@ -211,7 +223,6 @@ export function ProductsSection() {
 
   const categories = useMemo(() => {
     const cats = [...new Set(products.map(p => p.category))];
-    // Sort by CATEGORY_ORDER, then alphabetically for others
     return cats.sort((a, b) => {
       const aIndex = CATEGORY_ORDER.indexOf(a);
       const bIndex = CATEGORY_ORDER.indexOf(b);
@@ -236,17 +247,12 @@ export function ProductsSection() {
     }
 
     // Category filter
-    if (filters.category !== 'all') {
-      result = result.filter(p => p.category === filters.category);
+    if (activeCategory !== 'all') {
+      result = result.filter(p => p.category === activeCategory);
     }
 
-    // Price filter
-    result = result.filter(p => 
-      p.price >= filters.priceRange[0] && p.price <= filters.priceRange[1]
-    );
-
     // Sort
-    switch (filters.sortBy) {
+    switch (sortBy) {
       case 'price-low':
         result.sort((a, b) => a.price - b.price);
         break;
@@ -262,32 +268,28 @@ export function ProductsSection() {
     }
 
     return result;
-  }, [products, searchQuery, filters]);
+  }, [products, searchQuery, activeCategory, sortBy]);
 
   // Group products by category
   const productsByCategory = useMemo(() => {
     const grouped: Record<string, typeof filteredProducts> = {};
-    
-    // Use sorted categories
     categories.forEach(cat => {
       grouped[cat] = filteredProducts.filter(p => p.category === cat);
     });
-    
     return grouped;
   }, [filteredProducts, categories]);
 
   const handleViewAll = (category: string) => {
-    setFilters(prev => ({ ...prev, category }));
-    // Scroll to top of products
+    setActiveCategory(category);
     document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const isFiltering = searchQuery || filters.category !== 'all';
+  const isFiltering = searchQuery || activeCategory !== 'all';
   const showCategorySections = !isFiltering && filteredProducts.length > 0;
 
   if (loading) {
     return (
-      <section id="products" className="py-20 bg-background">
+      <section id="products" className="py-20 bg-gradient-to-b from-background to-secondary/20">
         <div className="container px-4 md:px-8 flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
@@ -300,7 +302,7 @@ export function ProductsSection() {
 
   if (error) {
     return (
-      <section id="products" className="py-20 bg-background">
+      <section id="products" className="py-20 bg-gradient-to-b from-background to-secondary/20">
         <div className="container px-4 md:px-8 flex items-center justify-center min-h-[400px]">
           <p className="text-destructive">{error}</p>
         </div>
@@ -309,65 +311,131 @@ export function ProductsSection() {
   }
 
   return (
-    <section id="products" className="py-20 bg-background">
-      <div className="container px-4 md:px-8">
+    <section id="products" className="py-20 bg-gradient-to-b from-background via-secondary/10 to-background relative overflow-hidden">
+      {/* Subtle Background Pattern */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-accent/10 rounded-full blur-3xl" />
+      </div>
+
+      <div className="container px-4 md:px-8 relative z-10">
         {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="mb-8 text-center"
+          className="mb-10 text-center"
         >
+          <span className="text-primary font-medium text-sm tracking-widest uppercase mb-2 block">
+            Our Collection
+          </span>
           <h2 className="font-display text-4xl md:text-5xl font-bold text-foreground mb-4 tracking-wide">
-            SHOP BY CATEGORY
+            ALL PRODUCTS
           </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto mb-6">
-            Browse our collection organized by category. Find exactly what you're looking for.
+          <p className="text-muted-foreground max-w-xl mx-auto">
+            Discover our premium fashion essentials. Filter by category or search for exactly what you need.
           </p>
         </motion.div>
 
         {/* Quick Category Navigation */}
         <CategoryNav 
           categories={categories}
-          activeCategory={filters.category}
-          onSelect={(cat) => setFilters(prev => ({ ...prev, category: cat }))}
+          activeCategory={activeCategory}
+          onSelect={setActiveCategory}
         />
 
-        {/* Search & Filters */}
-        <div className="mb-10">
-          <SearchFilter
-            onSearch={setSearchQuery}
-            onFilterChange={setFilters}
-            categories={categories}
-          />
-        </div>
+        {/* Search & Filter Bar */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-10 flex flex-col sm:flex-row gap-4 items-center justify-between bg-card/50 backdrop-blur-sm rounded-2xl p-4 border border-border/50"
+        >
+          {/* Search */}
+          <div className="relative w-full sm:w-96">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-12 pr-10 h-12 rounded-xl border-border/50 bg-background/50"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Sort & Filter */}
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="flex items-center gap-2 flex-1 sm:flex-none">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-full sm:w-[180px] h-12 rounded-xl border-border/50 bg-background/50">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Newest First</SelectItem>
+                  <SelectItem value="price-low">Price: Low to High</SelectItem>
+                  <SelectItem value="price-high">Price: High to Low</SelectItem>
+                  <SelectItem value="popular">Most Popular</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </motion.div>
 
         {/* Results count when filtering */}
         {isFiltering && (
-          <div className="flex items-center justify-between mb-6">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center justify-between mb-6 px-2"
+          >
             <p className="text-muted-foreground">
-              Showing {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
-              {filters.category !== 'all' && ` in ${filters.category}`}
+              Showing <span className="font-medium text-foreground">{filteredProducts.length}</span> {filteredProducts.length === 1 ? 'product' : 'products'}
+              {activeCategory !== 'all' && <span> in <span className="font-medium text-primary">{activeCategory}</span></span>}
             </p>
-            {filters.category !== 'all' && (
+            {activeCategory !== 'all' && (
               <Button 
                 variant="ghost" 
                 size="sm"
-                onClick={() => setFilters(prev => ({ ...prev, category: 'all' }))}
+                onClick={() => setActiveCategory('all')}
+                className="gap-1"
               >
+                <X className="h-4 w-4" />
                 Clear filter
               </Button>
             )}
-          </div>
+          </motion.div>
         )}
 
         {/* Products Display */}
         {filteredProducts.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-xl text-muted-foreground">No products found</p>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center py-16 bg-card/30 rounded-2xl border border-border/50"
+          >
+            <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
+            <p className="text-xl text-muted-foreground font-medium">No products found</p>
             <p className="text-muted-foreground mt-2">Try adjusting your search or filters</p>
-          </div>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setSearchQuery('');
+                setActiveCategory('all');
+              }}
+              className="mt-4"
+            >
+              Clear all filters
+            </Button>
+          </motion.div>
         ) : showCategorySections ? (
           // Show products grouped by category (Shopee style)
           <div>
@@ -386,7 +454,7 @@ export function ProductsSection() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6"
           >
             {filteredProducts.map((product, index) => (
               <ProductCard key={product.id} product={product} index={index} />

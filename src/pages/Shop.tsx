@@ -1,8 +1,7 @@
 import { Helmet } from 'react-helmet-async';
 import { Header } from '@/components/Header';
+import { ShopCategoriesGrid } from '@/components/ShopCategoriesGrid';
 import { ProductsSection } from '@/components/ProductsSection';
-import { AboutSection } from '@/components/AboutSection';
-import { CollectionSection } from '@/components/CollectionSection';
 import { Footer } from '@/components/Footer';
 import { CartSlide } from '@/components/CartSlide';
 
@@ -25,9 +24,11 @@ const Shop = () => {
       <div className="min-h-screen bg-background">
         <Header />
         <main>
+          {/* Shop By Category Section with Warm Design */}
+          <ShopCategoriesGrid />
+          
+          {/* All Products Section */}
           <ProductsSection />
-          <AboutSection />
-          <CollectionSection />
         </main>
         <Footer />
         <CartSlide />
