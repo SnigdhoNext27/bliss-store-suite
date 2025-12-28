@@ -17,6 +17,7 @@ import { ProductReviews } from '@/components/ProductReviews';
 import { ProductShareButton } from '@/components/ProductShareButton';
 import { SizeGuideModal } from '@/components/SizeGuideModal';
 import { ProductImageZoom } from '@/components/ProductImageZoom';
+import { LowStockWarning } from '@/components/LowStockWarning';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -290,6 +291,8 @@ export default function ProductDetail() {
                     {product.stock} items available
                   </span>
                 </div>
+                {/* Low Stock Warning */}
+                <LowStockWarning stock={product.stock} />
               </div>
 
               {/* Actions */}
