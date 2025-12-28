@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, User, Loader2, MessageSquare } from 'lucide-react';
+import { Star, User, Loader2, MessageSquare, Camera, X, Image as ImageIcon } from 'lucide-react';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,6 +8,11 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+
+interface ReviewPhoto {
+  id: string;
+  image_url: string;
+}
 
 interface Review {
   id: string;
@@ -18,6 +23,7 @@ interface Review {
   profiles?: {
     full_name: string | null;
   } | null;
+  photos?: ReviewPhoto[];
 }
 
 interface ProductReviewsProps {
@@ -34,6 +40,7 @@ const reviewSchema = z.object({
 export function ProductReviews({ productId, productRating, reviewCount }: ProductReviewsProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,6 +50,10 @@ export function ProductReviews({ productId, productRating, reviewCount }: Produc
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState('');
   const [hasUserReviewed, setHasUserReviewed] = useState(false);
+  const [selectedPhotos, setSelectedPhotos] = useState<File[]>([]);
+  const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchReviews();
@@ -51,7 +62,6 @@ export function ProductReviews({ productId, productRating, reviewCount }: Produc
   const fetchReviews = async () => {
     setLoading(true);
     try {
-      // Fetch approved reviews
       const { data, error } = await supabase
         .from('reviews')
         .select('id, rating, comment, created_at, user_id')
@@ -61,7 +71,6 @@ export function ProductReviews({ productId, productRating, reviewCount }: Produc
 
       if (error) throw error;
 
-      // Fetch profiles for each review
       const reviewsWithProfiles: Review[] = [];
       for (const review of data || []) {
         let profileData = null;
@@ -73,15 +82,22 @@ export function ProductReviews({ productId, productRating, reviewCount }: Produc
             .single();
           profileData = profile;
         }
+
+        // Fetch photos for this review
+        const { data: photos } = await supabase
+          .from('review_photos')
+          .select('id, image_url')
+          .eq('review_id', review.id);
+
         reviewsWithProfiles.push({
           ...review,
           profiles: profileData,
+          photos: photos || [],
         });
       }
 
       setReviews(reviewsWithProfiles);
 
-      // Check if current user has already reviewed
       if (user) {
         const userReview = data?.find(r => r.user_id === user.id);
         setHasUserReviewed(!!userReview);
@@ -91,6 +107,73 @@ export function ProductReviews({ productId, productRating, reviewCount }: Produc
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length + selectedPhotos.length > 5) {
+      toast({ title: 'Maximum 5 photos allowed', variant: 'destructive' });
+      return;
+    }
+
+    const validFiles = files.filter(file => {
+      if (!file.type.startsWith('image/')) {
+        toast({ title: 'Only images allowed', variant: 'destructive' });
+        return false;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast({ title: 'Image must be less than 5MB', variant: 'destructive' });
+        return false;
+      }
+      return true;
+    });
+
+    setSelectedPhotos(prev => [...prev, ...validFiles]);
+    
+    validFiles.forEach(file => {
+      const url = URL.createObjectURL(file);
+      setPhotoPreviewUrls(prev => [...prev, url]);
+    });
+  };
+
+  const removePhoto = (index: number) => {
+    URL.revokeObjectURL(photoPreviewUrls[index]);
+    setSelectedPhotos(prev => prev.filter((_, i) => i !== index));
+    setPhotoPreviewUrls(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadPhotos = async (reviewId: string) => {
+    const uploadedUrls: string[] = [];
+
+    for (const photo of selectedPhotos) {
+      const fileExt = photo.name.split('.').pop();
+      const fileName = `${user?.id}/${reviewId}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(`reviews/${fileName}`, photo);
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        continue;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(`reviews/${fileName}`);
+
+      uploadedUrls.push(publicUrl);
+    }
+
+    // Insert photo records
+    for (const url of uploadedUrls) {
+      await supabase.from('review_photos').insert({
+        review_id: reviewId,
+        image_url: url,
+      });
+    }
+
+    return uploadedUrls;
   };
 
   const handleSubmitReview = async () => {
@@ -107,25 +190,35 @@ export function ProductReviews({ productId, productRating, reviewCount }: Produc
 
     setSubmitting(true);
     try {
-      const { error } = await supabase.from('reviews').insert({
+      const { data: reviewData, error } = await supabase.from('reviews').insert({
         product_id: productId,
         user_id: user.id,
         rating,
         comment: comment || null,
-        is_approved: false, // Requires admin approval
-      });
+        is_approved: false,
+      }).select().single();
 
       if (error) throw error;
+
+      // Upload photos if any
+      if (selectedPhotos.length > 0 && reviewData) {
+        setUploadingPhotos(true);
+        await uploadPhotos(reviewData.id);
+        setUploadingPhotos(false);
+      }
 
       toast({ title: 'Review submitted! It will appear after approval.' });
       setRating(0);
       setComment('');
+      setSelectedPhotos([]);
+      setPhotoPreviewUrls([]);
       setShowForm(false);
       setHasUserReviewed(true);
     } catch (error) {
       toast({ title: 'Failed to submit review', variant: 'destructive' });
     } finally {
       setSubmitting(false);
+      setUploadingPhotos(false);
     }
   };
 
@@ -140,7 +233,7 @@ export function ProductReviews({ productId, productRating, reviewCount }: Produc
             onClick={() => interactive && setRating(star)}
             onMouseEnter={() => interactive && setHoverRating(star)}
             onMouseLeave={() => interactive && setHoverRating(0)}
-            className={interactive ? 'cursor-pointer' : 'cursor-default'}
+            className={interactive ? 'cursor-pointer transition-transform hover:scale-110' : 'cursor-default'}
           >
             <Star
               className={`h-5 w-5 ${
@@ -169,7 +262,8 @@ export function ProductReviews({ productId, productRating, reviewCount }: Produc
         </div>
 
         {user && !hasUserReviewed && (
-          <Button onClick={() => setShowForm(!showForm)} variant="outline">
+          <Button onClick={() => setShowForm(!showForm)} variant="outline" className="gap-2">
+            <Camera className="h-4 w-4" />
             Write a Review
           </Button>
         )}
@@ -182,7 +276,7 @@ export function ProductReviews({ productId, productRating, reviewCount }: Produc
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="bg-card rounded-xl p-6 mb-6"
+            className="bg-card rounded-xl p-6 mb-6 border border-border"
           >
             <h3 className="font-medium mb-4">Write Your Review</h3>
             
@@ -204,9 +298,51 @@ export function ProductReviews({ productId, productRating, reviewCount }: Produc
                 />
               </div>
 
+              {/* Photo Upload */}
+              <div>
+                <Label>Add Photos (Optional - Max 5)</Label>
+                <div className="mt-2 flex flex-wrap gap-3">
+                  {photoPreviewUrls.map((url, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="relative w-20 h-20 rounded-lg overflow-hidden border border-border"
+                    >
+                      <img src={url} alt="Preview" className="w-full h-full object-cover" />
+                      <button
+                        onClick={() => removePhoto(index)}
+                        className="absolute top-1 right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </motion.div>
+                  ))}
+                  
+                  {selectedPhotos.length < 5 && (
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-20 h-20 rounded-lg border-2 border-dashed border-border hover:border-primary flex flex-col items-center justify-center gap-1 transition-colors"
+                    >
+                      <Camera className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">Add</span>
+                    </button>
+                  )}
+                  
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handlePhotoSelect}
+                    className="hidden"
+                  />
+                </div>
+              </div>
+
               <div className="flex gap-3">
                 <Button onClick={handleSubmitReview} disabled={submitting || rating === 0}>
-                  {submitting ? 'Submitting...' : 'Submit Review'}
+                  {submitting ? (uploadingPhotos ? 'Uploading photos...' : 'Submitting...') : 'Submit Review'}
                 </Button>
                 <Button variant="ghost" onClick={() => setShowForm(false)}>
                   Cancel
@@ -239,7 +375,7 @@ export function ProductReviews({ productId, productRating, reviewCount }: Produc
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
       ) : reviews.length === 0 ? (
-        <div className="text-center py-12 bg-card rounded-xl">
+        <div className="text-center py-12 bg-card rounded-xl border border-border">
           <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <p className="text-muted-foreground">No reviews yet. Be the first to review!</p>
         </div>
@@ -250,18 +386,18 @@ export function ProductReviews({ productId, productRating, reviewCount }: Produc
               key={review.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-card rounded-xl p-4 sm:p-6"
+              className="bg-card rounded-xl p-4 sm:p-6 border border-border"
             >
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                   <User className="h-5 w-5 text-primary" />
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="font-medium">
+                    <p className="font-medium truncate">
                       {review.profiles?.full_name || 'Anonymous'}
                     </p>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-sm text-muted-foreground shrink-0">
                       {new Date(review.created_at).toLocaleDateString()}
                     </span>
                   </div>
@@ -269,12 +405,60 @@ export function ProductReviews({ productId, productRating, reviewCount }: Produc
                   {review.comment && (
                     <p className="mt-3 text-muted-foreground">{review.comment}</p>
                   )}
+                  
+                  {/* Review Photos */}
+                  {review.photos && review.photos.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      {review.photos.map((photo) => (
+                        <motion.button
+                          key={photo.id}
+                          whileHover={{ scale: 1.05 }}
+                          onClick={() => setSelectedImage(photo.image_url)}
+                          className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border border-border"
+                        >
+                          <img
+                            src={photo.image_url}
+                            alt="Review photo"
+                            className="w-full h-full object-cover"
+                          />
+                        </motion.button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>
           ))}
         </div>
       )}
+
+      {/* Image Lightbox */}
+      <AnimatePresence>
+        {selectedImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSelectedImage(null)}
+            className="fixed inset-0 z-50 bg-background/90 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.img
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              src={selectedImage}
+              alt="Review photo"
+              className="max-w-full max-h-[90vh] rounded-xl object-contain"
+            />
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-4 right-4 w-10 h-10 bg-card rounded-full flex items-center justify-center"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
