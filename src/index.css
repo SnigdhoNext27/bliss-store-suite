@@ -120,18 +120,45 @@
 @layer base {
   * {
     @apply border-border;
+    -webkit-tap-highlight-color: transparent;
   }
 
   html {
     scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    touch-action: manipulation;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-display;
+  }
+
+  /* Enhanced touch targets for mobile */
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Safe area padding for notched devices */
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .safe-area-pt {
+    padding-top: env(safe-area-inset-top, 0);
+  }
+
+  /* Smooth momentum scrolling */
+  .scroll-container {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 }
 
@@ -317,4 +344,65 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--almans-brown-dark));
+}
+
+/* Mobile-first responsive utilities */
+@media (max-width: 640px) {
+  /* Smaller button text targets */
+  button, a, [role="button"] {
+    min-height: 40px;
+  }
+  
+  /* Improve readability on small screens */
+  body {
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  
+  /* Better card shadows on mobile */
+  .shadow-sm {
+    box-shadow: 0 2px 8px -2px hsl(18 22% 27% / 0.08);
+  }
+}
+
+/* iOS-specific fixes */
+@supports (-webkit-touch-callout: none) {
+  /* Fix for 100vh on iOS */
+  .min-h-screen {
+    min-height: -webkit-fill-available;
+  }
+  
+  /* Fix for sticky elements on iOS */
+  .sticky {
+    position: -webkit-sticky;
+    position: sticky;
+  }
+}
+
+/* Prevent layout shift on scrollbar appearance */
+html {
+  scrollbar-gutter: stable;
+}
+
+/* Focus-visible for keyboard navigation */
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Dark mode preference - auto detection */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    color-scheme: dark;
+  }
 }

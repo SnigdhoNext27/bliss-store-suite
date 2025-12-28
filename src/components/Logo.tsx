@@ -27,7 +27,7 @@ export function Logo({ className, showText = true, size = 'md', animate = true }
       transition: {
         duration: 0.5,
         ease: [0.25, 0.46, 0.45, 0.94] as Easing,
-        staggerChildren: 0.05,
+        staggerChildren: 0.03,
       },
     },
   };
@@ -38,7 +38,7 @@ export function Logo({ className, showText = true, size = 'md', animate = true }
       pathLength: 1,
       opacity: 1,
       transition: {
-        duration: 0.8,
+        duration: 0.7,
         ease: 'easeOut' as Easing,
       },
     },
@@ -63,7 +63,7 @@ export function Logo({ className, showText = true, size = 'md', animate = true }
       x: 0,
       transition: {
         duration: 0.4,
-        delay: 0.6,
+        delay: 0.5,
         ease: 'easeOut' as Easing,
       },
     },
@@ -81,77 +81,91 @@ export function Logo({ className, showText = true, size = 'md', animate = true }
         animate="visible"
         variants={containerVariants}
         whileHover={{ 
-          filter: 'drop-shadow(0 0 12px hsl(24, 35%, 49%, 0.5))',
+          filter: 'drop-shadow(0 0 14px hsl(24, 42%, 45%, 0.6))',
         }}
       >
         <svg viewBox="0 0 100 100" className="w-full h-full">
-          {/* White circular background with animated brown border */}
+          {/* Gradient definitions */}
+          <defs>
+            <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="hsl(24, 42%, 45%)" />
+              <stop offset="100%" stopColor="hsl(38, 60%, 55%)" />
+            </linearGradient>
+          </defs>
+          
+          {/* Cream circular background */}
           <circle 
             cx="50" 
             cy="50" 
             r="47" 
             fill="hsl(30, 25%, 96%)"
           />
+          {/* Gradient border */}
           <motion.circle 
             cx="50" 
             cy="50" 
             r="47" 
             fill="none"
-            stroke="hsl(24, 35%, 49%)"
-            strokeWidth="2.5"
+            stroke="url(#logoGrad)"
+            strokeWidth="2"
             variants={circleVariants}
             initial={animate ? 'hidden' : 'visible'}
             animate="visible"
           />
           
-          {/* Wolf head - animated geometric design in brown */}
+          {/* Enhanced Wolf head - geometric design */}
           <motion.g 
             fill="none" 
-            stroke="hsl(24, 35%, 49%)" 
-            strokeWidth="2.2" 
+            stroke="hsl(24, 42%, 45%)" 
+            strokeWidth="2" 
             strokeLinecap="round" 
             strokeLinejoin="round"
           >
-            {/* Left ear - outer pointed shape */}
-            <motion.path d="M35 52 L28 32 L22 18 L36 36" variants={pathVariants} />
-            {/* Left ear - inner detail */}
-            <motion.path d="M32 45 L28 35 L25 26" strokeWidth="1.8" variants={pathVariants} />
-            <motion.path d="M30 40 L34 38" strokeWidth="1.8" variants={pathVariants} />
+            {/* Left ear */}
+            <motion.path d="M35 50 L28 30 L22 15 L36 35" variants={pathVariants} />
+            <motion.path d="M32 43 L27 32 L24 22" strokeWidth="1.5" stroke="hsl(24, 35%, 55%)" variants={pathVariants} />
+            <motion.path d="M29 38 L35 36" strokeWidth="1.5" stroke="hsl(24, 35%, 55%)" variants={pathVariants} />
             
-            {/* Right ear - outer pointed shape */}
-            <motion.path d="M65 52 L72 32 L78 18 L64 36" variants={pathVariants} />
-            {/* Right ear - inner detail */}
-            <motion.path d="M68 45 L72 35 L75 26" strokeWidth="1.8" variants={pathVariants} />
-            <motion.path d="M70 40 L66 38" strokeWidth="1.8" variants={pathVariants} />
+            {/* Right ear */}
+            <motion.path d="M65 50 L72 30 L78 15 L64 35" variants={pathVariants} />
+            <motion.path d="M68 43 L73 32 L76 22" strokeWidth="1.5" stroke="hsl(24, 35%, 55%)" variants={pathVariants} />
+            <motion.path d="M71 38 L65 36" strokeWidth="1.5" stroke="hsl(24, 35%, 55%)" variants={pathVariants} />
             
-            {/* Head top - connecting ears with angular crown */}
-            <motion.path d="M36 36 L42 40 L50 38 L58 40 L64 36" variants={pathVariants} />
+            {/* Head crown */}
+            <motion.path d="M36 35 L43 39 L50 36 L57 39 L64 35" variants={pathVariants} />
             
-            {/* Left side face/cheek angular lines */}
-            <motion.path d="M35 52 L32 58 L35 68" variants={pathVariants} />
-            <motion.path d="M42 40 L38 50 L35 58" strokeWidth="1.8" variants={pathVariants} />
+            {/* Left cheek */}
+            <motion.path d="M35 50 L31 57 L34 67" variants={pathVariants} />
+            <motion.path d="M43 39 L38 49 L34 57" strokeWidth="1.5" stroke="hsl(24, 35%, 55%)" variants={pathVariants} />
             
-            {/* Right side face/cheek angular lines */}
-            <motion.path d="M65 52 L68 58 L65 68" variants={pathVariants} />
-            <motion.path d="M58 40 L62 50 L65 58" strokeWidth="1.8" variants={pathVariants} />
+            {/* Right cheek */}
+            <motion.path d="M65 50 L69 57 L66 67" variants={pathVariants} />
+            <motion.path d="M57 39 L62 49 L66 57" strokeWidth="1.5" stroke="hsl(24, 35%, 55%)" variants={pathVariants} />
             
-            {/* Chin - V shape pointing down */}
-            <motion.path d="M35 68 L50 82 L65 68" variants={pathVariants} />
+            {/* Chin */}
+            <motion.path d="M34 67 L50 83 L66 67" variants={pathVariants} />
             
-            {/* Center vertical line - forehead to nose */}
-            <motion.path d="M50 38 L50 58" strokeWidth="1.8" variants={pathVariants} />
+            {/* Center line */}
+            <motion.path d="M50 36 L50 56" strokeWidth="1.5" variants={pathVariants} />
             
-            {/* Nose/snout area - diamond shape */}
-            <motion.path d="M44 60 L50 54 L56 60 L50 72 Z" strokeWidth="2" variants={pathVariants} />
+            {/* Nose diamond with gradient */}
+            <motion.path d="M44 58 L50 52 L56 58 L50 70 Z" stroke="url(#logoGrad)" strokeWidth="1.8" variants={pathVariants} />
+            
+            {/* Inner nose detail */}
+            <motion.path d="M47 60 L50 57 L53 60" strokeWidth="1.2" stroke="hsl(24, 35%, 55%)" variants={pathVariants} />
+            
+            {/* Eyes */}
+            <motion.circle cx="40" cy="44" r="2" fill="hsl(24, 42%, 45%)" stroke="none" variants={pathVariants} />
+            <motion.circle cx="60" cy="44" r="2" fill="hsl(24, 42%, 45%)" stroke="none" variants={pathVariants} />
           </motion.g>
         </svg>
       </motion.div>
 
-      {/* Brand Name - ALMANS with fade in */}
+      {/* Brand Name - ALMANS with gradient effect */}
       {showText && (
         <motion.span
           className={cn(
-            'hidden font-display font-bold tracking-wider sm:inline-block transition-colors text-foreground group-hover:text-primary uppercase',
+            'hidden font-display font-bold tracking-[0.15em] sm:inline-block transition-colors text-foreground group-hover:text-primary uppercase',
             sizes.text
           )}
           variants={textVariants}

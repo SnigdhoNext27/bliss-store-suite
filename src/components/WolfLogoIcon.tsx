@@ -8,22 +8,28 @@ interface WolfLogoIconProps {
 }
 
 export function WolfLogoIcon({ className, variant = 'default', animate = false }: WolfLogoIconProps) {
-  // Color configurations for different variants
+  // Enhanced color configurations for different variants
   const colors = {
     default: {
       bg: 'hsl(30, 25%, 96%)',
-      stroke: 'hsl(24, 35%, 49%)',
-      border: 'hsl(24, 35%, 49%)',
+      stroke: 'hsl(24, 42%, 45%)',
+      strokeLight: 'hsl(24, 35%, 55%)',
+      border: 'hsl(24, 42%, 45%)',
+      accent: 'hsl(38, 60%, 55%)',
     },
     light: {
       bg: 'transparent',
       stroke: 'hsl(30, 25%, 96%)',
+      strokeLight: 'hsl(30, 20%, 85%)',
       border: 'hsl(30, 25%, 96%)',
+      accent: 'hsl(38, 60%, 65%)',
     },
     dark: {
       bg: 'hsl(18, 22%, 27%)',
       stroke: 'hsl(30, 25%, 96%)',
+      strokeLight: 'hsl(30, 20%, 85%)',
       border: 'hsl(38, 60%, 55%)',
+      accent: 'hsl(38, 60%, 55%)',
     },
   };
 
@@ -35,7 +41,7 @@ export function WolfLogoIcon({ className, variant = 'default', animate = false }
       pathLength: 1,
       opacity: 1,
       transition: {
-        duration: 0.4,
+        duration: 0.5,
         ease: 'easeOut' as Easing,
       },
     },
@@ -47,7 +53,7 @@ export function WolfLogoIcon({ className, variant = 'default', animate = false }
       pathLength: 1,
       opacity: 1,
       transition: {
-        duration: 0.6,
+        duration: 0.7,
         ease: 'easeOut' as Easing,
       },
     },
@@ -59,11 +65,92 @@ export function WolfLogoIcon({ className, variant = 'default', animate = false }
       opacity: 1,
       scale: 1,
       transition: {
-        duration: 0.4,
-        staggerChildren: 0.03,
+        duration: 0.5,
+        staggerChildren: 0.02,
       },
     },
   };
+
+  const svgContent = (
+    <>
+      {/* Gradient definitions */}
+      <defs>
+        <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={c.stroke} />
+          <stop offset="100%" stopColor={c.accent} />
+        </linearGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="1" result="coloredBlur" />
+          <feMerge>
+            <feMergeNode in="coloredBlur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
+      {/* Circular background with subtle gradient border */}
+      <circle 
+        cx="50" 
+        cy="50" 
+        r="47" 
+        fill={c.bg}
+      />
+      <circle 
+        cx="50" 
+        cy="50" 
+        r="47" 
+        fill="none"
+        stroke="url(#logoGradient)"
+        strokeWidth="2"
+      />
+      
+      {/* Enhanced Wolf head - geometric design with more detail */}
+      <g 
+        fill="none" 
+        stroke={c.stroke}
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+      >
+        {/* Left ear - sharper, more defined */}
+        <path d="M35 50 L28 30 L22 15 L36 35" />
+        <path d="M32 43 L27 32 L24 22" strokeWidth="1.5" stroke={c.strokeLight} />
+        <path d="M29 38 L35 36" strokeWidth="1.5" stroke={c.strokeLight} />
+        
+        {/* Right ear - sharper, more defined */}
+        <path d="M65 50 L72 30 L78 15 L64 35" />
+        <path d="M68 43 L73 32 L76 22" strokeWidth="1.5" stroke={c.strokeLight} />
+        <path d="M71 38 L65 36" strokeWidth="1.5" stroke={c.strokeLight} />
+        
+        {/* Head crown - more angular */}
+        <path d="M36 35 L43 39 L50 36 L57 39 L64 35" />
+        
+        {/* Left cheek structure */}
+        <path d="M35 50 L31 57 L34 67" />
+        <path d="M43 39 L38 49 L34 57" strokeWidth="1.5" stroke={c.strokeLight} />
+        
+        {/* Right cheek structure */}
+        <path d="M65 50 L69 57 L66 67" />
+        <path d="M57 39 L62 49 L66 57" strokeWidth="1.5" stroke={c.strokeLight} />
+        
+        {/* Chin - V shape pointing down */}
+        <path d="M34 67 L50 83 L66 67" />
+        
+        {/* Center forehead to nose line */}
+        <path d="M50 36 L50 56" strokeWidth="1.5" />
+        
+        {/* Nose/snout area - diamond shape, more detailed */}
+        <path d="M44 58 L50 52 L56 58 L50 70 Z" stroke="url(#logoGradient)" strokeWidth="1.8" />
+        
+        {/* Inner nose detail */}
+        <path d="M47 60 L50 57 L53 60" strokeWidth="1.2" stroke={c.strokeLight} />
+        
+        {/* Eye hints - subtle dots */}
+        <circle cx="40" cy="44" r="2" fill={c.stroke} stroke="none" />
+        <circle cx="60" cy="44" r="2" fill={c.stroke} stroke="none" />
+      </g>
+    </>
+  );
 
   if (animate) {
     return (
@@ -74,45 +161,48 @@ export function WolfLogoIcon({ className, variant = 'default', animate = false }
         animate="visible"
         variants={containerVariants}
       >
-        {/* Circular background with border */}
-        <circle 
-          cx="50" 
-          cy="50" 
-          r="47" 
-          fill={c.bg}
-        />
+        <defs>
+          <linearGradient id="logoGradientAnimated" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={c.stroke} />
+            <stop offset="100%" stopColor={c.accent} />
+          </linearGradient>
+        </defs>
+        
+        <circle cx="50" cy="50" r="47" fill={c.bg} />
         <motion.circle 
           cx="50" 
           cy="50" 
           r="47" 
           fill="none"
-          stroke={c.border}
-          strokeWidth="2.5"
+          stroke="url(#logoGradientAnimated)"
+          strokeWidth="2"
           variants={circleVariants}
         />
         
-        {/* Wolf head - geometric design */}
         <motion.g 
           fill="none" 
           stroke={c.stroke}
-          strokeWidth="2.2" 
+          strokeWidth="2" 
           strokeLinecap="round" 
           strokeLinejoin="round"
         >
-          <motion.path d="M35 52 L28 32 L22 18 L36 36" variants={pathVariants} />
-          <motion.path d="M32 45 L28 35 L25 26" strokeWidth="1.8" variants={pathVariants} />
-          <motion.path d="M30 40 L34 38" strokeWidth="1.8" variants={pathVariants} />
-          <motion.path d="M65 52 L72 32 L78 18 L64 36" variants={pathVariants} />
-          <motion.path d="M68 45 L72 35 L75 26" strokeWidth="1.8" variants={pathVariants} />
-          <motion.path d="M70 40 L66 38" strokeWidth="1.8" variants={pathVariants} />
-          <motion.path d="M36 36 L42 40 L50 38 L58 40 L64 36" variants={pathVariants} />
-          <motion.path d="M35 52 L32 58 L35 68" variants={pathVariants} />
-          <motion.path d="M42 40 L38 50 L35 58" strokeWidth="1.8" variants={pathVariants} />
-          <motion.path d="M65 52 L68 58 L65 68" variants={pathVariants} />
-          <motion.path d="M58 40 L62 50 L65 58" strokeWidth="1.8" variants={pathVariants} />
-          <motion.path d="M35 68 L50 82 L65 68" variants={pathVariants} />
-          <motion.path d="M50 38 L50 58" strokeWidth="1.8" variants={pathVariants} />
-          <motion.path d="M44 60 L50 54 L56 60 L50 72 Z" strokeWidth="2" variants={pathVariants} />
+          <motion.path d="M35 50 L28 30 L22 15 L36 35" variants={pathVariants} />
+          <motion.path d="M32 43 L27 32 L24 22" strokeWidth="1.5" stroke={c.strokeLight} variants={pathVariants} />
+          <motion.path d="M29 38 L35 36" strokeWidth="1.5" stroke={c.strokeLight} variants={pathVariants} />
+          <motion.path d="M65 50 L72 30 L78 15 L64 35" variants={pathVariants} />
+          <motion.path d="M68 43 L73 32 L76 22" strokeWidth="1.5" stroke={c.strokeLight} variants={pathVariants} />
+          <motion.path d="M71 38 L65 36" strokeWidth="1.5" stroke={c.strokeLight} variants={pathVariants} />
+          <motion.path d="M36 35 L43 39 L50 36 L57 39 L64 35" variants={pathVariants} />
+          <motion.path d="M35 50 L31 57 L34 67" variants={pathVariants} />
+          <motion.path d="M43 39 L38 49 L34 57" strokeWidth="1.5" stroke={c.strokeLight} variants={pathVariants} />
+          <motion.path d="M65 50 L69 57 L66 67" variants={pathVariants} />
+          <motion.path d="M57 39 L62 49 L66 57" strokeWidth="1.5" stroke={c.strokeLight} variants={pathVariants} />
+          <motion.path d="M34 67 L50 83 L66 67" variants={pathVariants} />
+          <motion.path d="M50 36 L50 56" strokeWidth="1.5" variants={pathVariants} />
+          <motion.path d="M44 58 L50 52 L56 58 L50 70 Z" stroke={c.accent} strokeWidth="1.8" variants={pathVariants} />
+          <motion.path d="M47 60 L50 57 L53 60" strokeWidth="1.2" stroke={c.strokeLight} variants={pathVariants} />
+          <motion.circle cx="40" cy="44" r="2" fill={c.stroke} stroke="none" variants={pathVariants} />
+          <motion.circle cx="60" cy="44" r="2" fill={c.stroke} stroke="none" variants={pathVariants} />
         </motion.g>
       </motion.svg>
     );
@@ -120,56 +210,7 @@ export function WolfLogoIcon({ className, variant = 'default', animate = false }
 
   return (
     <svg viewBox="0 0 100 100" className={cn('w-10 h-10', className)}>
-      {/* Circular background with border */}
-      <circle 
-        cx="50" 
-        cy="50" 
-        r="47" 
-        fill={c.bg}
-        stroke={c.border}
-        strokeWidth="2.5"
-      />
-      
-      {/* Wolf head - geometric design */}
-      <g 
-        fill="none" 
-        stroke={c.stroke}
-        strokeWidth="2.2" 
-        strokeLinecap="round" 
-        strokeLinejoin="round"
-      >
-        {/* Left ear - outer pointed shape */}
-        <path d="M35 52 L28 32 L22 18 L36 36" />
-        {/* Left ear - inner detail */}
-        <path d="M32 45 L28 35 L25 26" strokeWidth="1.8" />
-        <path d="M30 40 L34 38" strokeWidth="1.8" />
-        
-        {/* Right ear - outer pointed shape */}
-        <path d="M65 52 L72 32 L78 18 L64 36" />
-        {/* Right ear - inner detail */}
-        <path d="M68 45 L72 35 L75 26" strokeWidth="1.8" />
-        <path d="M70 40 L66 38" strokeWidth="1.8" />
-        
-        {/* Head top - connecting ears with angular crown */}
-        <path d="M36 36 L42 40 L50 38 L58 40 L64 36" />
-        
-        {/* Left side face/cheek angular lines */}
-        <path d="M35 52 L32 58 L35 68" />
-        <path d="M42 40 L38 50 L35 58" strokeWidth="1.8" />
-        
-        {/* Right side face/cheek angular lines */}
-        <path d="M65 52 L68 58 L65 68" />
-        <path d="M58 40 L62 50 L65 58" strokeWidth="1.8" />
-        
-        {/* Chin - V shape pointing down */}
-        <path d="M35 68 L50 82 L65 68" />
-        
-        {/* Center vertical line - forehead to nose */}
-        <path d="M50 38 L50 58" strokeWidth="1.8" />
-        
-        {/* Nose/snout area - diamond shape */}
-        <path d="M44 60 L50 54 L56 60 L50 72 Z" strokeWidth="2" />
-      </g>
+      {svgContent}
     </svg>
   );
 }
