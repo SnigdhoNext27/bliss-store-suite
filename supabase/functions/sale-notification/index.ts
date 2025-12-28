@@ -36,6 +36,23 @@ const handler = async (req: Request): Promise<Response> => {
     // Calculate discount percentage
     const discountPercent = Math.round(((originalPrice - salePrice) / originalPrice) * 100);
     
+    // Fetch admin notification email from settings
+    let adminEmail = '';
+    try {
+      const { data: emailSetting } = await supabase
+        .from("site_settings")
+        .select("value")
+        .eq("key", "admin_notification_email")
+        .single();
+      
+      if (emailSetting?.value) {
+        adminEmail = emailSetting.value;
+        console.log("Admin notification email:", adminEmail);
+      }
+    } catch (settingsError) {
+      console.log("Could not fetch admin email setting:", settingsError);
+    }
+
     // Fetch all active newsletter subscribers
     const { data: subscribers, error: fetchError } = await supabase
       .from("newsletter_subscribers")
@@ -45,6 +62,39 @@ const handler = async (req: Request): Promise<Response> => {
     if (fetchError) {
       console.error("Error fetching subscribers:", fetchError);
       throw new Error(`Failed to fetch subscribers: ${fetchError.message}`);
+    }
+
+    // Send admin notification about the sale campaign
+    if (adminEmail && RESEND_API_KEY) {
+      try {
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${RESEND_API_KEY}`,
+          },
+          body: JSON.stringify({
+            from: "Almans Store <onboarding@resend.dev>",
+            to: [adminEmail],
+            subject: `📢 Sale Campaign Sent: ${productName}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; padding: 20px;">
+                <h2>Sale Notification Campaign Sent</h2>
+                <p><strong>Product:</strong> ${productName}</p>
+                <p><strong>Discount:</strong> ${discountPercent}% OFF</p>
+                <p><strong>Original Price:</strong> ৳${originalPrice.toLocaleString()}</p>
+                <p><strong>Sale Price:</strong> ৳${salePrice.toLocaleString()}</p>
+                <p><strong>Subscribers Notified:</strong> ${subscribers?.length || 0}</p>
+                <hr style="margin: 20px 0;">
+                <p style="color: #666; font-size: 12px;">This is an admin notification from Almans Store.</p>
+              </div>
+            `,
+          }),
+        });
+        console.log("Admin notification sent");
+      } catch (adminEmailError) {
+        console.error("Failed to send admin notification:", adminEmailError);
+      }
     }
 
     if (!subscribers || subscribers.length === 0) {

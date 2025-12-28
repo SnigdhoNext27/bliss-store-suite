@@ -109,6 +109,7 @@ interface Settings {
   business_email: string;
   business_phone: string;
   whatsapp_notification_phone: string;
+  admin_notification_email: string;
   social_facebook: string;
   social_instagram: string;
   social_whatsapp: string;
@@ -128,6 +129,7 @@ export default function Settings() {
     business_email: 'rijvialomrafa@gmail.com',
     business_phone: '+8801930278877',
     whatsapp_notification_phone: '+8801930278877',
+    admin_notification_email: '',
     social_facebook: '',
     social_instagram: '',
     social_whatsapp: '',
@@ -468,6 +470,21 @@ export default function Settings() {
             />
             <p className="text-xs text-muted-foreground mt-1">
               New order notifications will be sent to this WhatsApp number. Include country code (e.g., 8801XXXXXXXXX)
+            </p>
+          </div>
+
+          <div className="pt-4 border-t border-border">
+            <Label htmlFor="admin_notification_email">Admin Notification Email</Label>
+            <Input
+              id="admin_notification_email"
+              type="email"
+              value={settings.admin_notification_email}
+              onChange={(e) => setSettings({ ...settings, admin_notification_email: e.target.value })}
+              placeholder="admin@almans.com"
+              className="mt-1"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              This email receives all admin notifications: new orders, sale alerts, and system updates. Leave empty to disable email notifications.
             </p>
           </div>
         </div>
