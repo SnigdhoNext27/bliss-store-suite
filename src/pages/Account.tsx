@@ -26,18 +26,31 @@ import { LoyaltyPointsCard } from '@/components/account/LoyaltyPointsCard';
 import { ReferralProgram } from '@/components/ReferralProgram';
 import { SavedPaymentMethods } from '@/components/SavedPaymentMethods';
 import { OrderHistoryExport } from '@/components/OrderHistoryExport';
+import { OrderFilters, OrderFiltersState, defaultFilters } from '@/components/OrderFilters';
+
+interface OrderItem {
+  id: string;
+  product_name: string;
+  quantity: number;
+  price: number;
+  size?: string | null;
+  color?: string | null;
+}
 
 interface Order {
   id: string;
   order_number: string;
   status: string;
   total: number;
+  subtotal?: number;
+  delivery_fee?: number;
   created_at: string;
   shipping_address: {
     full_name?: string;
     address?: string;
     area?: string;
   };
+  order_items?: OrderItem[];
 }
 
 interface Address {
@@ -103,6 +116,7 @@ export default function Account() {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [orderFilters, setOrderFilters] = useState<OrderFiltersState>(defaultFilters);
   const [saving, setSaving] = useState(false);
   const [profileForm, setProfileForm] = useState({ 
     full_name: '', 
@@ -145,7 +159,17 @@ export default function Account() {
     try {
       const { data: ordersData } = await supabase
         .from('orders')
-        .select('*')
+        .select(`
+          *,
+          order_items (
+            id,
+            product_name,
+            quantity,
+            price,
+            size,
+            color
+          )
+        `)
         .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
 
@@ -349,6 +373,46 @@ export default function Account() {
     }
   };
 
+  // Filter orders based on search and filters
+  const filteredOrders = orders.filter(order => {
+    // Search filter
+    if (orderFilters.search) {
+      const searchLower = orderFilters.search.toLowerCase();
+      if (!order.order_number.toLowerCase().includes(searchLower)) {
+        return false;
+      }
+    }
+    
+    // Status filter
+    if (orderFilters.status !== 'all' && order.status !== orderFilters.status) {
+      return false;
+    }
+    
+    // Date from filter
+    if (orderFilters.dateFrom) {
+      const orderDate = new Date(order.created_at);
+      orderDate.setHours(0, 0, 0, 0);
+      const fromDate = new Date(orderFilters.dateFrom);
+      fromDate.setHours(0, 0, 0, 0);
+      if (orderDate < fromDate) {
+        return false;
+      }
+    }
+    
+    // Date to filter
+    if (orderFilters.dateTo) {
+      const orderDate = new Date(order.created_at);
+      orderDate.setHours(23, 59, 59, 999);
+      const toDate = new Date(orderFilters.dateTo);
+      toDate.setHours(23, 59, 59, 999);
+      if (orderDate > toDate) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -524,10 +588,17 @@ export default function Account() {
               {/* Orders Tab */}
               {activeTab === 'orders' && (
                 <div className="bg-card rounded-xl border border-border p-6">
-                  <div className="flex justify-between items-center mb-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                     <h1 className="font-display text-2xl font-bold">My Orders</h1>
-                    <OrderHistoryExport orders={orders} />
+                    <OrderHistoryExport orders={filteredOrders} />
                   </div>
+                  
+                  {/* Filters */}
+                  {orders.length > 0 && (
+                    <div className="mb-6">
+                      <OrderFilters filters={orderFilters} onFiltersChange={setOrderFilters} />
+                    </div>
+                  )}
                   
                   {orders.length === 0 ? (
                     <div className="text-center py-12">
@@ -537,9 +608,20 @@ export default function Account() {
                         Start Shopping
                       </Button>
                     </div>
+                  ) : filteredOrders.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">No orders match your filters</p>
+                      <Button variant="outline" onClick={() => setOrderFilters(defaultFilters)} className="mt-4">
+                        Clear Filters
+                      </Button>
+                    </div>
                   ) : (
                     <div className="space-y-4">
-                      {orders.map((order) => (
+                      <p className="text-sm text-muted-foreground">
+                        Showing {filteredOrders.length} of {orders.length} orders
+                      </p>
+                      {filteredOrders.map((order) => (
                         <div
                           key={order.id}
                           onClick={() => navigate(`/orders/${order.order_number}`)}
@@ -559,6 +641,19 @@ export default function Account() {
                               <ChevronRight className="h-5 w-5 text-muted-foreground" />
                             </div>
                           </div>
+                          {order.order_items && order.order_items.length > 0 && (
+                            <div className="text-sm text-muted-foreground mb-2">
+                              {order.order_items.slice(0, 2).map((item, idx) => (
+                                <span key={item.id}>
+                                  {item.product_name} × {item.quantity}
+                                  {idx < Math.min(order.order_items!.length - 1, 1) ? ', ' : ''}
+                                </span>
+                              ))}
+                              {order.order_items.length > 2 && (
+                                <span> +{order.order_items.length - 2} more</span>
+                              )}
+                            </div>
+                          )}
                           <div className="flex justify-between items-center">
                             <p className="text-sm text-muted-foreground">
                               {order.shipping_address?.address?.substring(0, 40)}...
