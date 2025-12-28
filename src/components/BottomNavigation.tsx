@@ -4,7 +4,12 @@ import { Home, ShoppingBag, Heart, User, Briefcase } from 'lucide-react';
 import { useCartStore } from '@/lib/store';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useAuth } from '@/lib/auth';
-
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 const navItems = [
   { icon: Home, label: 'Home', path: '/' },
   { icon: ShoppingBag, label: 'Shop', path: '/shop' },
@@ -43,6 +48,7 @@ export function BottomNavigation() {
   if (location.pathname.startsWith('/admin')) return null;
 
   return (
+    <TooltipProvider delayDuration={300}>
     <motion.nav
       initial={{ y: 100 }}
       animate={{ y: 0 }}
@@ -57,7 +63,12 @@ export function BottomNavigation() {
             (item.path === '/wishlist' && wishlistCount > 0);
           const badgeCount = item.path === 'cart' ? cartCount : wishlistCount;
 
-          return (
+          const isCart = item.path === 'cart';
+          const tooltipContent = isCart && cartCount > 0 
+            ? `${cartCount} item${cartCount > 1 ? 's' : ''} in bag`
+            : null;
+
+          const buttonContent = (
             <button
               key={item.label}
               onClick={() => handleNavigation(item)}
@@ -101,8 +112,24 @@ export function BottomNavigation() {
               )}
             </button>
           );
+
+          if (tooltipContent) {
+            return (
+              <Tooltip key={item.label}>
+                <TooltipTrigger asChild>
+                  {buttonContent}
+                </TooltipTrigger>
+                <TooltipContent side="top" className="bg-foreground text-background text-xs">
+                  {tooltipContent}
+                </TooltipContent>
+              </Tooltip>
+            );
+          }
+
+          return buttonContent;
         })}
       </div>
     </motion.nav>
+    </TooltipProvider>
   );
 }
