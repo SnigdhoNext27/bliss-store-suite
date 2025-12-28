@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, ShoppingBag, User, Menu, X, LogOut, Settings, Package, Facebook, Instagram, Home, ChevronDown, Heart } from 'lucide-react';
@@ -26,6 +26,7 @@ import { useAuth } from '@/lib/auth';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { Logo } from './Logo';
 import { SearchBar } from './SearchBar';
+import { cn } from '@/lib/utils';
 
 const navLinks = [
   { name: 'Home', href: '/' },
@@ -38,6 +39,7 @@ export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const { getTotalItems, openCart } = useCartStore();
   const { user, isAdmin, signOut } = useAuth();
   const { settings } = useSiteSettings();
@@ -45,6 +47,16 @@ export function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const totalItems = getTotalItems();
+
+  // Track scroll position for header effects
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const socialLinks = [
     { name: 'Facebook', icon: Facebook, href: settings.social_facebook || 'https://www.facebook.com/profile.php?id=61584375982557' },
@@ -86,10 +98,29 @@ export function Header() {
       {/* Search Overlay */}
       <SearchBar isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 
-      <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between px-4 md:px-8">
-        {/* Logo */}
-        <Logo />
+      <motion.header 
+        className={cn(
+          "sticky top-0 z-40 w-full border-b transition-all duration-300",
+          isScrolled 
+            ? "border-border/60 bg-background/98 backdrop-blur-lg shadow-md" 
+            : "border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+        )}
+        animate={{
+          height: isScrolled ? 56 : 64,
+        }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
+      >
+      <div className={cn(
+        "container flex items-center justify-between px-4 md:px-8 transition-all duration-300",
+        isScrolled ? "h-14" : "h-16"
+      )}>
+        {/* Logo with scale transition */}
+        <motion.div
+          animate={{ scale: isScrolled ? 0.9 : 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Logo size={isScrolled ? 'sm' : 'md'} animate={false} />
+        </motion.div>
 
         {/* Desktop Navigation */}
         <nav className="hidden items-center gap-6 md:flex">
@@ -319,7 +350,7 @@ export function Header() {
           </motion.div>
         )}
       </AnimatePresence>
-    </header>
+    </motion.header>
 
       {/* Sign Out Confirmation Dialog */}
       <AlertDialog open={showSignOutDialog} onOpenChange={setShowSignOutDialog}>
