@@ -25,6 +25,7 @@ import { NotificationPreferencesCard } from '@/components/account/NotificationPr
 import { LoyaltyPointsCard } from '@/components/account/LoyaltyPointsCard';
 import { ReferralProgram } from '@/components/ReferralProgram';
 import { SavedPaymentMethods } from '@/components/SavedPaymentMethods';
+import { OrderHistoryExport } from '@/components/OrderHistoryExport';
 
 interface Order {
   id: string;
@@ -523,7 +524,10 @@ export default function Account() {
               {/* Orders Tab */}
               {activeTab === 'orders' && (
                 <div className="bg-card rounded-xl border border-border p-6">
-                  <h1 className="font-display text-2xl font-bold mb-6">My Orders</h1>
+                  <div className="flex justify-between items-center mb-6">
+                    <h1 className="font-display text-2xl font-bold">My Orders</h1>
+                    <OrderHistoryExport orders={orders} />
+                  </div>
                   
                   {orders.length === 0 ? (
                     <div className="text-center py-12">

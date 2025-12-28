@@ -15,8 +15,8 @@ import {
 import { useSavedPaymentMethods, SavedPaymentMethod } from '@/hooks/useSavedPaymentMethods';
 
 interface SavedPaymentMethodsProps {
-  onSelect?: (method: SavedPaymentMethod) => void;
-  selectedId?: string;
+  onSelect?: (id: string) => void;
+  selectedId?: string | null;
   showAddButton?: boolean;
 }
 
@@ -207,7 +207,7 @@ export function SavedPaymentMethods({
                     ? 'border-primary bg-primary/5'
                     : 'border-border hover:border-primary/50'
                 }`}
-                onClick={() => onSelect?.(method)}
+                onClick={() => onSelect?.(method.id)}
               >
                 <div className={`p-2 rounded-lg ${getMethodColor(method.method_type)}`}>
                   {getMethodIcon(method.method_type)}
