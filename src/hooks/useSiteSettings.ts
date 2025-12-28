@@ -16,6 +16,8 @@ interface SiteSettings {
   flash_sale_discount: string;
   flash_sale_end_date: string;
   whatsapp_notification_phone: string;
+  banner_theme: string;
+  banner_animation: string;
   [key: string]: string; // Allow dynamic keys
 }
 
@@ -33,6 +35,8 @@ const defaultSettings: SiteSettings = {
   flash_sale_discount: '50',
   flash_sale_end_date: '',
   whatsapp_notification_phone: '+8801930278877',
+  banner_theme: 'default',
+  banner_animation: 'shimmer',
 };
 
 async function fetchSiteSettings(): Promise<SiteSettings> {

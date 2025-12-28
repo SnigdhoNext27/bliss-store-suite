@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Save, Store, Truck, Bell, Share2, Flame } from 'lucide-react';
+import { Save, Store, Truck, Bell, Share2, Flame, Palette } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { logAdminAction } from '@/lib/auditLog';
@@ -23,6 +24,8 @@ interface Settings {
   flash_sale_enabled: string;
   flash_sale_discount: string;
   flash_sale_end_date: string;
+  banner_theme: string;
+  banner_animation: string;
 }
 
 export default function Settings() {
@@ -40,6 +43,8 @@ export default function Settings() {
     flash_sale_enabled: 'true',
     flash_sale_discount: '50',
     flash_sale_end_date: '',
+    banner_theme: 'default',
+    banner_animation: 'shimmer',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -202,7 +207,83 @@ export default function Settings() {
         </div>
       </motion.div>
 
-      {/* Delivery Settings */}
+      {/* Banner Customization */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="bg-card rounded-xl border border-border p-6 space-y-6"
+      >
+        <div className="flex items-center gap-3 mb-4">
+          <Palette className="h-5 w-5 text-primary" />
+          <h2 className="font-display text-xl font-semibold">Banner Appearance</h2>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="banner_theme">Color Theme</Label>
+            <Select
+              value={settings.banner_theme}
+              onValueChange={(value) => setSettings({ ...settings, banner_theme: value })}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select theme" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full bg-gradient-to-r from-primary to-almans-brown-dark" />
+                    Default (Brown/Gold)
+                  </div>
+                </SelectItem>
+                <SelectItem value="fire">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full bg-gradient-to-r from-red-500 to-orange-500" />
+                    Fire (Red/Orange)
+                  </div>
+                </SelectItem>
+                <SelectItem value="ocean">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500" />
+                    Ocean (Blue/Cyan)
+                  </div>
+                </SelectItem>
+                <SelectItem value="midnight">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600" />
+                    Midnight (Purple)
+                  </div>
+                </SelectItem>
+                <SelectItem value="forest">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full bg-gradient-to-r from-green-600 to-emerald-500" />
+                    Forest (Green)
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="banner_animation">Animation Style</Label>
+            <Select
+              value={settings.banner_animation}
+              onValueChange={(value) => setSettings({ ...settings, banner_animation: value })}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select animation" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="shimmer">Shimmer (Moving gradient)</SelectItem>
+                <SelectItem value="pulse">Pulse (Breathing effect)</SelectItem>
+                <SelectItem value="glow">Glow (Subtle glow)</SelectItem>
+                <SelectItem value="none">None (Static)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </motion.div>
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
