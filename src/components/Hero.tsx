@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MoveHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import heroImage1 from '@/assets/hero-1.jpg';
@@ -64,6 +64,10 @@ export function Hero() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [direction, setDirection] = useState(1);
   const [isPaused, setIsPaused] = useState(false);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [showSwipeHint, setShowSwipeHint] = useState(true);
+  const [hasSwiped, setHasSwiped] = useState(false);
   const { settings } = useSiteSettings();
   const navigate = useNavigate();
 
@@ -91,23 +95,61 @@ export function Hero() {
     setCurrentSlide(index);
   };
 
-  const nextSlide = () => {
+  const nextSlide = useCallback(() => {
     setDirection(1);
     setCurrentSlide((prev) => (prev + 1) % slides.length);
-  };
+  }, [slides.length]);
 
-  const prevSlide = () => {
+  const prevSlide = useCallback(() => {
     setDirection(-1);
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+  }, [slides.length]);
+
+  // Touch/swipe handling
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
   };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isSwipe = Math.abs(distance) > minSwipeDistance;
+    
+    if (isSwipe) {
+      setHasSwiped(true);
+      setShowSwipeHint(false);
+      if (distance > 0) {
+        nextSlide();
+      } else {
+        prevSlide();
+      }
+    }
+  };
+
+  // Hide swipe hint after 4 seconds or after first swipe
+  useEffect(() => {
+    if (hasSwiped) return;
+    const timer = setTimeout(() => setShowSwipeHint(false), 4000);
+    return () => clearTimeout(timer);
+  }, [hasSwiped]);
 
   const slide = slides[currentSlide];
 
   return (
     <section 
-      className="relative w-full overflow-hidden bg-primary"
+      className="relative w-full overflow-hidden bg-primary touch-pan-y"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
     >
       <div className="relative h-[85vh] min-h-[600px] max-h-[900px]">
         {/* Background Image */}
@@ -255,6 +297,27 @@ export function Hero() {
           <span className="mx-2">/</span>
           <span>{String(slides.length).padStart(2, '0')}</span>
         </div>
+
+        {/* Mobile Swipe Hint */}
+        <AnimatePresence>
+          {showSwipeHint && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 flex items-center pointer-events-none md:hidden"
+            >
+              <motion.div
+                animate={{ x: [0, 10, -10, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1 }}
+                className="flex items-center gap-2 bg-almans-cream/90 text-almans-chocolate px-4 py-2 rounded-full shadow-lg"
+              >
+                <MoveHorizontal className="h-4 w-4" />
+                <span className="text-sm font-medium">Swipe to browse</span>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </section>
   );
