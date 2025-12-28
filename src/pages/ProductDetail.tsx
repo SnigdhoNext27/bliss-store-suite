@@ -21,6 +21,7 @@ import { LowStockWarning } from '@/components/LowStockWarning';
 import { ProductQA } from '@/components/ProductQA';
 import { SizeRecommendationQuiz } from '@/components/SizeRecommendationQuiz';
 import { PriceDisplay } from '@/components/PriceDisplay';
+import { ProductVideoPlayer } from '@/components/ProductVideoPlayer';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -202,6 +203,17 @@ export default function ProductDetail() {
                       <img src={image} alt="" className="w-full h-full object-cover" />
                     </button>
                   ))}
+                </div>
+              )}
+
+              {/* Product Video */}
+              {product.video_url && (
+                <div className="mt-6">
+                  <h3 className="font-medium mb-3">Product Video</h3>
+                  <ProductVideoPlayer 
+                    videoUrl={product.video_url} 
+                    posterUrl={product.images[0]}
+                  />
                 </div>
               )}
             </motion.div>

@@ -921,6 +921,7 @@ export type Database = {
           slug: string
           stock: number
           updated_at: string
+          video_url: string | null
         }
         Insert: {
           category_id?: string | null
@@ -943,6 +944,7 @@ export type Database = {
           slug: string
           stock?: number
           updated_at?: string
+          video_url?: string | null
         }
         Update: {
           category_id?: string | null
@@ -965,6 +967,7 @@ export type Database = {
           slug?: string
           stock?: number
           updated_at?: string
+          video_url?: string | null
         }
         Relationships: [
           {
@@ -1185,6 +1188,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      saved_payment_methods: {
+        Row: {
+          card_brand: string | null
+          created_at: string
+          id: string
+          is_default: boolean | null
+          last_four: string | null
+          method_type: string
+          nickname: string | null
+          phone_number: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          card_brand?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          last_four?: string | null
+          method_type: string
+          nickname?: string | null
+          phone_number?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          card_brand?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          last_four?: string | null
+          method_type?: string
+          nickname?: string | null
+          phone_number?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       site_settings: {
         Row: {
