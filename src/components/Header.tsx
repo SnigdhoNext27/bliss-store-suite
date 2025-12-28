@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, ShoppingBag, User, Menu, X, LogOut, Settings, Package, Facebook, Instagram, Home } from 'lucide-react';
+import { Search, ShoppingBag, User, Menu, X, LogOut, Settings, Package, Facebook, Instagram, Home, ChevronDown, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -10,11 +10,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +24,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useCartStore } from '@/lib/store';
 import { useAuth } from '@/lib/auth';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { Logo } from './Logo';
+import { SearchBar } from './SearchBar';
 
 const navLinks = [
   { name: 'Home', href: '/' },
@@ -40,6 +37,7 @@ const navLinks = [
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { getTotalItems, openCart } = useCartStore();
   const { user, isAdmin, signOut } = useAuth();
   const { settings } = useSiteSettings();
@@ -85,17 +83,13 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      {/* Search Overlay */}
+      <SearchBar isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+
+      <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between px-4 md:px-8">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-primary">
-            <span className="font-display text-lg font-semibold text-primary">A</span>
-          </div>
-          <span className="hidden font-display text-xl font-semibold text-foreground sm:inline-block">
-            ALMANS
-          </span>
-        </Link>
+        <Logo />
 
         {/* Desktop Navigation */}
         <nav className="hidden items-center gap-6 md:flex">
@@ -135,70 +129,92 @@ export function Header() {
           </div>
         </nav>
 
-        {/* Right Actions */}
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="hidden sm:flex">
+        {/* Right Actions - Shopee Style */}
+        <div className="flex items-center gap-1">
+          {/* Search Button */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setIsSearchOpen(true)}
+            className="relative"
+          >
             <Search className="h-5 w-5" />
             <span className="sr-only">Search</span>
           </Button>
 
-          {/* User Menu */}
+          {/* Wishlist */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => navigate('/wishlist')}
+            className="hidden sm:flex"
+          >
+            <Heart className="h-5 w-5" />
+            <span className="sr-only">Wishlist</span>
+          </Button>
+
+          {/* User Menu - Shopee Style */}
           {user ? (
-            <>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-2">
-                    <User className="h-5 w-5" />
-                    <span className="hidden sm:inline">Hi, {user.email?.split('@')[0]}</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => navigate('/account')}>
-                    <User className="h-4 w-4 mr-2" />
-                    My Account
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/account?tab=orders')}>
-                    <Package className="h-4 w-4 mr-2" />
-                    My Orders
-                  </DropdownMenuItem>
-                  {isAdmin && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => navigate('/admin')}>
-                        <Settings className="h-4 w-4 mr-2" />
-                        Admin Dashboard
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOutClick}>
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              
-              {/* Dedicated Sign Out Button */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleSignOutClick}
-                    className="hidden sm:flex hover:bg-destructive/10 hover:text-destructive transition-colors"
-                  >
-                    <LogOut className="h-5 w-5" />
-                    <span className="sr-only">Sign Out</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Sign Out</p>
-                </TooltipContent>
-              </Tooltip>
-            </>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-1 group">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-almans-gold flex items-center justify-center">
+                      <span className="text-xs font-bold text-primary-foreground uppercase">
+                        {user.email?.charAt(0)}
+                      </span>
+                    </div>
+                    <span className="hidden lg:inline text-sm max-w-[100px] truncate">
+                      {user.email?.split('@')[0]}
+                    </span>
+                    <ChevronDown className="h-4 w-4 hidden sm:block transition-transform group-data-[state=open]:rotate-180" />
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 p-2">
+                <div className="px-2 py-3 border-b border-border mb-2">
+                  <p className="text-sm font-medium">Welcome back!</p>
+                  <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                </div>
+                <DropdownMenuItem onClick={() => navigate('/account')} className="py-2.5">
+                  <User className="h-4 w-4 mr-3" />
+                  My Account
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/account?tab=orders')} className="py-2.5">
+                  <Package className="h-4 w-4 mr-3" />
+                  My Orders
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/wishlist')} className="py-2.5">
+                  <Heart className="h-4 w-4 mr-3" />
+                  My Wishlist
+                </DropdownMenuItem>
+                {isAdmin && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate('/admin')} className="py-2.5">
+                      <Settings className="h-4 w-4 mr-3" />
+                      Admin Dashboard
+                    </DropdownMenuItem>
+                  </>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={handleSignOutClick} 
+                  className="py-2.5 text-destructive focus:text-destructive"
+                >
+                  <LogOut className="h-4 w-4 mr-3" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
-            <Button variant="ghost" size="sm" onClick={() => navigate('/auth')}>
-              <User className="h-5 w-5 mr-2" />
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => navigate('/auth')}
+              className="gap-2"
+            >
+              <User className="h-5 w-5" />
               <span className="hidden sm:inline">Login</span>
             </Button>
           )}
