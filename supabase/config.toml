@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.abandoned-cart-recovery]
 verify_jwt = false
+
+[functions.order-shipped-notification]
+verify_jwt = false
