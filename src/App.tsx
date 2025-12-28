@@ -19,6 +19,7 @@ import { CartQuickView } from "@/components/CartQuickView";
 import { ProductComparisonBar } from "@/components/ProductComparisonBar";
 import { ProductComparisonModal } from "@/components/ProductComparisonModal";
 import { AbandonedCartTracker } from "@/components/AbandonedCartTracker";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { fetchAndUpdateRates } from "@/hooks/useCurrency";
 import Index from "./pages/Index";
 import Shop from "./pages/Shop";
@@ -91,6 +92,7 @@ const App = () => {
                   <LiveChatWidget />
                   <BackToTop />
                   <BrowserRouter>
+                    <OfflineIndicator />
                     <AbandonedCartTracker />
                     <ProductComparisonBar />
                     <ProductComparisonModal />
