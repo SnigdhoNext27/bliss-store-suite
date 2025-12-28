@@ -300,8 +300,12 @@ export function Header() {
           navigate('/admin');
           setIsMobileMenuOpen(false);
         }}
-        onAuth={() => {
-          navigate('/auth');
+        onLogin={() => {
+          navigate('/auth?mode=login');
+          setIsMobileMenuOpen(false);
+        }}
+        onSignup={() => {
+          navigate('/auth?mode=signup');
           setIsMobileMenuOpen(false);
         }}
         onSignOut={() => {
