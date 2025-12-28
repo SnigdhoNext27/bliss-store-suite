@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 interface Currency {
   code: string;
@@ -8,7 +10,8 @@ interface Currency {
   rate: number; // Rate relative to BDT
 }
 
-const currencies: Currency[] = [
+// Default rates (fallback if API fails)
+const defaultCurrencies: Currency[] = [
   { code: 'BDT', symbol: '৳', name: 'Bangladeshi Taka', rate: 1 },
   { code: 'USD', symbol: '$', name: 'US Dollar', rate: 0.0091 },
   { code: 'EUR', symbol: '€', name: 'Euro', rate: 0.0084 },
@@ -25,22 +28,51 @@ const currencies: Currency[] = [
 interface CurrencyStore {
   selectedCurrency: Currency;
   currencies: Currency[];
+  lastUpdated: string | null;
   setCurrency: (code: string) => void;
+  updateRates: (rates: Record<string, number>) => void;
   convert: (amount: number) => number;
   format: (amount: number) => string;
 }
 
-export const useCurrency = create<CurrencyStore>()(
+export const useCurrencyStore = create<CurrencyStore>()(
   persist(
     (set, get) => ({
-      selectedCurrency: currencies[0],
-      currencies,
+      selectedCurrency: defaultCurrencies[0],
+      currencies: defaultCurrencies,
+      lastUpdated: null,
 
       setCurrency: (code: string) => {
+        const { currencies } = get();
         const currency = currencies.find(c => c.code === code);
         if (currency) {
           set({ selectedCurrency: currency });
         }
+      },
+
+      updateRates: (rates: Record<string, number>) => {
+        const { currencies, selectedCurrency } = get();
+        // BDT rate from the API (we need to convert all rates relative to BDT)
+        const bdtRate = rates['BDT'] || 1;
+        
+        const updatedCurrencies = currencies.map(currency => {
+          if (currency.code === 'BDT') return { ...currency, rate: 1 };
+          const apiRate = rates[currency.code];
+          if (apiRate) {
+            // Convert rate relative to BDT
+            return { ...currency, rate: apiRate / bdtRate };
+          }
+          return currency;
+        });
+
+        // Update selected currency with new rate
+        const updatedSelected = updatedCurrencies.find(c => c.code === selectedCurrency.code) || selectedCurrency;
+
+        set({ 
+          currencies: updatedCurrencies, 
+          selectedCurrency: updatedSelected,
+          lastUpdated: new Date().toISOString()
+        });
       },
 
       convert: (amount: number) => {
@@ -70,3 +102,48 @@ export const useCurrency = create<CurrencyStore>()(
     }
   )
 );
+
+// Fetch live exchange rates from a free API
+const fetchExchangeRates = async (): Promise<Record<string, number>> => {
+  try {
+    // Using exchangerate-api.com free tier (no API key needed for basic usage)
+    const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+    if (!response.ok) throw new Error('Failed to fetch rates');
+    const data = await response.json();
+    return data.rates;
+  } catch (error) {
+    console.error('Error fetching exchange rates:', error);
+    throw error;
+  }
+};
+
+// Hook that combines store with live rate updates
+export const useCurrency = () => {
+  const store = useCurrencyStore();
+  
+  // Fetch rates on mount and cache for 24 hours
+  const { data: rates } = useQuery({
+    queryKey: ['exchangeRates'],
+    queryFn: fetchExchangeRates,
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours
+    gcTime: 24 * 60 * 60 * 1000, // Keep in cache for 24 hours
+    refetchOnWindowFocus: false,
+    retry: 2,
+  });
+
+  // Update store when rates are fetched
+  useEffect(() => {
+    if (rates) {
+      store.updateRates(rates);
+    }
+  }, [rates]);
+
+  return {
+    selectedCurrency: store.selectedCurrency,
+    currencies: store.currencies,
+    lastUpdated: store.lastUpdated,
+    setCurrency: store.setCurrency,
+    convert: store.convert,
+    format: store.format,
+  };
+};
