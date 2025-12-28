@@ -1,7 +1,5 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
 
 interface Currency {
   code: string;
@@ -35,7 +33,7 @@ interface CurrencyStore {
   format: (amount: number) => string;
 }
 
-export const useCurrencyStore = create<CurrencyStore>()(
+export const useCurrency = create<CurrencyStore>()(
   persist(
     (set, get) => ({
       selectedCurrency: defaultCurrencies[0],
@@ -103,47 +101,14 @@ export const useCurrencyStore = create<CurrencyStore>()(
   )
 );
 
-// Fetch live exchange rates from a free API
-const fetchExchangeRates = async (): Promise<Record<string, number>> => {
+// Function to fetch and update rates - call this once at app level
+export const fetchAndUpdateRates = async () => {
   try {
-    // Using exchangerate-api.com free tier (no API key needed for basic usage)
     const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
     if (!response.ok) throw new Error('Failed to fetch rates');
     const data = await response.json();
-    return data.rates;
+    useCurrency.getState().updateRates(data.rates);
   } catch (error) {
     console.error('Error fetching exchange rates:', error);
-    throw error;
   }
-};
-
-// Hook that combines store with live rate updates
-export const useCurrency = () => {
-  const store = useCurrencyStore();
-  
-  // Fetch rates on mount and cache for 24 hours
-  const { data: rates } = useQuery({
-    queryKey: ['exchangeRates'],
-    queryFn: fetchExchangeRates,
-    staleTime: 24 * 60 * 60 * 1000, // 24 hours
-    gcTime: 24 * 60 * 60 * 1000, // Keep in cache for 24 hours
-    refetchOnWindowFocus: false,
-    retry: 2,
-  });
-
-  // Update store when rates are fetched
-  useEffect(() => {
-    if (rates) {
-      store.updateRates(rates);
-    }
-  }, [rates]);
-
-  return {
-    selectedCurrency: store.selectedCurrency,
-    currencies: store.currencies,
-    lastUpdated: store.lastUpdated,
-    setCurrency: store.setCurrency,
-    convert: store.convert,
-    format: store.format,
-  };
 };
