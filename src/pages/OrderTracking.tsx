@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
-import { Package, Truck, CheckCircle, Clock, XCircle, ChevronLeft, Loader2, Copy, Share2 } from 'lucide-react';
+import { Package, Truck, CheckCircle, Clock, XCircle, ChevronLeft, Loader2, Copy, Share2, FileText, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { CartSlide } from '@/components/CartSlide';
+import { InvoiceDownloadButton } from '@/components/InvoiceDownloadButton';
 
 interface OrderItem {
   id: string;
@@ -36,6 +37,7 @@ interface Order {
     full_name?: string;
     phone?: string;
     address?: string;
+    city?: string;
     area?: string;
   };
 }
@@ -55,7 +57,9 @@ export default function OrderTracking() {
   const [order, setOrder] = useState<Order | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [statusHistory, setStatusHistory] = useState<{ status: string; timestamp: string }[]>([]);
 
   useEffect(() => {
     if (orderNumber) {
@@ -63,8 +67,51 @@ export default function OrderTracking() {
     }
   }, [orderNumber]);
 
-  const fetchOrder = async () => {
-    setLoading(true);
+  // Set up real-time subscription for order updates
+  useEffect(() => {
+    if (!order?.id) return;
+
+    const channel = supabase
+      .channel(`order-${order.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `id=eq.${order.id}`,
+        },
+        (payload) => {
+          const newOrder = payload.new as Order;
+          setOrder(newOrder);
+          
+          // Add to status history if status changed
+          if (newOrder.status !== order.status) {
+            setStatusHistory(prev => [
+              ...prev,
+              { status: newOrder.status, timestamp: new Date().toISOString() }
+            ]);
+            toast({
+              title: 'Order Updated',
+              description: `Your order is now ${newOrder.status}!`,
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [order?.id, order?.status, toast]);
+
+  const fetchOrder = async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    
     try {
       // Fetch order by order number
       const { data: orderData, error: orderError } = await supabase
@@ -75,11 +122,29 @@ export default function OrderTracking() {
 
       if (orderError || !orderData) {
         setError('Order not found');
-        setLoading(false);
         return;
       }
 
       setOrder(orderData as Order);
+      
+      // Build status history from order data
+      const history: { status: string; timestamp: string }[] = [];
+      history.push({ status: 'pending', timestamp: orderData.created_at });
+      
+      if (['processing', 'shipped', 'delivered'].includes(orderData.status)) {
+        history.push({ status: 'processing', timestamp: orderData.created_at });
+      }
+      if (['shipped', 'delivered'].includes(orderData.status)) {
+        history.push({ status: 'shipped', timestamp: orderData.updated_at });
+      }
+      if (orderData.status === 'delivered') {
+        history.push({ status: 'delivered', timestamp: orderData.updated_at });
+      }
+      if (orderData.status === 'cancelled') {
+        history.push({ status: 'cancelled', timestamp: orderData.updated_at });
+      }
+      
+      setStatusHistory(history);
 
       // Fetch order items
       const { data: itemsData } = await supabase
@@ -90,10 +155,15 @@ export default function OrderTracking() {
       if (itemsData) {
         setOrderItems(itemsData as OrderItem[]);
       }
+      
+      if (isRefresh) {
+        toast({ title: 'Order refreshed!' });
+      }
     } catch (err) {
       setError('Failed to load order');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -183,7 +253,16 @@ export default function OrderTracking() {
                   <p className="text-sm text-muted-foreground">Order Number</p>
                   <h1 className="font-display text-2xl font-bold text-primary">{order.order_number}</h1>
                 </div>
-                <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => fetchOrder(true)}
+                    disabled={refreshing}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </Button>
                   <Button variant="outline" size="sm" onClick={copyOrderNumber}>
                     <Copy className="h-4 w-4 mr-2" />
                     Copy
@@ -192,6 +271,19 @@ export default function OrderTracking() {
                     <Share2 className="h-4 w-4 mr-2" />
                     Share
                   </Button>
+                  {order && (
+                    <InvoiceDownloadButton 
+                      order={{
+                        ...order,
+                        items: orderItems.map(item => ({
+                          product_name: item.product_name,
+                          quantity: item.quantity,
+                          price: item.price,
+                          size: item.size
+                        }))
+                      }}
+                    />
+                  )}
                 </div>
               </div>
               <p className="text-sm text-muted-foreground">
@@ -214,14 +306,21 @@ export default function OrderTracking() {
               </div>
             ) : (
               <div className="bg-card rounded-xl p-6 mb-6">
-                <h2 className="font-display text-lg font-bold mb-6">Order Status</h2>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="font-display text-lg font-bold">Order Status</h2>
+                  <Badge variant="outline" className="text-xs">
+                    Real-time updates enabled
+                  </Badge>
+                </div>
                 
                 <div className="relative">
                   {/* Progress Line */}
                   <div className="absolute left-6 top-6 bottom-6 w-0.5 bg-border" />
-                  <div 
-                    className="absolute left-6 top-6 w-0.5 bg-primary transition-all duration-500"
-                    style={{ height: `${Math.max(0, (currentStep / (statusSteps.length - 1)) * 100)}%` }}
+                  <motion.div 
+                    className="absolute left-6 top-6 w-0.5 bg-primary"
+                    initial={{ height: 0 }}
+                    animate={{ height: `${Math.max(0, (currentStep / (statusSteps.length - 1)) * 100)}%` }}
+                    transition={{ duration: 0.5, ease: 'easeOut' }}
                   />
 
                   {/* Status Steps */}
@@ -230,27 +329,53 @@ export default function OrderTracking() {
                       const isCompleted = index <= currentStep;
                       const isCurrent = index === currentStep;
                       const StepIcon = step.icon;
+                      const historyEntry = statusHistory.find(h => h.status === step.key);
 
                       return (
-                        <div key={step.key} className="flex items-center gap-4 relative">
-                          <div
-                            className={`w-12 h-12 rounded-full flex items-center justify-center z-10 transition-colors ${
+                        <motion.div 
+                          key={step.key} 
+                          className="flex items-start gap-4 relative"
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                        >
+                          <motion.div
+                            className={`w-12 h-12 rounded-full flex items-center justify-center z-10 transition-colors shrink-0 ${
                               isCompleted
                                 ? 'bg-primary text-primary-foreground'
                                 : 'bg-muted text-muted-foreground'
                             } ${isCurrent ? 'ring-4 ring-primary/20' : ''}`}
+                            initial={false}
+                            animate={isCurrent ? { scale: [1, 1.1, 1] } : {}}
+                            transition={{ duration: 0.5, repeat: isCurrent ? Infinity : 0, repeatDelay: 2 }}
                           >
                             <StepIcon className="h-5 w-5" />
-                          </div>
-                          <div>
+                          </motion.div>
+                          <div className="pt-2.5">
                             <p className={`font-medium ${isCompleted ? 'text-foreground' : 'text-muted-foreground'}`}>
                               {step.label}
                             </p>
                             {isCurrent && (
-                              <p className="text-sm text-primary">Current Status</p>
+                              <motion.p 
+                                className="text-sm text-primary font-medium"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                              >
+                                Current Status
+                              </motion.p>
+                            )}
+                            {historyEntry && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {new Date(historyEntry.timestamp).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
                             )}
                           </div>
-                        </div>
+                        </motion.div>
                       );
                     })}
                   </div>
