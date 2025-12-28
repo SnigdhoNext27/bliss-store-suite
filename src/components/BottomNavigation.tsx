@@ -53,9 +53,10 @@ export function BottomNavigation() {
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-background/95 backdrop-blur-xl border-t border-border shadow-lg safe-area-pb"
+      className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-background/98 backdrop-blur-xl border-t border-border/50 shadow-[0_-4px_20px_-4px_rgba(0,0,0,0.08)]"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
-      <div className="flex items-center justify-around h-16 px-2">
+      <div className="flex items-center justify-around h-[60px] px-1 max-w-md mx-auto">
         {navItems.map((item) => {
           const active = isActive(item.path);
           const showBadge = 
@@ -72,41 +73,41 @@ export function BottomNavigation() {
             <button
               key={item.label}
               onClick={() => handleNavigation(item)}
-              className="relative flex flex-col items-center justify-center w-16 h-full transition-all"
+              className="relative flex flex-col items-center justify-center flex-1 h-full py-1.5 transition-all active:scale-95"
             >
               <motion.div
-                className={`relative p-2 rounded-xl transition-colors ${
+                className={`relative p-2.5 rounded-2xl transition-all duration-200 ${
                   active 
-                    ? 'bg-primary/15 text-primary' 
+                    ? 'bg-primary/12 text-primary shadow-sm' 
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
                 whileTap={{ scale: 0.9 }}
               >
-                <item.icon className="h-5 w-5" strokeWidth={active ? 2.5 : 2} />
+                <item.icon className={`h-5 w-5 transition-all ${active ? 'stroke-[2.5px]' : 'stroke-[2px]'}`} />
                 
-                {/* Badge */}
+                {/* Badge with pulse animation */}
                 {showBadge && (
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center px-1 text-[10px] font-bold bg-primary text-primary-foreground rounded-full"
+                    className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center px-1 text-[10px] font-bold bg-primary text-primary-foreground rounded-full shadow-sm"
                   >
                     {badgeCount > 99 ? '99+' : badgeCount}
                   </motion.span>
                 )}
               </motion.div>
               
-              <span className={`text-[10px] mt-0.5 font-medium transition-colors ${
-                active ? 'text-primary' : 'text-muted-foreground'
+              <span className={`text-[10px] mt-0.5 font-medium transition-all ${
+                active ? 'text-primary font-semibold' : 'text-muted-foreground'
               }`}>
                 {item.label}
               </span>
 
-              {/* Active indicator */}
+              {/* Active indicator pill */}
               {active && (
                 <motion.div
                   layoutId="bottomNavIndicator"
-                  className="absolute bottom-1 w-4 h-1 bg-primary rounded-full"
+                  className="absolute -bottom-0.5 w-8 h-1 bg-gradient-to-r from-primary to-primary/70 rounded-full shadow-sm"
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />
               )}
@@ -119,7 +120,7 @@ export function BottomNavigation() {
                 <TooltipTrigger asChild>
                   {buttonContent}
                 </TooltipTrigger>
-                <TooltipContent side="top" className="bg-foreground text-background text-xs">
+                <TooltipContent side="top" className="bg-foreground text-background text-xs px-3 py-1.5 rounded-lg">
                   {tooltipContent}
                 </TooltipContent>
               </Tooltip>
