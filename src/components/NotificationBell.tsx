@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, Check, Package, Megaphone, ShoppingBag, Sparkles, Volume2, VolumeX, Trash2, Settings, ChevronLeft } from 'lucide-react';
+import { Bell, Check, Package, Megaphone, ShoppingBag, Sparkles, Volume2, VolumeX, Trash2, Settings, ChevronLeft, Mail, BellRing } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 interface Notification {
   id: string;
@@ -26,6 +27,11 @@ interface NotificationPreferences {
   product: boolean;
   order: boolean;
   promo: boolean;
+}
+
+interface ExtendedPreferences extends NotificationPreferences {
+  pushEnabled: boolean;
+  emailEnabled: boolean;
 }
 
 const notificationIcons: Record<string, React.ReactNode> = {
@@ -53,11 +59,13 @@ const notificationLabels: Record<string, string> = {
 const READ_NOTIFICATIONS_KEY = 'alman_read_notifications';
 const NOTIFICATION_PREFS_KEY = 'alman_notification_prefs';
 
-const defaultPreferences: NotificationPreferences = {
+const defaultPreferences: ExtendedPreferences = {
   info: true,
   product: true,
   order: true,
   promo: true,
+  pushEnabled: false,
+  emailEnabled: true,
 };
 
 export function NotificationBell() {
@@ -66,12 +74,13 @@ export function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [preferences, setPreferences] = useState<NotificationPreferences>(defaultPreferences);
+  const [preferences, setPreferences] = useState<ExtendedPreferences>(defaultPreferences);
   const panelRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { isSupported: pushSupported, permission: pushPermission, requestPermission: requestPushPermission, showNotification: showPushNotification } = usePushNotifications();
 
   // Load preferences from local storage
   useEffect(() => {
@@ -86,7 +95,7 @@ export function NotificationBell() {
   }, []);
 
   // Save preferences to local storage
-  const savePreferences = useCallback((newPrefs: NotificationPreferences) => {
+  const savePreferences = useCallback((newPrefs: ExtendedPreferences) => {
     setPreferences(newPrefs);
     try {
       localStorage.setItem(NOTIFICATION_PREFS_KEY, JSON.stringify(newPrefs));
@@ -95,7 +104,7 @@ export function NotificationBell() {
     }
   }, []);
 
-  const togglePreference = (type: keyof NotificationPreferences) => {
+  const togglePreference = (type: keyof ExtendedPreferences) => {
     const newPrefs = { ...preferences, [type]: !preferences[type] };
     savePreferences(newPrefs);
   };
@@ -199,9 +208,25 @@ export function NotificationBell() {
         },
         (payload) => {
           const newNotification = payload.new as Notification;
+          
+          // Check if this notification type is enabled
+          const typeKey = newNotification.type as keyof NotificationPreferences;
+          if (preferences[typeKey] === false) {
+            return; // Skip if this type is disabled
+          }
+          
           setNotifications(prev => [newNotification, ...prev]);
           setUnreadCount(prev => prev + 1);
           playNotificationSound();
+          
+          // Show browser push notification if enabled
+          if (preferences.pushEnabled && pushPermission === 'granted') {
+            showPushNotification(newNotification.title, {
+              body: newNotification.message,
+              icon: '/favicon.jpg',
+              data: { url: newNotification.link || '/' },
+            });
+          }
         }
       )
       .subscribe();
@@ -209,7 +234,7 @@ export function NotificationBell() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchNotifications, playNotificationSound]);
+  }, [fetchNotifications, playNotificationSound, preferences, pushPermission, showPushNotification]);
 
   // Close panel when clicking outside
   useEffect(() => {
@@ -475,45 +500,112 @@ export function NotificationBell() {
 
               {/* Settings View */}
               {showSettings ? (
-                <div className="p-4 space-y-4">
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Choose which types of notifications you want to receive:
-                  </p>
-                  {(Object.keys(notificationLabels) as Array<keyof NotificationPreferences>).map((type) => (
-                    <div key={type} className="flex items-center justify-between py-2">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${notificationColors[type]}`}>
-                          {notificationIcons[type]}
+                <ScrollArea className="h-[400px] md:h-[400px]">
+                  <div className="p-4 space-y-4">
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Choose which types of notifications you want to receive:
+                    </p>
+                    {(Object.keys(notificationLabels) as Array<keyof NotificationPreferences>).map((type) => (
+                      <div key={type} className="flex items-center justify-between py-2">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${notificationColors[type]}`}>
+                            {notificationIcons[type]}
+                          </div>
+                          <Label htmlFor={`pref-${type}`} className="text-sm font-medium cursor-pointer">
+                            {notificationLabels[type]}
+                          </Label>
                         </div>
-                        <Label htmlFor={`pref-${type}`} className="text-sm font-medium cursor-pointer">
-                          {notificationLabels[type]}
-                        </Label>
+                        <Switch
+                          id={`pref-${type}`}
+                          checked={preferences[type]}
+                          onCheckedChange={() => togglePreference(type)}
+                        />
                       </div>
-                      <Switch
-                        id={`pref-${type}`}
-                        checked={preferences[type]}
-                        onCheckedChange={() => togglePreference(type)}
-                      />
-                    </div>
-                  ))}
-                  <div className="pt-4 border-t border-border">
-                    <div className="flex items-center justify-between py-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-muted">
-                          <Volume2 className="h-4 w-4 text-muted-foreground" />
+                    ))}
+                    
+                    {/* Delivery Methods */}
+                    <div className="pt-4 border-t border-border">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide mb-3">
+                        Delivery Methods
+                      </p>
+                      
+                      {/* Push Notifications */}
+                      <div className="flex items-center justify-between py-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center bg-primary/10">
+                            <BellRing className="h-4 w-4 text-primary" />
+                          </div>
+                          <div>
+                            <Label htmlFor="push-pref" className="text-sm font-medium cursor-pointer block">
+                              Browser Notifications
+                            </Label>
+                            <p className="text-xs text-muted-foreground">
+                              {!pushSupported 
+                                ? 'Not supported in this browser' 
+                                : pushPermission === 'denied'
+                                  ? 'Blocked by browser'
+                                  : 'Get notified even when app is closed'}
+                            </p>
+                          </div>
                         </div>
-                        <Label htmlFor="sound-pref" className="text-sm font-medium cursor-pointer">
-                          Notification sounds
-                        </Label>
+                        <Switch
+                          id="push-pref"
+                          checked={preferences.pushEnabled && pushPermission === 'granted'}
+                          disabled={!pushSupported || pushPermission === 'denied'}
+                          onCheckedChange={async (checked) => {
+                            if (checked && pushPermission !== 'granted') {
+                              const granted = await requestPushPermission();
+                              if (granted) {
+                                togglePreference('pushEnabled');
+                              }
+                            } else {
+                              togglePreference('pushEnabled');
+                            }
+                          }}
+                        />
                       </div>
-                      <Switch
-                        id="sound-pref"
-                        checked={soundEnabled}
-                        onCheckedChange={setSoundEnabled}
-                      />
+
+                      {/* Email Notifications */}
+                      <div className="flex items-center justify-between py-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center bg-orange-500/10">
+                            <Mail className="h-4 w-4 text-orange-500" />
+                          </div>
+                          <div>
+                            <Label htmlFor="email-pref" className="text-sm font-medium cursor-pointer block">
+                              Email Notifications
+                            </Label>
+                            <p className="text-xs text-muted-foreground">
+                              Receive sale alerts and updates via email
+                            </p>
+                          </div>
+                        </div>
+                        <Switch
+                          id="email-pref"
+                          checked={preferences.emailEnabled}
+                          onCheckedChange={() => togglePreference('emailEnabled')}
+                        />
+                      </div>
+
+                      {/* Sound */}
+                      <div className="flex items-center justify-between py-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center bg-muted">
+                            <Volume2 className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                          <Label htmlFor="sound-pref" className="text-sm font-medium cursor-pointer">
+                            Notification sounds
+                          </Label>
+                        </div>
+                        <Switch
+                          id="sound-pref"
+                          checked={soundEnabled}
+                          onCheckedChange={setSoundEnabled}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
+                </ScrollArea>
               ) : (
                 /* Notifications List */
                 <ScrollArea className="h-[400px] md:h-[400px]">
