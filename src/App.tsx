@@ -12,6 +12,7 @@ import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { LiveChatWidget } from "@/components/chat/LiveChatWidget";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { BackToTop } from "@/components/BackToTop";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { AnimatedRoutes } from "@/components/AnimatedRoutes";
 import { SwipeNavigationWrapper } from "@/components/SwipeNavigationWrapper";
@@ -92,6 +93,7 @@ const App = () => {
                   <LiveChatWidget />
                   <BackToTop />
                   <BrowserRouter>
+                    <ScrollToTop />
                     <OfflineIndicator />
                     <AbandonedCartTracker />
                     <ProductComparisonBar />
