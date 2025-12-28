@@ -1,13 +1,31 @@
+import { useState, useEffect } from 'react';
 import { motion, type Easing } from 'framer-motion';
 import { WolfLogoIcon } from './WolfLogoIcon';
 
 interface LoadingScreenProps {
   onSkip?: () => void;
+  duration?: number;
 }
 
-export function LoadingScreen({ onSkip }: LoadingScreenProps) {
+export function LoadingScreen({ onSkip, duration = 2500 }: LoadingScreenProps) {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const startTime = Date.now();
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const newProgress = Math.min((elapsed / duration) * 100, 100);
+      setProgress(newProgress);
+      
+      if (newProgress >= 100) {
+        clearInterval(interval);
+      }
+    }, 16); // ~60fps
+
+    return () => clearInterval(interval);
+  }, [duration]);
+
   const handleSkip = () => {
-    // Store preference to skip loading screen in future
     localStorage.setItem('skipLoadingScreen', 'true');
     onSkip?.();
   };
@@ -47,33 +65,33 @@ export function LoadingScreen({ onSkip }: LoadingScreenProps) {
         ALMANS
       </motion.h1>
 
-      {/* Loading indicator */}
+      {/* Progress bar */}
       <motion.div
-        className="mt-8 flex items-center gap-2"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.2 }}
+        className="mt-8 w-48 h-1 bg-muted rounded-full overflow-hidden"
+        initial={{ opacity: 0, scaleX: 0.8 }}
+        animate={{ opacity: 1, scaleX: 1 }}
+        transition={{ delay: 1, duration: 0.3 }}
       >
         <motion.div
-          className="w-2 h-2 rounded-full bg-primary"
-          animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 1, repeat: Infinity, delay: 0 }}
-        />
-        <motion.div
-          className="w-2 h-2 rounded-full bg-primary"
-          animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
-        />
-        <motion.div
-          className="w-2 h-2 rounded-full bg-primary"
-          animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
+          className="h-full bg-primary rounded-full"
+          style={{ width: `${progress}%` }}
+          transition={{ duration: 0.1 }}
         />
       </motion.div>
 
+      {/* Progress percentage */}
+      <motion.span
+        className="mt-3 text-xs text-muted-foreground font-medium tabular-nums"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.1 }}
+      >
+        {Math.round(progress)}%
+      </motion.span>
+
       {/* Skip button */}
       <motion.button
-        className="mt-10 px-6 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors border border-border/50 rounded-full hover:border-border hover:bg-muted/30"
+        className="mt-8 px-6 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors border border-border/50 rounded-full hover:border-border hover:bg-muted/30"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.5 }}
