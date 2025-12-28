@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Almans App Icon - Wolf Logo Placeholder -->
+  <rect width="512" height="512" rx="90" fill="#FAF8F5"/>
+  
+  <!-- Outer circle -->
+  <circle cx="256" cy="240" r="160" fill="none" stroke="#C9A45C" stroke-width="3"/>
+  
+  <!-- Inner circle -->
+  <circle cx="256" cy="240" r="100" fill="none" stroke="#C9A45C" stroke-width="2"/>
+  
+  <!-- Wolf head stylized -->
+  <g fill="#C9A45C">
+    <!-- Left ear -->
+    <path d="M200 180 L220 120 L240 180 Z" stroke="#C9A45C" stroke-width="2"/>
+    <!-- Right ear -->
+    <path d="M272 180 L292 120 L312 180 Z" stroke="#C9A45C" stroke-width="2"/>
+    
+    <!-- Face outline -->
+    <ellipse cx="256" cy="220" rx="55" ry="65" fill="none" stroke="#C9A45C" stroke-width="2"/>
+    
+    <!-- Eyes -->
+    <circle cx="235" cy="200" r="8" fill="#C9A45C"/>
+    <circle cx="277" cy="200" r="8" fill="#C9A45C"/>
+    
+    <!-- Inner eye -->
+    <circle cx="235" cy="200" r="3" fill="#FAF8F5"/>
+    <circle cx="277" cy="200" r="3" fill="#FAF8F5"/>
+    
+    <!-- Nose -->
+    <path d="M256 230 L248 245 L256 250 L264 245 Z" fill="#C9A45C"/>
+    
+    <!-- Diamond below -->
+    <path d="M256 260 L246 275 L256 290 L266 275 Z" fill="none" stroke="#C9A45C" stroke-width="2"/>
+  </g>
+  
+  <!-- Brand text -->
+  <text x="256" y="420" text-anchor="middle" font-family="Georgia, serif" font-size="36" fill="#C9A45C" letter-spacing="8">
+    ALMANS
+  </text>
+</svg>
