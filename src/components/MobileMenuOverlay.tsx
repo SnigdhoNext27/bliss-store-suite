@@ -1,10 +1,12 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import type { LucideIcon } from 'lucide-react';
-import { Home, X } from 'lucide-react';
+import { Home, X, Settings } from 'lucide-react';
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/Logo';
+import { SettingsPanel } from '@/components/SettingsPanel';
 
 type NavLink = {
   name: string;
@@ -93,6 +95,15 @@ export function MobileMenuOverlay({
                 </button>
               ))}
             </nav>
+
+            {/* Settings Section */}
+            <div className="border-t border-border px-4 py-4">
+              <div className="flex items-center gap-3 mb-3">
+                <Settings className="h-5 w-5 text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground">Settings</span>
+              </div>
+              <SettingsPanel variant="inline" />
+            </div>
 
             {/* Social */}
             <div className="flex items-center gap-3 border-t border-border px-4 py-4">
