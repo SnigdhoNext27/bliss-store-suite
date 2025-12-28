@@ -14,6 +14,8 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 import { BackToTop } from "@/components/BackToTop";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { AnimatedRoutes } from "@/components/AnimatedRoutes";
+import { SwipeNavigationWrapper } from "@/components/SwipeNavigationWrapper";
+import { CartQuickView } from "@/components/CartQuickView";
 import { ProductComparisonBar } from "@/components/ProductComparisonBar";
 import { ProductComparisonModal } from "@/components/ProductComparisonModal";
 import { AbandonedCartTracker } from "@/components/AbandonedCartTracker";
@@ -93,6 +95,8 @@ const App = () => {
                     <ProductComparisonBar />
                     <ProductComparisonModal />
                     <BottomNavigation />
+                    <CartQuickView />
+                    <SwipeNavigationWrapper>
                     <AnimatedRoutes>
                       <Routes>
                         <Route path="/" element={<Index />} />
@@ -125,6 +129,7 @@ const App = () => {
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </AnimatedRoutes>
+                    </SwipeNavigationWrapper>
                   </BrowserRouter>
                 </motion.div>
               )}
