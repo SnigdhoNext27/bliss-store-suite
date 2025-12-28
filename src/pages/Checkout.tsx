@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, MapPin, Phone, Truck, Check, PartyPopper, MessageCircle, Mail, AlertTriangle, Banknote, CreditCard, Smartphone, Award, Package } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Phone, Truck, Check, PartyPopper, MessageCircle, Mail, AlertTriangle, Banknote, CreditCard, Smartphone, Award, Package, Wallet } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,8 @@ import { LoyaltyPointsRedemption } from '@/components/LoyaltyPointsRedemption';
 import { BulkDiscountBanner } from '@/components/BulkDiscountBanner';
 import { useBulkDiscount } from '@/hooks/useBulkDiscount';
 import { GiftWrapOption } from '@/components/GiftWrapOption';
+import { SavedPaymentMethods } from '@/components/SavedPaymentMethods';
+import { useSavedPaymentMethods } from '@/hooks/useSavedPaymentMethods';
 
 const deliverySchema = z.object({
   fullName: z.string().min(2, 'Name is required').max(100),
@@ -58,6 +60,8 @@ export default function Checkout() {
   const [pointsDiscount, setPointsDiscount] = useState(0);
   const [giftWrap, setGiftWrap] = useState(false);
   const [giftMessage, setGiftMessage] = useState('');
+  const [selectedSavedPayment, setSelectedSavedPayment] = useState<string | null>(null);
+  const { methods: savedPaymentMethods } = useSavedPaymentMethods();
 
   const subtotal = liveSubtotal;
   const { discountAmount: bulkDiscountAmount, applicableTier } = useBulkDiscount(items, subtotal);
@@ -597,22 +601,55 @@ export default function Checkout() {
                     <CreditCard className="h-4 w-4" />
                     Payment Method
                   </h3>
+                  
+                  {/* Saved Payment Methods */}
+                  {savedPaymentMethods.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-sm text-muted-foreground mb-3 flex items-center gap-2">
+                        <Wallet className="h-4 w-4" />
+                        Your saved payment methods
+                      </p>
+                      <SavedPaymentMethods
+                        selectedId={selectedSavedPayment}
+                        onSelect={(id) => {
+                          setSelectedSavedPayment(id);
+                          const method = savedPaymentMethods.find(m => m.id === id);
+                          if (method) {
+                            setFormData({ ...formData, paymentMethod: method.method_type as 'cod' | 'bkash' | 'nagad' | 'card' });
+                          }
+                        }}
+                        showAddButton={false}
+                      />
+                      <div className="relative my-4">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t border-border" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                          <span className="bg-card px-2 text-muted-foreground">or pay with</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <RadioGroup
                     value={formData.paymentMethod}
-                    onValueChange={(val) => setFormData({ ...formData, paymentMethod: val as 'cod' | 'bkash' | 'nagad' | 'card' })}
+                    onValueChange={(val) => {
+                      setFormData({ ...formData, paymentMethod: val as 'cod' | 'bkash' | 'nagad' | 'card' });
+                      setSelectedSavedPayment(null);
+                    }}
                     className="space-y-3"
                   >
                     {/* COD - Available */}
                     <Label
                       htmlFor="cod"
                       className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                        formData.paymentMethod === 'cod'
+                        formData.paymentMethod === 'cod' && !selectedSavedPayment
                           ? 'border-primary bg-primary/5'
                           : 'border-border hover:border-primary/50'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <RadioGroupItem value="cod" id="cod" />
+                        <RadioGroupItem value="cod" id="cod" checked={formData.paymentMethod === 'cod' && !selectedSavedPayment} />
                         <div className="flex items-center gap-2">
                           <Banknote className="h-5 w-5 text-green-600" />
                           <div>
