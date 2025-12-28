@@ -511,6 +511,24 @@ export default function Checkout() {
                       </Label>
                     </RadioGroup>
                   </div>
+
+                  {/* Order Notes / Special Instructions */}
+                  <div className="space-y-2">
+                    <Label htmlFor="notes" className="flex items-center gap-2">
+                      <Package className="h-4 w-4" /> Special Instructions (Optional)
+                    </Label>
+                    <Textarea
+                      id="notes"
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      placeholder="Any special delivery instructions, preferred delivery time, landmarks, or other notes..."
+                      rows={3}
+                      className="resize-none"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      E.g., "Leave at the gate", "Call before delivery", "Preferred time: After 5 PM"
+                    </p>
+                  </div>
                 </div>
 
                 <Button onClick={handleNext} size="lg" className="w-full">
