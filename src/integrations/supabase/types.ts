@@ -344,6 +344,9 @@ export type Database = {
           message: string
           opened_count: number | null
           scheduled_at: string | null
+          send_email: boolean | null
+          target_criteria: Json | null
+          target_segment: string | null
           title: string
           type: string
           user_id: string | null
@@ -361,6 +364,9 @@ export type Database = {
           message: string
           opened_count?: number | null
           scheduled_at?: string | null
+          send_email?: boolean | null
+          target_criteria?: Json | null
+          target_segment?: string | null
           title: string
           type?: string
           user_id?: string | null
@@ -378,6 +384,9 @@ export type Database = {
           message?: string
           opened_count?: number | null
           scheduled_at?: string | null
+          send_email?: boolean | null
+          target_criteria?: Json | null
+          target_segment?: string | null
           title?: string
           type?: string
           user_id?: string | null

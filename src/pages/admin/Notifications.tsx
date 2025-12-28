@@ -20,7 +20,12 @@ import {
   Star,
   Eye,
   MousePointerClick,
-  BarChart3
+  BarChart3,
+  Mail,
+  Users,
+  MapPin,
+  Crown,
+  UserPlus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,7 +55,18 @@ interface Notification {
   delivered_count?: number;
   opened_count?: number;
   clicked_count?: number;
+  target_segment?: string;
+  target_criteria?: Record<string, any>;
+  send_email?: boolean;
 }
+
+const targetSegments = [
+  { value: 'all', label: 'All Users', icon: Users, description: 'All registered users and subscribers' },
+  { value: 'newsletter_subscribers', label: 'Newsletter Subscribers', icon: Mail, description: 'Only newsletter subscribers' },
+  { value: 'new_customers', label: 'New Customers', icon: UserPlus, description: 'Users who joined in last 30 days' },
+  { value: 'high_value', label: 'High Value Customers', icon: Crown, description: 'Customers with high order value' },
+  { value: 'by_location', label: 'By Location', icon: MapPin, description: 'Target users by city' },
+];
 
 const notificationTypes = [
   { value: 'info', label: 'General Info', icon: Megaphone },
@@ -125,6 +141,10 @@ export default function Notifications() {
     scheduleEnabled: false,
     scheduledDate: '',
     scheduledTime: '',
+    sendEmail: false,
+    targetSegment: 'all',
+    targetCity: '',
+    minOrderValue: '5000',
   });
 
   const fetchNotifications = async () => {
@@ -176,6 +196,15 @@ export default function Notifications() {
       isSent = false;
     }
 
+    // Build target criteria based on segment
+    const targetCriteria: Record<string, any> = {};
+    if (formData.targetSegment === 'by_location' && formData.targetCity) {
+      targetCriteria.city = formData.targetCity;
+    }
+    if (formData.targetSegment === 'high_value') {
+      targetCriteria.min_order_value = parseInt(formData.minOrderValue) || 5000;
+    }
+
     const { error } = await supabase.from('notifications').insert({
       title: formData.title,
       message: formData.message,
@@ -185,6 +214,9 @@ export default function Notifications() {
       user_id: null,
       scheduled_at: scheduledAt,
       is_sent: isSent,
+      send_email: formData.sendEmail,
+      target_segment: formData.targetSegment,
+      target_criteria: targetCriteria,
     });
 
     if (error) {
@@ -210,6 +242,10 @@ export default function Notifications() {
         scheduleEnabled: false,
         scheduledDate: '',
         scheduledTime: '',
+        sendEmail: false,
+        targetSegment: 'all',
+        targetCity: '',
+        minOrderValue: '5000',
       });
       fetchNotifications();
       if (formData.scheduleEnabled) {
@@ -360,6 +396,76 @@ export default function Notifications() {
                 />
               </div>
 
+              {/* Targeting Section */}
+              <div className="border-t border-border pt-4 space-y-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Target Audience
+                  </Label>
+                  <Select 
+                    value={formData.targetSegment} 
+                    onValueChange={(v) => setFormData(p => ({ ...p, targetSegment: v }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {targetSegments.map(segment => (
+                        <SelectItem key={segment.value} value={segment.value}>
+                          <div className="flex items-center gap-2">
+                            <segment.icon className="h-4 w-4" />
+                            <div>
+                              <div>{segment.label}</div>
+                              <div className="text-xs text-muted-foreground">{segment.description}</div>
+                            </div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {formData.targetSegment === 'by_location' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="targetCity">City</Label>
+                    <Input
+                      id="targetCity"
+                      placeholder="e.g., Dhaka, Chittagong"
+                      value={formData.targetCity}
+                      onChange={(e) => setFormData(p => ({ ...p, targetCity: e.target.value }))}
+                    />
+                  </div>
+                )}
+
+                {formData.targetSegment === 'high_value' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="minOrderValue">Minimum Order Value (৳)</Label>
+                    <Input
+                      id="minOrderValue"
+                      type="number"
+                      placeholder="5000"
+                      value={formData.minOrderValue}
+                      onChange={(e) => setFormData(p => ({ ...p, minOrderValue: e.target.value }))}
+                    />
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <Label>Send Email</Label>
+                      <p className="text-xs text-muted-foreground">Also send email to targeted users</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={formData.sendEmail}
+                    onCheckedChange={(v) => setFormData(p => ({ ...p, sendEmail: v }))}
+                  />
+                </div>
+              </div>
+
               {/* Schedule Section */}
               <div className="border-t border-border pt-4">
                 <div className="flex items-center justify-between mb-4">
@@ -479,16 +585,34 @@ export default function Notifications() {
                       </div>
                       
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <p className="font-medium text-foreground">{notification.title}</p>
                           <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground capitalize">
                             {notification.type}
                           </span>
+                          {notification.target_segment && notification.target_segment !== 'all' && (
+                            <Badge variant="outline" className="text-xs gap-1">
+                              <Users className="h-3 w-3" />
+                              {targetSegments.find(s => s.value === notification.target_segment)?.label || notification.target_segment}
+                            </Badge>
+                          )}
+                          {notification.send_email && (
+                            <Badge variant="secondary" className="text-xs gap-1">
+                              <Mail className="h-3 w-3" />
+                              Email
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
                           {notification.message}
                         </p>
                         <div className="flex items-center gap-4 mt-2">
+                          {notification.send_email && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Mail className="h-3 w-3" />
+                              <span>{notification.delivered_count || 0} delivered</span>
+                            </div>
+                          )}
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <Eye className="h-3 w-3" />
                             <span>{notification.opened_count || 0} opened</span>
@@ -564,6 +688,18 @@ export default function Notifications() {
                             <Clock className="h-3 w-3" />
                             {notification.scheduled_at && format(new Date(notification.scheduled_at), 'PPp')}
                           </Badge>
+                          {notification.target_segment && notification.target_segment !== 'all' && (
+                            <Badge variant="outline" className="text-xs gap-1">
+                              <Users className="h-3 w-3" />
+                              {targetSegments.find(s => s.value === notification.target_segment)?.label || notification.target_segment}
+                            </Badge>
+                          )}
+                          {notification.send_email && (
+                            <Badge variant="secondary" className="text-xs gap-1">
+                              <Mail className="h-3 w-3" />
+                              Email
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
                           {notification.message}
