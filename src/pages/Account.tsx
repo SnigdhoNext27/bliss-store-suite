@@ -20,6 +20,7 @@ import { CartSlide } from '@/components/CartSlide';
 import { AvatarUpload } from '@/components/account/AvatarUpload';
 import { AccountSidebar } from '@/components/account/AccountSidebar';
 import { TwoFactorAuth } from '@/components/account/TwoFactorAuth';
+import { DeleteAccount } from '@/components/account/DeleteAccount';
 
 interface Order {
   id: string;
@@ -768,6 +769,9 @@ export default function Account() {
                       </Button>
                     </div>
                   </div>
+
+                  {/* Delete Account */}
+                  <DeleteAccount />
                 </div>
               )}
             </div>
