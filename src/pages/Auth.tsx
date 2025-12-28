@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Mail, Lock, User, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
-import { PasswordStrengthIndicator, passwordRequirements, isCommonPassword } from '@/components/PasswordStrengthIndicator';
+import { PasswordStrengthIndicator, isCommonPassword } from '@/components/PasswordStrengthIndicator';
+import { useLoginRateLimit } from '@/hooks/useLoginRateLimit';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -56,6 +57,13 @@ export default function Auth() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { 
+    isLocked, 
+    attemptsRemaining, 
+    formatRemainingTime, 
+    recordFailedAttempt, 
+    recordSuccessfulLogin 
+  } = useLoginRateLimit();
 
   // Get redirect URL from query params (e.g., /auth?redirect=/checkout)
   const redirectTo = searchParams.get('redirect') || '/';
@@ -118,6 +126,17 @@ export default function Auth() {
 
     try {
       if (mode === 'login') {
+        // Check rate limit before attempting login
+        if (isLocked) {
+          toast({
+            title: 'Too many failed attempts',
+            description: `Please wait ${formatRemainingTime()} before trying again.`,
+            variant: 'destructive',
+          });
+          setLoading(false);
+          return;
+        }
+
         const result = loginSchema.safeParse(formData);
         if (!result.success) {
           const fieldErrors: Record<string, string> = {};
@@ -131,14 +150,24 @@ export default function Auth() {
 
         const { error } = await signIn(formData.email, formData.password);
         if (error) {
-          toast({
-            title: 'Login failed',
-            description: error.message === 'Invalid login credentials' 
-              ? 'Invalid email or password. Please try again.'
-              : error.message,
-            variant: 'destructive',
-          });
+          const wasLocked = recordFailedAttempt();
+          if (wasLocked) {
+            toast({
+              title: 'Account temporarily locked',
+              description: 'Too many failed login attempts. Please wait 15 minutes before trying again.',
+              variant: 'destructive',
+            });
+          } else {
+            toast({
+              title: 'Login failed',
+              description: error.message === 'Invalid login credentials' 
+                ? `Invalid email or password. ${attemptsRemaining - 1} attempts remaining.`
+                : error.message,
+              variant: 'destructive',
+            });
+          }
         } else {
+          recordSuccessfulLogin();
           toast({ title: 'Welcome back!' });
           navigate(redirectTo);
         }
@@ -245,6 +274,18 @@ export default function Auth() {
             )
           ) : (
             <>
+              {/* Rate Limit Warning */}
+              {isLocked && (
+                <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-destructive">Account temporarily locked</p>
+                    <p className="text-xs text-destructive/80 mt-1">
+                      Too many failed login attempts. Please wait {formatRemainingTime()} before trying again.
+                    </p>
+                  </div>
+                </div>
+              )}
               {/* Google Sign In Button */}
               <Button
                 type="button"
@@ -369,9 +410,15 @@ export default function Auth() {
                   </div>
                 )}
 
-                <Button type="submit" className="w-full" size="lg" disabled={loading}>
+                <Button type="submit" className="w-full" size="lg" disabled={loading || (mode === 'login' && isLocked)}>
                   {loading ? 'Please wait...' : mode === 'login' ? 'Sign In' : 'Create Account'}
                 </Button>
+
+                {mode === 'login' && attemptsRemaining < 5 && attemptsRemaining > 0 && !isLocked && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    {attemptsRemaining} login {attemptsRemaining === 1 ? 'attempt' : 'attempts'} remaining
+                  </p>
+                )}
               </form>
 
               {mode === 'login' && (
