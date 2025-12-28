@@ -1,16 +1,22 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import type { LucideIcon } from 'lucide-react';
-import { Home, X, Settings, ArrowLeft } from 'lucide-react';
+import { Home, X, Settings, ArrowLeft, Heart, User, Package, ShoppingBag } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/Logo';
 import { SettingsPanel } from '@/components/SettingsPanel';
+import { useWishlist } from '@/hooks/useWishlist';
+import { useLanguage } from '@/hooks/useLanguage';
+import { useCartStore } from '@/lib/store';
 
 type NavLink = {
   name: string;
+  key?: string;
   href: string;
+  highlight?: boolean;
 };
 
 type SocialLink = {
@@ -28,6 +34,7 @@ interface MobileMenuOverlayProps {
   socialLinks: SocialLink[];
   isAuthenticated: boolean;
   isAdmin: boolean;
+  userEmail?: string;
   onAdmin: () => void;
   onLogin: () => void;
   onSignup: () => void;
@@ -42,17 +49,29 @@ export function MobileMenuOverlay({
   socialLinks,
   isAuthenticated,
   isAdmin,
+  userEmail,
   onAdmin,
   onLogin,
   onSignup,
   onSignOut,
 }: MobileMenuOverlayProps) {
   const [showSettings, setShowSettings] = useState(false);
+  const navigate = useNavigate();
+  const { wishlistIds } = useWishlist();
+  const wishlistCount = wishlistIds.length;
+  const { t } = useLanguage();
+  const { getTotalItems, openCart } = useCartStore();
+  const totalItems = getTotalItems();
 
   // Reset settings view when menu closes
   const handleClose = () => {
     setShowSettings(false);
     onClose();
+  };
+
+  const handleNavigateAndClose = (path: string) => {
+    navigate(path);
+    handleClose();
   };
 
   if (typeof document === 'undefined') return null;
@@ -147,13 +166,78 @@ export function MobileMenuOverlay({
                       <button
                         key={link.name}
                         onClick={() => onNavigate(link.href)}
-                        className="flex items-center gap-3 rounded-lg px-2 py-3 text-left text-lg font-semibold text-foreground transition-colors hover:bg-muted hover:text-primary"
+                        className={`flex items-center gap-3 rounded-lg px-2 py-3 text-left text-lg font-semibold transition-colors hover:bg-muted hover:text-primary ${
+                          link.highlight 
+                            ? 'text-destructive animate-pulse' 
+                            : 'text-foreground'
+                        }`}
                       >
                         {link.name === 'Home' && <Home className="h-5 w-5" />}
-                        {link.name}
+                        {link.highlight && <span className="mr-1">🔥</span>}
+                        {link.key ? t(link.key) : link.name}
                       </button>
                     ))}
                   </nav>
+
+                  {/* Quick Actions - Wishlist, Cart, Account */}
+                  <div className="border-t border-border px-4 py-2">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2 px-2">{t('followUs').includes('Follow') ? 'Quick Actions' : 'إجراءات سريعة'}</p>
+                    
+                    {/* Wishlist */}
+                    <button
+                      onClick={() => handleNavigateAndClose('/wishlist')}
+                      className="flex items-center justify-between gap-3 rounded-lg px-2 py-3 text-left text-base font-medium text-foreground transition-colors hover:bg-muted hover:text-primary w-full"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Heart className="h-5 w-5" />
+                        {t('myWishlist')}
+                      </div>
+                      {wishlistCount > 0 && (
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-xs font-medium text-destructive-foreground">
+                          {wishlistCount > 9 ? '9+' : wishlistCount}
+                        </span>
+                      )}
+                    </button>
+
+                    {/* Cart */}
+                    <button
+                      onClick={() => {
+                        handleClose();
+                        openCart();
+                      }}
+                      className="flex items-center justify-between gap-3 rounded-lg px-2 py-3 text-left text-base font-medium text-foreground transition-colors hover:bg-muted hover:text-primary w-full"
+                    >
+                      <div className="flex items-center gap-3">
+                        <ShoppingBag className="h-5 w-5" />
+                        {t('myBag')}
+                      </div>
+                      {totalItems > 0 && (
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+                          {totalItems > 9 ? '9+' : totalItems}
+                        </span>
+                      )}
+                    </button>
+
+                    {/* Account Links (for authenticated users) */}
+                    {isAuthenticated && (
+                      <>
+                        <button
+                          onClick={() => handleNavigateAndClose('/account')}
+                          className="flex items-center gap-3 rounded-lg px-2 py-3 text-left text-base font-medium text-foreground transition-colors hover:bg-muted hover:text-primary w-full"
+                        >
+                          <User className="h-5 w-5" />
+                          {t('myAccount')}
+                        </button>
+                        <button
+                          onClick={() => handleNavigateAndClose('/account?tab=orders')}
+                          className="flex items-center gap-3 rounded-lg px-2 py-3 text-left text-base font-medium text-foreground transition-colors hover:bg-muted hover:text-primary w-full"
+                        >
+                          <Package className="h-5 w-5" />
+                          {t('myOrders')}
+                        </button>
+                      </>
+                    )}
+                  </div>
 
                   {/* Settings Link */}
                   <div className="border-t border-border px-4 py-2">
@@ -168,7 +252,7 @@ export function MobileMenuOverlay({
 
                   {/* Social */}
                   <div className="flex items-center gap-3 border-t border-border px-4 py-4">
-                    <span className="text-sm text-muted-foreground">Follow us</span>
+                    <span className="text-sm text-muted-foreground">{t('followUs')}</span>
                     <div className="flex items-center gap-2">
                       {socialLinks.map((social) => (
                         <a
@@ -191,6 +275,23 @@ export function MobileMenuOverlay({
                     </div>
                   </div>
 
+                  {/* User Info (for authenticated users) */}
+                  {isAuthenticated && userEmail && (
+                    <div className="border-t border-border px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-almans-gold flex items-center justify-center">
+                          <span className="text-sm font-bold text-primary-foreground uppercase">
+                            {userEmail.charAt(0)}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{userEmail.split('@')[0]}</p>
+                          <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Actions */}
                   <div className="mt-auto border-t border-border px-4 py-4">
                     <div className="flex gap-4">
@@ -202,16 +303,16 @@ export function MobileMenuOverlay({
                             </Button>
                           )}
                           <Button variant="default" className="flex-1" onClick={onSignOut}>
-                            Sign Out
+                            {t('signOut')}
                           </Button>
                         </>
                       ) : (
                         <>
                           <Button variant="outline" className="flex-1" onClick={onLogin}>
-                            Login
+                            {t('login')}
                           </Button>
                           <Button variant="default" className="flex-1" onClick={onSignup}>
-                            Signup
+                            {t('login').includes('Login') ? 'Signup' : 'إنشاء حساب'}
                           </Button>
                         </>
                       )}
