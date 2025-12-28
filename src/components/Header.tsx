@@ -28,6 +28,8 @@ import { Logo } from './Logo';
 import { SearchBar } from './SearchBar';
 import { MobileMenuOverlay } from '@/components/MobileMenuOverlay';
 import { NotificationBell } from '@/components/NotificationBell';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { CurrencySelector } from '@/components/CurrencySelector';
 import { cn } from '@/lib/utils';
 import { useWishlist } from '@/hooks/useWishlist';
 
@@ -179,6 +181,12 @@ export function Header() {
 
         {/* Right Actions - Shopee Style */}
         <div className="flex items-center gap-1">
+          {/* Theme Toggle */}
+          <ThemeToggle />
+          
+          {/* Currency Selector */}
+          <CurrencySelector />
+          
           {/* Notification Bell */}
           <NotificationBell />
 

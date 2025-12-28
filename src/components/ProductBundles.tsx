@@ -110,17 +110,17 @@ export function ProductBundles() {
   const handleAddBundle = (bundle: Bundle) => {
     bundle.items.forEach((item) => {
       const price = item.product.sale_price || item.product.price;
-      addItem(
-        {
-          id: item.product.id,
-          name: item.product.name,
-          price,
-          image: item.product.images[0] || '/placeholder.svg',
-          size: item.product.sizes[0] || 'One Size',
-          quantity: item.quantity,
-        },
-        item.quantity
-      );
+      const productForCart = {
+        id: item.product.id,
+        name: item.product.name,
+        price,
+        category: 'Bundle',
+        description: '',
+        images: item.product.images || [],
+        sizes: item.product.sizes || [],
+        stock: 99,
+      };
+      addItem(productForCart, item.product.sizes[0] || 'One Size', item.quantity);
     });
 
     toast({
