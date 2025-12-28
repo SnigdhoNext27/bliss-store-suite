@@ -25,7 +25,9 @@ import {
   Users,
   MapPin,
   Crown,
-  UserPlus
+  UserPlus,
+  FlaskConical,
+  Settings2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +42,8 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format, formatDistanceToNow, isFuture } from 'date-fns';
+import { AutomatedTriggersCard } from '@/components/admin/AutomatedTriggersCard';
+import { ABTestingCard } from '@/components/admin/ABTestingCard';
 
 interface Notification {
   id: string;
@@ -547,6 +551,14 @@ export default function Notifications() {
           <TabsTrigger value="analytics" className="gap-2">
             <BarChart3 className="h-4 w-4" />
             Analytics
+          </TabsTrigger>
+          <TabsTrigger value="triggers" className="gap-2">
+            <Zap className="h-4 w-4" />
+            Triggers
+          </TabsTrigger>
+          <TabsTrigger value="ab-testing" className="gap-2">
+            <FlaskConical className="h-4 w-4" />
+            A/B Tests
           </TabsTrigger>
         </TabsList>
 
