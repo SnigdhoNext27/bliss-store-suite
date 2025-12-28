@@ -1,11 +1,12 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, ChevronRight, Shirt, Package, Sparkles, Filter, Search, X } from 'lucide-react';
+import { Loader2, ChevronRight, Shirt, Package, Sparkles, Filter, Search, X, LayoutGrid, LayoutList } from 'lucide-react';
 import { ProductCard } from './ProductCard';
 import { useProducts, Product } from '@/hooks/useProducts';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { supabase } from '@/integrations/supabase/client';
+import { ProductFiltersPanel, ActiveFilterTags, ProductFilters } from './ProductFilters';
 import {
   Select,
   SelectContent,
@@ -202,6 +203,44 @@ export function ProductsSection() {
   const [categoryData, setCategoryData] = useState<Record<string, CategoryData>>({});
   const [sortBy, setSortBy] = useState('newest');
   const [activeCategory, setActiveCategory] = useState('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  
+  // Advanced filters state
+  const [filters, setFilters] = useState<ProductFilters>({
+    priceRange: [0, 10000],
+    sizes: [],
+    colors: [],
+  });
+
+  // Calculate max price and available filter options from products
+  const { maxPrice, availableSizes, availableColors } = useMemo(() => {
+    const prices = products.map(p => p.price);
+    const max = Math.ceil(Math.max(...prices, 10000) / 100) * 100;
+    
+    const sizes = new Set<string>();
+    const colors = new Set<string>();
+    
+    products.forEach(p => {
+      p.sizes.forEach(s => sizes.add(s));
+      // Colors would come from product.colors if available
+    });
+    
+    // Common colors for now (you can extend based on your product data)
+    ['Black', 'White', 'Blue', 'Red', 'Green', 'Gray', 'Navy', 'Brown', 'Beige'].forEach(c => colors.add(c));
+    
+    return {
+      maxPrice: max,
+      availableSizes: Array.from(sizes),
+      availableColors: Array.from(colors),
+    };
+  }, [products]);
+
+  // Initialize price range once we know max price
+  useEffect(() => {
+    if (maxPrice > 0 && filters.priceRange[1] === 10000) {
+      setFilters(prev => ({ ...prev, priceRange: [0, maxPrice] }));
+    }
+  }, [maxPrice]);
 
   // Fetch category data including banners
   useEffect(() => {
@@ -251,6 +290,25 @@ export function ProductsSection() {
       result = result.filter(p => p.category === activeCategory);
     }
 
+    // Price range filter
+    result = result.filter(p => 
+      p.price >= filters.priceRange[0] && p.price <= filters.priceRange[1]
+    );
+
+    // Size filter
+    if (filters.sizes.length > 0) {
+      result = result.filter(p => 
+        p.sizes.some(s => filters.sizes.includes(s))
+      );
+    }
+
+    // Note: Color filter would work if products have colors field
+    // if (filters.colors.length > 0) {
+    //   result = result.filter(p => 
+    //     p.colors?.some(c => filters.colors.includes(c))
+    //   );
+    // }
+
     // Sort
     switch (sortBy) {
       case 'price-low':
@@ -268,7 +326,26 @@ export function ProductsSection() {
     }
 
     return result;
-  }, [products, searchQuery, activeCategory, sortBy]);
+  }, [products, searchQuery, activeCategory, sortBy, filters]);
+
+  // Count active filters
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.priceRange[0] > 0 || filters.priceRange[1] < maxPrice) count++;
+    count += filters.sizes.length;
+    count += filters.colors.length;
+    return count;
+  }, [filters, maxPrice]);
+
+  const clearAllFilters = () => {
+    setFilters({
+      priceRange: [0, maxPrice],
+      sizes: [],
+      colors: [],
+    });
+    setSearchQuery('');
+    setActiveCategory('all');
+  };
 
   // Group products by category
   const productsByCategory = useMemo(() => {
@@ -284,7 +361,7 @@ export function ProductsSection() {
     document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const isFiltering = searchQuery || activeCategory !== 'all';
+  const isFiltering = searchQuery || activeCategory !== 'all' || activeFiltersCount > 0;
   const showCategorySections = !isFiltering && filteredProducts.length > 0;
 
   if (loading) {
@@ -349,7 +426,7 @@ export function ProductsSection() {
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-10 flex flex-col sm:flex-row gap-4 items-center justify-between bg-card/50 backdrop-blur-sm rounded-2xl p-4 border border-border/50"
+          className="mb-6 flex flex-col sm:flex-row gap-4 items-center justify-between bg-card/50 backdrop-blur-sm rounded-2xl p-4 border border-border/50"
         >
           {/* Search */}
           <div className="relative w-full sm:w-96">
@@ -371,12 +448,23 @@ export function ProductsSection() {
             )}
           </div>
 
-          {/* Sort & Filter */}
+          {/* Sort, Filter & View Toggle */}
           <div className="flex items-center gap-3 w-full sm:w-auto">
+            {/* Mobile Filter Button */}
+            <ProductFiltersPanel
+              filters={filters}
+              onFiltersChange={setFilters}
+              maxPrice={maxPrice}
+              availableSizes={availableSizes}
+              availableColors={availableColors}
+              activeFiltersCount={activeFiltersCount}
+              onClearAll={clearAllFilters}
+            />
+            
+            {/* Sort */}
             <div className="flex items-center gap-2 flex-1 sm:flex-none">
-              <Filter className="h-4 w-4 text-muted-foreground" />
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-full sm:w-[180px] h-12 rounded-xl border-border/50 bg-background/50">
+                <SelectTrigger className="w-full sm:w-[180px] h-10 rounded-xl border-border/50 bg-background/50">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent>
@@ -387,8 +475,32 @@ export function ProductsSection() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* View Mode Toggle */}
+            <div className="hidden sm:flex items-center border border-border rounded-lg overflow-hidden">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 ${viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'bg-background hover:bg-secondary'}`}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 ${viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'bg-background hover:bg-secondary'}`}
+              >
+                <LayoutList className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </motion.div>
+
+        {/* Active Filter Tags */}
+        <ActiveFilterTags
+          filters={filters}
+          onFiltersChange={setFilters}
+          maxPrice={maxPrice}
+          onClearAll={clearAllFilters}
+        />
 
         {/* Results count when filtering */}
         {isFiltering && (
@@ -427,10 +539,7 @@ export function ProductsSection() {
             <p className="text-muted-foreground mt-2">Try adjusting your search or filters</p>
             <Button 
               variant="outline" 
-              onClick={() => {
-                setSearchQuery('');
-                setActiveCategory('all');
-              }}
+              onClick={clearAllFilters}
               className="mt-4"
             >
               Clear all filters
