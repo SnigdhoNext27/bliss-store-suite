@@ -7,9 +7,11 @@ import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/lib/store';
 import { useProduct } from '@/hooks/useProducts';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { CartSlide } from '@/components/CartSlide';
+import { RecentlyViewedProducts } from '@/components/RecentlyViewedProducts';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -20,7 +22,7 @@ export default function ProductDetail() {
   const addItem = useCartStore((state) => state.addItem);
   const { product, loading, error } = useProduct(id);
   const { settings } = useSiteSettings();
-
+  const { addToRecentlyViewed } = useRecentlyViewed();
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -50,6 +52,13 @@ export default function ProductDetail() {
       setSelectedSize(product.sizes[0] || '');
     }
   }, [product, categoryHasSizes]);
+
+  // Track recently viewed product
+  useEffect(() => {
+    if (id) {
+      addToRecentlyViewed(id);
+    }
+  }, [id, addToRecentlyViewed]);
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -340,6 +349,9 @@ export default function ProductDetail() {
           </div>
         </div>
       </main>
+
+      {/* Recently Viewed Products */}
+      <RecentlyViewedProducts />
 
       <Footer />
     </>
