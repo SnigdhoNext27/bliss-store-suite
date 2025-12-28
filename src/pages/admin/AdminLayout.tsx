@@ -14,7 +14,8 @@ import {
   Shield,
   Grid3X3,
   Home,
-  MessageCircle
+  MessageCircle,
+  Mail
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
@@ -41,6 +42,7 @@ const allNavItems: NavItem[] = [
   { to: '/admin/customers', icon: Users, label: 'Customers', permission: 'customers' },
   { to: '/admin/coupons', icon: Tag, label: 'Coupons', permission: 'coupons' },
   { to: '/admin/banners', icon: Image, label: 'Banners', permission: 'banners' },
+  { to: '/admin/newsletter', icon: Mail, label: 'Newsletter', permission: 'customers' },
   { to: '/admin/settings', icon: Settings, label: 'Settings', permission: 'settings' },
   { to: '/admin/team', icon: Shield, label: 'Team', permission: 'team' },
   { to: '/admin/chats', icon: MessageCircle, label: 'Live Chats', permission: 'orders' },

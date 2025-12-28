@@ -32,6 +32,7 @@ import Banners from "./pages/admin/Banners";
 import Settings from "./pages/admin/Settings";
 import Team from "./pages/admin/Team";
 import AdminChats from "./pages/admin/Chats";
+import Newsletter from "./pages/admin/Newsletter";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -104,6 +105,7 @@ const App = () => {
                           <Route path="settings" element={<Settings />} />
                           <Route path="team" element={<Team />} />
                           <Route path="chats" element={<AdminChats />} />
+                          <Route path="newsletter" element={<Newsletter />} />
                         </Route>
                         
                         <Route path="*" element={<NotFound />} />
