@@ -689,7 +689,7 @@ const Shop = () => {
                     {
                       name: 'Sarah Khan',
                       location: 'Chittagong',
-                      rating: 5,
+                      rating: 4,
                       review: 'Fast delivery and amazing customer service. The clothes exceeded my expectations. Highly recommended!',
                       avatar: 'S',
                     },
@@ -703,7 +703,7 @@ const Shop = () => {
                     {
                       name: 'Fatima Begum',
                       location: 'Rajshahi',
-                      rating: 5,
+                      rating: 4,
                       review: 'The attention to detail is impressive. Every stitch is perfect. Almans never disappoints!',
                       avatar: 'F',
                     },
@@ -717,7 +717,7 @@ const Shop = () => {
                     {
                       name: 'Nadia Islam',
                       location: 'Comilla',
-                      rating: 5,
+                      rating: 4,
                       review: 'The website is easy to use and the products are exactly as shown. Trusted brand for sure!',
                       avatar: 'N',
                     },
@@ -732,9 +732,12 @@ const Shop = () => {
                     >
                       <Quote className="w-8 h-8 text-primary/30 mb-4" />
                       <p className="text-foreground leading-relaxed mb-6">"{testimonial.review}"</p>
-                      <div className="flex items-center gap-2 mb-4">
-                        {[...Array(testimonial.rating)].map((_, j) => (
-                          <Star key={j} className="w-4 h-4 fill-almans-gold text-almans-gold" />
+                      <div className="flex items-center gap-1 mb-4">
+                        {[...Array(5)].map((_, j) => (
+                          <Star 
+                            key={j} 
+                            className={`w-4 h-4 ${j < testimonial.rating ? 'fill-almans-gold text-almans-gold' : 'text-muted-foreground/30'}`} 
+                          />
                         ))}
                       </div>
                       <div className="flex items-center gap-3">
