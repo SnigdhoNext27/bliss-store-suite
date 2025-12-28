@@ -15,6 +15,8 @@ import { RecentlyViewedProducts } from '@/components/RecentlyViewedProducts';
 import { RestockAlertButton } from '@/components/RestockAlertButton';
 import { ProductReviews } from '@/components/ProductReviews';
 import { ProductShareButton } from '@/components/ProductShareButton';
+import { SizeGuideModal } from '@/components/SizeGuideModal';
+import { ProductImageZoom } from '@/components/ProductImageZoom';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -169,10 +171,10 @@ export default function ProductDetail() {
             >
               <div className="aspect-[4/5] bg-card rounded-2xl overflow-hidden">
                 {product.images[selectedImage] ? (
-                  <img
+                  <ProductImageZoom
                     src={product.images[selectedImage]}
                     alt={product.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-secondary">
@@ -245,7 +247,7 @@ export default function ProductDetail() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="font-medium">Size</span>
-                    <button className="text-sm text-primary hover:underline">Size Guide</button>
+                    <SizeGuideModal category={product.category} />
                   </div>
                   <div className="flex flex-wrap gap-3">
                     {product.sizes.map((size) => (
