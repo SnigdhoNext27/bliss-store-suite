@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.42c700e72a3440f4bd9d33ee9c2ed73c',
+  appId: 'com.almans.app',
   appName: 'almans',
   webDir: 'dist',
   server: {
