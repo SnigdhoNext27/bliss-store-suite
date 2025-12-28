@@ -295,9 +295,46 @@ export type Database = {
         }
         Relationships: []
       }
-      notifications: {
+      notification_analytics: {
         Row: {
           created_at: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          notification_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          notification_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          notification_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_analytics_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          clicked_count: number | null
+          created_at: string
+          delivered_count: number | null
           id: string
           image_url: string | null
           is_global: boolean | null
@@ -305,13 +342,16 @@ export type Database = {
           is_sent: boolean | null
           link: string | null
           message: string
+          opened_count: number | null
           scheduled_at: string | null
           title: string
           type: string
           user_id: string | null
         }
         Insert: {
+          clicked_count?: number | null
           created_at?: string
+          delivered_count?: number | null
           id?: string
           image_url?: string | null
           is_global?: boolean | null
@@ -319,13 +359,16 @@ export type Database = {
           is_sent?: boolean | null
           link?: string | null
           message: string
+          opened_count?: number | null
           scheduled_at?: string | null
           title: string
           type?: string
           user_id?: string | null
         }
         Update: {
+          clicked_count?: number | null
           created_at?: string
+          delivered_count?: number | null
           id?: string
           image_url?: string | null
           is_global?: boolean | null
@@ -333,6 +376,7 @@ export type Database = {
           is_sent?: boolean | null
           link?: string | null
           message?: string
+          opened_count?: number | null
           scheduled_at?: string | null
           title?: string
           type?: string

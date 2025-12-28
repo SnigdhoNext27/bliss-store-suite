@@ -326,9 +326,25 @@ export function NotificationBell() {
     }
   };
 
-  const handleNotificationClick = (notification: Notification) => {
+  // Track analytics events
+  const trackAnalytics = async (notificationId: string, eventType: 'opened' | 'clicked') => {
+    try {
+      await supabase.from('notification_analytics').insert({
+        notification_id: notificationId,
+        user_id: user?.id || null,
+        event_type: eventType,
+      });
+    } catch {
+      // Silently fail analytics tracking
+    }
+  };
+
+  const handleNotificationClick = async (notification: Notification) => {
     markAsRead(notification.id);
     setIsOpen(false);
+    
+    // Track click analytics
+    await trackAnalytics(notification.id, 'clicked');
     
     if (notification.link) {
       // Check if it's an internal link (starts with /) or external
@@ -381,6 +397,11 @@ export function NotificationBell() {
             const newReadIds = [...new Set([...localReadIds, ...allIds])];
             saveLocalReadIds(newReadIds);
             setUnreadCount(0);
+            
+            // Track "opened" analytics for unread notifications
+            notifications.filter(n => !isNotificationRead(n)).forEach(n => {
+              trackAnalytics(n.id, 'opened');
+            });
           }
           setIsOpen(!isOpen);
         }}
