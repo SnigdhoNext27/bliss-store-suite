@@ -18,6 +18,7 @@ import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { LoyaltyPointsRedemption } from '@/components/LoyaltyPointsRedemption';
 import { BulkDiscountBanner } from '@/components/BulkDiscountBanner';
 import { useBulkDiscount } from '@/hooks/useBulkDiscount';
+import { GiftWrapOption } from '@/components/GiftWrapOption';
 
 const deliverySchema = z.object({
   fullName: z.string().min(2, 'Name is required').max(100),
@@ -55,13 +56,16 @@ export default function Checkout() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [redeemedPoints, setRedeemedPoints] = useState(0);
   const [pointsDiscount, setPointsDiscount] = useState(0);
+  const [giftWrap, setGiftWrap] = useState(false);
+  const [giftMessage, setGiftMessage] = useState('');
 
   const subtotal = liveSubtotal;
   const { discountAmount: bulkDiscountAmount, applicableTier } = useBulkDiscount(items, subtotal);
   const deliveryFeeDhaka = parseInt(settings.delivery_fee_dhaka) || 60;
   const deliveryFeeOutside = parseInt(settings.delivery_fee_outside) || 120;
   const deliveryFee = formData.deliveryArea === 'dhaka' ? deliveryFeeDhaka : deliveryFeeOutside;
-  const total = subtotal + deliveryFee - pointsDiscount - bulkDiscountAmount;
+  const giftWrapFee = giftWrap ? 50 : 0;
+  const total = subtotal + deliveryFee + giftWrapFee - pointsDiscount - bulkDiscountAmount;
 
   const handlePointsRedemption = (pointsUsed: number, discountAmount: number) => {
     setRedeemedPoints(pointsUsed);
@@ -522,6 +526,15 @@ export default function Checkout() {
               >
                 <h2 className="font-display text-2xl font-bold mb-6">Confirm Your Order</h2>
                 
+                {/* Gift Wrap Option */}
+                <GiftWrapOption
+                  enabled={giftWrap}
+                  message={giftMessage}
+                  onToggle={setGiftWrap}
+                  onMessageChange={setGiftMessage}
+                  price={50}
+                />
+                
                 {/* Loyalty Points Redemption */}
                 <LoyaltyPointsRedemption
                   subtotal={subtotal}
@@ -563,6 +576,12 @@ export default function Checkout() {
                         Bulk Discount ({applicableTier.discountPercent}%)
                       </span>
                       <span>-৳{bulkDiscountAmount.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {giftWrap && (
+                    <div className="flex justify-between text-pink-600 dark:text-pink-400">
+                      <span>Gift Wrap</span>
+                      <span>+৳50</span>
                     </div>
                   )}
                   <hr className="border-border" />

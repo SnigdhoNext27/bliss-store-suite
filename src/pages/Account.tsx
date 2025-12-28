@@ -23,6 +23,7 @@ import { TwoFactorAuth } from '@/components/account/TwoFactorAuth';
 import { DeleteAccount } from '@/components/account/DeleteAccount';
 import { NotificationPreferencesCard } from '@/components/account/NotificationPreferencesCard';
 import { LoyaltyPointsCard } from '@/components/account/LoyaltyPointsCard';
+import { ReferralProgram } from '@/components/ReferralProgram';
 
 interface Order {
   id: string;
@@ -733,6 +734,11 @@ export default function Account() {
               {/* Loyalty Points Tab */}
               {activeTab === 'loyalty' && (
                 <LoyaltyPointsCard />
+              )}
+
+              {/* Referral Program Tab */}
+              {activeTab === 'referrals' && (
+                <ReferralProgram />
               )}
 
               {/* Security Tab */}
