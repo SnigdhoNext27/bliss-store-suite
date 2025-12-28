@@ -42,6 +42,7 @@ interface Product {
   short_description: string | null;
   sku: string | null;
   category_id: string | null;
+  video_url: string | null;
   category?: { name: string } | null;
 }
 
@@ -75,6 +76,7 @@ export default function Products() {
     is_new: true,
     is_featured: false,
     category_id: '',
+    video_url: '',
   });
   const { toast } = useToast();
 
@@ -204,6 +206,7 @@ export default function Products() {
       is_new: formData.is_new,
       is_featured: formData.is_featured,
       category_id: formData.category_id || null,
+      video_url: formData.video_url?.trim() || null,
     };
 
     try {
@@ -268,6 +271,7 @@ export default function Products() {
       is_new: product.is_new,
       is_featured: product.is_featured,
       category_id: product.category_id || '',
+      video_url: product.video_url || '',
     });
     setDialogOpen(true);
   };
@@ -289,6 +293,7 @@ export default function Products() {
       is_new: true,
       is_featured: false,
       category_id: '',
+      video_url: '',
     });
   };
 
@@ -438,6 +443,16 @@ export default function Products() {
                   placeholder="Detailed product description..."
                   rows={3}
                 />
+              </div>
+
+              <div>
+                <Label>Video URL (YouTube or direct video link)</Label>
+                <Input
+                  value={formData.video_url}
+                  onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+                  placeholder="https://www.youtube.com/watch?v=... or https://example.com/video.mp4"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Supports YouTube links or direct video URLs</p>
               </div>
 
               <div className="space-y-3">
