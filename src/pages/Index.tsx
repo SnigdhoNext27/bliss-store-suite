@@ -1,12 +1,24 @@
+import { useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useQueryClient } from '@tanstack/react-query';
 import { Header } from '@/components/Header';
 import { Hero } from '@/components/Hero';
 import { AboutSection } from '@/components/AboutSection';
 import { CollectionSection } from '@/components/CollectionSection';
 import { Footer } from '@/components/Footer';
 import { CartSlide } from '@/components/CartSlide';
+import { PullToRefresh } from '@/components/PullToRefresh';
 
 const Index = () => {
+  const queryClient = useQueryClient();
+
+  const handleRefresh = useCallback(async () => {
+    // Invalidate all queries to refresh data
+    await queryClient.invalidateQueries();
+    // Small delay to show the refreshing animation
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }, [queryClient]);
+
   return (
     <>
       <Helmet>
@@ -21,6 +33,8 @@ const Index = () => {
         <meta property="og:type" content="website" />
         <link rel="canonical" href="https://almans.com" />
       </Helmet>
+
+      <PullToRefresh onRefresh={handleRefresh} />
 
       <div className="min-h-screen bg-background">
         <Header />
