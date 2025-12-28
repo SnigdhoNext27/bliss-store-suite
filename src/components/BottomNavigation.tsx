@@ -10,12 +10,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+// Account removed from bottom nav - it's in the header
 const navItems = [
   { icon: Home, label: 'Home', path: '/' },
   { icon: ShoppingBag, label: 'Shop', path: '/shop' },
   { icon: Briefcase, label: 'My Bag', path: 'cart' },
   { icon: Heart, label: 'Wishlist', path: '/wishlist' },
-  { icon: User, label: 'Account', path: '/account' },
 ];
 
 export function BottomNavigation() {
