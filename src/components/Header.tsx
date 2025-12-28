@@ -319,6 +319,7 @@ export function Header() {
         socialLinks={socialLinks}
         isAuthenticated={!!user}
         isAdmin={!!isAdmin}
+        userEmail={user?.email}
         onAdmin={() => {
           navigate('/admin');
           setIsMobileMenuOpen(false);
