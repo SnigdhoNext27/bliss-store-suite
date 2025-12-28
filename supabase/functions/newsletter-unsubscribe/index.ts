@@ -16,10 +16,11 @@ serve(async (req) => {
     const url = new URL(req.url);
     const email = url.searchParams.get("email");
     const token = url.searchParams.get("token");
+    const action = url.searchParams.get("action") || "unsubscribe";
 
     if (!email) {
       return new Response(
-        generateHtmlPage("Error", "Invalid unsubscribe link. Email is missing.", false),
+        generateHtmlPage("Error", "Invalid link. Email is missing.", "error", null, null),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "text/html" } }
       );
     }
@@ -28,7 +29,7 @@ serve(async (req) => {
     const expectedToken = await generateToken(email);
     if (token !== expectedToken) {
       return new Response(
-        generateHtmlPage("Error", "Invalid or expired unsubscribe link.", false),
+        generateHtmlPage("Error", "Invalid or expired link.", "error", null, null),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "text/html" } }
       );
     }
@@ -37,34 +38,65 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Update subscriber to inactive
-    const { error } = await supabase
-      .from("newsletter_subscribers")
-      .update({ is_active: false })
-      .eq("email", email);
+    if (action === "resubscribe") {
+      // Re-subscribe the user
+      const { error } = await supabase
+        .from("newsletter_subscribers")
+        .update({ is_active: true })
+        .eq("email", email);
 
-    if (error) {
-      console.error("Unsubscribe error:", error);
+      if (error) {
+        console.error("Re-subscribe error:", error);
+        return new Response(
+          generateHtmlPage("Error", "Failed to re-subscribe. Please try again later.", "error", null, null),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "text/html" } }
+        );
+      }
+
+      console.log(`Successfully re-subscribed: ${email}`);
+
       return new Response(
-        generateHtmlPage("Error", "Failed to unsubscribe. Please try again later.", false),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "text/html" } }
+        generateHtmlPage(
+          "Welcome Back!",
+          `You have been successfully re-subscribed to Almans newsletter. You will now receive our latest updates and exclusive offers.`,
+          "success",
+          email,
+          token
+        ),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "text/html" } }
+      );
+    } else {
+      // Unsubscribe the user
+      const { error } = await supabase
+        .from("newsletter_subscribers")
+        .update({ is_active: false })
+        .eq("email", email);
+
+      if (error) {
+        console.error("Unsubscribe error:", error);
+        return new Response(
+          generateHtmlPage("Error", "Failed to unsubscribe. Please try again later.", "error", null, null),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "text/html" } }
+        );
+      }
+
+      console.log(`Successfully unsubscribed: ${email}`);
+
+      return new Response(
+        generateHtmlPage(
+          "Unsubscribed Successfully",
+          `You have been successfully unsubscribed from Almans newsletter. You will no longer receive promotional emails from us.`,
+          "unsubscribed",
+          email,
+          token
+        ),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "text/html" } }
       );
     }
-
-    console.log(`Successfully unsubscribed: ${email}`);
-
-    return new Response(
-      generateHtmlPage(
-        "Unsubscribed Successfully",
-        `You have been successfully unsubscribed from Almans newsletter. You will no longer receive promotional emails from us.`,
-        true
-      ),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "text/html" } }
-    );
   } catch (error) {
-    console.error("Unsubscribe error:", error);
+    console.error("Newsletter action error:", error);
     return new Response(
-      generateHtmlPage("Error", "An unexpected error occurred.", false),
+      generateHtmlPage("Error", "An unexpected error occurred.", "error", null, null),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "text/html" } }
     );
   }
@@ -78,13 +110,42 @@ async function generateToken(email: string): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, "0")).join("").substring(0, 32);
 }
 
-function generateHtmlPage(title: string, message: string, success: boolean): string {
-  const bgColor = success ? "#f0fdf4" : "#fef2f2";
-  const textColor = success ? "#166534" : "#991b1b";
-  const iconColor = success ? "#22c55e" : "#ef4444";
-  const icon = success 
-    ? `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`
-    : `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
+function generateHtmlPage(
+  title: string, 
+  message: string, 
+  status: "success" | "error" | "unsubscribed",
+  email: string | null,
+  token: string | null
+): string {
+  const colors = {
+    success: { bg: "#f0fdf4", text: "#166534", icon: "#22c55e" },
+    error: { bg: "#fef2f2", text: "#991b1b", icon: "#ef4444" },
+    unsubscribed: { bg: "#fefce8", text: "#854d0e", icon: "#eab308" },
+  };
+  
+  const { bg, text: textColor, icon: iconColor } = colors[status];
+  
+  const icons = {
+    success: `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`,
+    error: `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`,
+    unsubscribed: `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`,
+  };
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+  const resubscribeUrl = email && token 
+    ? `${supabaseUrl}/functions/v1/newsletter-unsubscribe?email=${encodeURIComponent(email)}&token=${token}&action=resubscribe`
+    : null;
+
+  const resubscribeButton = status === "unsubscribed" && resubscribeUrl
+    ? `
+      <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #eee;">
+        <p style="color: #666; font-size: 14px; margin-bottom: 16px;">Changed your mind?</p>
+        <a href="${resubscribeUrl}" style="display: inline-block; background: #1a1a1a; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+          Re-subscribe to Newsletter
+        </a>
+      </div>
+    `
+    : "";
 
   return `
     <!DOCTYPE html>
@@ -124,7 +185,7 @@ function generateHtmlPage(title: string, message: string, success: boolean): str
           margin-bottom: 24px;
         }
         .status-box {
-          background: ${bgColor};
+          background: ${bg};
           border-radius: 8px;
           padding: 16px;
           margin-bottom: 24px;
@@ -138,23 +199,24 @@ function generateHtmlPage(title: string, message: string, success: boolean): str
           color: #999;
           font-size: 14px;
         }
-        a {
+        a.home-link {
           color: #1a1a1a;
           text-decoration: none;
           font-weight: 600;
         }
-        a:hover { text-decoration: underline; }
+        a.home-link:hover { text-decoration: underline; }
       </style>
     </head>
     <body>
       <div class="card">
-        <div class="icon">${icon}</div>
+        <div class="icon">${icons[status]}</div>
         <h1>${title}</h1>
         <div class="status-box">
           <p>${message}</p>
         </div>
-        <p class="brand">
-          <a href="https://almans.lovable.app">← Return to Almans Store</a>
+        ${resubscribeButton}
+        <p class="brand" style="margin-top: 24px;">
+          <a href="https://almans.lovable.app" class="home-link">← Return to Almans Store</a>
         </p>
       </div>
     </body>
