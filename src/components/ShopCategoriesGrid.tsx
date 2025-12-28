@@ -30,7 +30,8 @@ export function ShopCategoriesGrid() {
     const fetchCategories = async () => {
       const { data } = await supabase
         .from('categories')
-        .select('id, name, slug, image_url');
+        .select('id, name, slug, image_url, display_order')
+        .order('display_order', { ascending: true });
       
       if (data) {
         setCategories(data);

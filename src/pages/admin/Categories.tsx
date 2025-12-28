@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, Edit, Trash2, Grid3X3, ImageIcon, Upload, X, Loader2, Images } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Grid3X3, ImageIcon, Upload, X, Loader2, Images, GripVertical, Package, TrendingUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,6 +17,23 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ImageUpload } from '@/components/admin/ImageUpload';
 import { logAdminAction } from '@/lib/auditLog';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface Category {
   id: string;
@@ -25,11 +42,154 @@ interface Category {
   description: string | null;
   image_url: string | null;
   has_sizes: boolean;
+  display_order: number;
   created_at: string;
+}
+
+interface CategoryStats {
+  categoryId: string;
+  productCount: number;
+  totalSales: number;
+  totalRevenue: number;
+}
+
+// Sortable Category Card Component
+function SortableCategoryCard({ 
+  category, 
+  stats,
+  onEdit, 
+  onDelete, 
+  onRemoveBanner 
+}: { 
+  category: Category; 
+  stats?: CategoryStats;
+  onEdit: (category: Category) => void; 
+  onDelete: (id: string) => void;
+  onRemoveBanner: (id: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: category.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`bg-card rounded-xl border border-border overflow-hidden ${isDragging ? 'shadow-2xl' : ''}`}
+    >
+      {/* Banner Preview */}
+      <div className="aspect-[4/1] bg-secondary/50 flex items-center justify-center relative overflow-hidden group">
+        {category.image_url ? (
+          <>
+            <img 
+              src={category.image_url} 
+              alt={category.name} 
+              className="w-full h-full object-cover" 
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-transparent" />
+            <button
+              onClick={() => onRemoveBanner(category.id)}
+              className="absolute top-2 right-2 p-1.5 bg-destructive/90 text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive"
+              title="Remove banner (revert to AI-generated)"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </>
+        ) : (
+          <div className="flex flex-col items-center text-muted-foreground/50">
+            <ImageIcon className="h-8 w-8" />
+            <span className="text-xs mt-1">AI-generated</span>
+          </div>
+        )}
+        {category.image_url && (
+          <span className="absolute bottom-2 left-2 text-white font-display font-bold text-lg drop-shadow-lg">
+            {category.name}
+          </span>
+        )}
+        
+        {/* Drag Handle */}
+        <div
+          {...attributes}
+          {...listeners}
+          className="absolute top-2 left-2 p-1.5 bg-background/80 backdrop-blur-sm rounded cursor-grab active:cursor-grabbing hover:bg-background"
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </div>
+      </div>
+
+      <div className="p-4">
+        <div className="flex items-start justify-between mb-2">
+          <div>
+            <h3 className="font-medium">{category.name}</h3>
+            <p className="text-xs text-muted-foreground">/{category.slug}</p>
+          </div>
+          <span className={`text-xs px-2 py-1 rounded-full ${
+            category.has_sizes 
+              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' 
+              : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+          }`}>
+            {category.has_sizes ? 'Has Sizes' : 'No Sizes'}
+          </span>
+        </div>
+
+        {/* Statistics */}
+        {stats && (
+          <div className="grid grid-cols-3 gap-2 mb-3 p-2 bg-secondary/30 rounded-lg">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1 text-muted-foreground mb-0.5">
+                <Package className="h-3 w-3" />
+              </div>
+              <p className="text-sm font-semibold">{stats.productCount}</p>
+              <p className="text-[10px] text-muted-foreground">Products</p>
+            </div>
+            <div className="text-center border-x border-border/50">
+              <div className="flex items-center justify-center gap-1 text-muted-foreground mb-0.5">
+                <TrendingUp className="h-3 w-3" />
+              </div>
+              <p className="text-sm font-semibold">{stats.totalSales}</p>
+              <p className="text-[10px] text-muted-foreground">Sales</p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-semibold text-primary">৳{stats.totalRevenue.toLocaleString()}</p>
+              <p className="text-[10px] text-muted-foreground">Revenue</p>
+            </div>
+          </div>
+        )}
+
+        {category.description && (
+          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+            {category.description}
+          </p>
+        )}
+
+        <div className="flex gap-2 justify-end">
+          <Button variant="ghost" size="sm" onClick={() => onEdit(category)}>
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => onDelete(category.id)}>
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function Categories() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryStats, setCategoryStats] = useState<Record<string, CategoryStats>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -46,8 +206,16 @@ export default function Categories() {
   const bulkInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   useEffect(() => {
     fetchCategories();
+    fetchCategoryStats();
   }, []);
 
   const fetchCategories = async () => {
@@ -55,7 +223,7 @@ export default function Categories() {
       const { data, error } = await supabase
         .from('categories')
         .select('*')
-        .order('name');
+        .order('display_order', { ascending: true });
 
       if (error) throw error;
       setCategories((data || []) as Category[]);
@@ -64,6 +232,86 @@ export default function Categories() {
       toast({ title: 'Failed to load categories', variant: 'destructive' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCategoryStats = async () => {
+    try {
+      // Fetch products with their categories
+      const { data: products } = await supabase
+        .from('products')
+        .select('id, category_id, name');
+
+      // Fetch order items with product info
+      const { data: orderItems } = await supabase
+        .from('order_items')
+        .select('product_id, quantity, price');
+
+      // Fetch categories to match by name
+      const { data: cats } = await supabase
+        .from('categories')
+        .select('id, name');
+
+      if (!cats) return;
+
+      const stats: Record<string, CategoryStats> = {};
+
+      cats.forEach(cat => {
+        // Count products in this category
+        const categoryProducts = products?.filter(p => p.category_id === cat.id) || [];
+        
+        // Calculate sales and revenue
+        let totalSales = 0;
+        let totalRevenue = 0;
+        
+        categoryProducts.forEach(product => {
+          const productOrders = orderItems?.filter(oi => oi.product_id === product.id) || [];
+          productOrders.forEach(order => {
+            totalSales += order.quantity;
+            totalRevenue += order.quantity * order.price;
+          });
+        });
+
+        stats[cat.id] = {
+          categoryId: cat.id,
+          productCount: categoryProducts.length,
+          totalSales,
+          totalRevenue,
+        };
+      });
+
+      setCategoryStats(stats);
+    } catch (error) {
+      console.error('Fetch stats error:', error);
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = categories.findIndex(c => c.id === active.id);
+      const newIndex = categories.findIndex(c => c.id === over.id);
+      
+      const newOrder = arrayMove(categories, oldIndex, newIndex);
+      setCategories(newOrder);
+
+      // Update display_order in database
+      try {
+        const updates = newOrder.map((cat, index) => 
+          supabase
+            .from('categories')
+            .update({ display_order: index })
+            .eq('id', cat.id)
+        );
+        
+        await Promise.all(updates);
+        toast({ title: 'Category order updated' });
+      } catch (error) {
+        console.error('Reorder error:', error);
+        toast({ title: 'Failed to update order', variant: 'destructive' });
+        fetchCategories(); // Revert on error
+      }
     }
   };
 
@@ -82,6 +330,7 @@ export default function Categories() {
       description: formData.description?.substring(0, 500) || null,
       image_url: formData.image_url || null,
       has_sizes: formData.has_sizes,
+      display_order: editingCategory?.display_order ?? categories.length,
     };
 
     try {
@@ -117,6 +366,7 @@ export default function Categories() {
       setDialogOpen(false);
       resetForm();
       fetchCategories();
+      fetchCategoryStats();
     } catch (error) {
       console.error('Save category error:', error);
       toast({ title: 'Failed to save category', variant: 'destructive' });
@@ -149,13 +399,11 @@ export default function Categories() {
     if (!category?.image_url) return;
 
     try {
-      // Delete from storage
       const urlParts = category.image_url.split('/product-images/');
       if (urlParts.length > 1) {
         await supabase.storage.from('product-images').remove([urlParts[1]]);
       }
 
-      // Update database
       const { error } = await supabase
         .from('categories')
         .update({ image_url: null })
@@ -188,7 +436,6 @@ export default function Categories() {
     const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
     const progress: Record<string, 'pending' | 'uploading' | 'done' | 'error'> = {};
 
-    // Initialize progress for all files
     Array.from(files).forEach(file => {
       progress[file.name] = 'pending';
     });
@@ -197,11 +444,9 @@ export default function Categories() {
     let successCount = 0;
 
     for (const file of Array.from(files)) {
-      // Extract category name from filename (e.g., "shirts.jpg" -> "Shirts")
       const fileNameWithoutExt = file.name.split('.')[0];
       const categoryName = fileNameWithoutExt.charAt(0).toUpperCase() + fileNameWithoutExt.slice(1).toLowerCase();
       
-      // Find matching category
       const matchingCategory = categories.find(c => 
         c.name.toLowerCase() === categoryName.toLowerCase() ||
         c.slug.toLowerCase().includes(fileNameWithoutExt.toLowerCase())
@@ -217,14 +462,12 @@ export default function Categories() {
       setBulkUploadProgress({ ...progress });
 
       try {
-        // Validate file
         if (!file.type.startsWith('image/')) continue;
         if (file.size > 5 * 1024 * 1024) continue;
 
         const fileExt = file.name.split('.').pop()?.toLowerCase();
         if (!fileExt || !allowedExtensions.includes(fileExt)) continue;
 
-        // Upload to storage
         const randomName = crypto.randomUUID();
         const fileName = `${randomName}.${fileExt}`;
         const filePath = `categories/${fileName}`;
@@ -239,7 +482,6 @@ export default function Categories() {
           .from('product-images')
           .getPublicUrl(filePath);
 
-        // Update category
         const { error: updateError } = await supabase
           .from('categories')
           .update({ image_url: urlData.publicUrl })
@@ -293,6 +535,11 @@ export default function Categories() {
     c.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  // Calculate totals
+  const totalProducts = Object.values(categoryStats).reduce((sum, s) => sum + s.productCount, 0);
+  const totalSales = Object.values(categoryStats).reduce((sum, s) => sum + s.totalSales, 0);
+  const totalRevenue = Object.values(categoryStats).reduce((sum, s) => sum + s.totalRevenue, 0);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -306,7 +553,7 @@ export default function Categories() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="font-display text-3xl font-bold">Categories</h1>
-          <p className="text-muted-foreground">Manage product categories and banners</p>
+          <p className="text-muted-foreground">Manage product categories and banners. Drag to reorder.</p>
         </div>
         <div className="flex gap-2">
           {/* Bulk Upload Dialog */}
@@ -314,7 +561,7 @@ export default function Categories() {
             <DialogTrigger asChild>
               <Button variant="outline">
                 <Images className="h-4 w-4 mr-2" />
-                Bulk Upload Banners
+                Bulk Upload
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md">
@@ -393,7 +640,6 @@ export default function Categories() {
                 <DialogTitle>{editingCategory ? 'Edit Category' : 'Add New Category'}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 mt-4">
-                {/* Banner Image Upload */}
                 <div>
                   <Label className="mb-2 block">Category Banner Image</Label>
                   <p className="text-xs text-muted-foreground mb-2">
@@ -463,6 +709,26 @@ export default function Categories() {
         </div>
       </div>
 
+      {/* Summary Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-card p-4 rounded-xl border border-border">
+          <p className="text-sm text-muted-foreground">Total Categories</p>
+          <p className="text-2xl font-bold">{categories.length}</p>
+        </div>
+        <div className="bg-card p-4 rounded-xl border border-border">
+          <p className="text-sm text-muted-foreground">Total Products</p>
+          <p className="text-2xl font-bold">{totalProducts}</p>
+        </div>
+        <div className="bg-card p-4 rounded-xl border border-border">
+          <p className="text-sm text-muted-foreground">Total Sales</p>
+          <p className="text-2xl font-bold">{totalSales}</p>
+        </div>
+        <div className="bg-card p-4 rounded-xl border border-border">
+          <p className="text-sm text-muted-foreground">Total Revenue</p>
+          <p className="text-2xl font-bold text-primary">৳{totalRevenue.toLocaleString()}</p>
+        </div>
+      </div>
+
       {/* Search */}
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -474,88 +740,37 @@ export default function Categories() {
         />
       </div>
 
-      {/* Categories Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCategories.length === 0 ? (
-          <div className="col-span-full text-center py-12 text-muted-foreground">
-            <Grid3X3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No categories found</p>
-          </div>
-        ) : (
-          filteredCategories.map((category, index) => (
-            <motion.div
-              key={category.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className="bg-card rounded-xl border border-border overflow-hidden"
-            >
-              {/* Banner Preview */}
-              <div className="aspect-[4/1] bg-secondary/50 flex items-center justify-center relative overflow-hidden group">
-                {category.image_url ? (
-                  <>
-                    <img 
-                      src={category.image_url} 
-                      alt={category.name} 
-                      className="w-full h-full object-cover" 
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-transparent" />
-                    {/* Remove banner button on hover */}
-                    <button
-                      onClick={() => handleRemoveBanner(category.id)}
-                      className="absolute top-2 right-2 p-1.5 bg-destructive/90 text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive"
-                      title="Remove banner (revert to AI-generated)"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center text-muted-foreground/50">
-                    <ImageIcon className="h-8 w-8" />
-                    <span className="text-xs mt-1">AI-generated</span>
-                  </div>
-                )}
-                {category.image_url && (
-                  <span className="absolute bottom-2 left-2 text-white font-display font-bold text-lg drop-shadow-lg">
-                    {category.name}
-                  </span>
-                )}
-              </div>
-
-              <div className="p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <h3 className="font-medium">{category.name}</h3>
-                    <p className="text-xs text-muted-foreground">/{category.slug}</p>
-                  </div>
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    category.has_sizes 
-                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' 
-                      : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
-                  }`}>
-                    {category.has_sizes ? 'Has Sizes' : 'No Sizes'}
-                  </span>
-                </div>
-
-                {category.description && (
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                    {category.description}
-                  </p>
-                )}
-
-                <div className="flex gap-2 justify-end">
-                  <Button variant="ghost" size="sm" onClick={() => openEdit(category)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleDelete(category.id)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-          ))
-        )}
-      </div>
+      {/* Categories Grid with Drag and Drop */}
+      {filteredCategories.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <Grid3X3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <p>No categories found</p>
+        </div>
+      ) : (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={filteredCategories.map(c => c.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredCategories.map((category) => (
+                <SortableCategoryCard
+                  key={category.id}
+                  category={category}
+                  stats={categoryStats[category.id]}
+                  onEdit={openEdit}
+                  onDelete={handleDelete}
+                  onRemoveBanner={handleRemoveBanner}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      )}
     </div>
   );
 }
