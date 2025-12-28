@@ -71,15 +71,18 @@ export function Logo({ className, showText = true, size = 'md', animate = true }
 
   return (
     <Link to="/" className={cn('flex items-center gap-2.5 group', className)}>
-      {/* Wolf Logo - Animated on load */}
+      {/* Wolf Logo - Animated on load with hover glow */}
       <motion.div
         className={cn(
-          'relative flex items-center justify-center transition-transform duration-300 group-hover:scale-105',
+          'relative flex items-center justify-center transition-all duration-300 group-hover:scale-105',
           sizes.icon
         )}
         initial={animate ? 'hidden' : 'visible'}
         animate="visible"
         variants={containerVariants}
+        whileHover={{ 
+          filter: 'drop-shadow(0 0 12px hsl(24, 35%, 49%, 0.5))',
+        }}
       >
         <svg viewBox="0 0 100 100" className="w-full h-full">
           {/* White circular background with animated brown border */}
