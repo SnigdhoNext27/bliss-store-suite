@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.order-shipped-notification]
 verify_jwt = false
+
+[functions.order-status-notification]
+verify_jwt = false
