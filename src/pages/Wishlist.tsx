@@ -97,7 +97,7 @@ export default function Wishlist() {
       <CartSlide />
 
       <PageTransition variant="slideUp">
-        <div className="min-h-screen bg-background py-12 pt-24">
+        <div className="min-h-screen bg-background py-12 pt-24 pb-24 md:pb-12">
           <div className="container px-4">
             <motion.div 
               className="flex items-center gap-3 mb-8"

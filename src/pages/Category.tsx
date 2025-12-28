@@ -1,13 +1,15 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Loader2, SlidersHorizontal, Grid3X3, LayoutGrid } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { CartSlide } from '@/components/CartSlide';
 import { ProductCard } from '@/components/ProductCard';
 import { Button } from '@/components/ui/button';
+import { PullToRefresh } from '@/components/PullToRefresh';
 import { useProducts } from '@/hooks/useProducts';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -29,10 +31,16 @@ interface CategoryInfo {
 export default function Category() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { products, loading } = useProducts();
   const [category, setCategory] = useState<CategoryInfo | null>(null);
   const [sortBy, setSortBy] = useState('newest');
   const [gridCols, setGridCols] = useState<3 | 4>(4);
+
+  const handleRefresh = useCallback(async () => {
+    await queryClient.invalidateQueries();
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }, [queryClient]);
 
   useEffect(() => {
     const fetchCategory = async () => {
@@ -107,7 +115,9 @@ export default function Category() {
         <meta name="description" content={category.description || `Shop our ${category.name} collection at Almans.`} />
       </Helmet>
 
-      <div className="min-h-screen bg-background">
+      <PullToRefresh onRefresh={handleRefresh} />
+
+      <div className="min-h-screen bg-background pb-20 md:pb-0">
         <Header />
         
         <main>

@@ -12,6 +12,7 @@ import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { LiveChatWidget } from "@/components/chat/LiveChatWidget";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { BackToTop } from "@/components/BackToTop";
+import { BottomNavigation } from "@/components/BottomNavigation";
 import { AnimatedRoutes } from "@/components/AnimatedRoutes";
 import { ProductComparisonBar } from "@/components/ProductComparisonBar";
 import { ProductComparisonModal } from "@/components/ProductComparisonModal";
@@ -91,6 +92,7 @@ const App = () => {
                     <AbandonedCartTracker />
                     <ProductComparisonBar />
                     <ProductComparisonModal />
+                    <BottomNavigation />
                     <AnimatedRoutes>
                       <Routes>
                         <Route path="/" element={<Index />} />
