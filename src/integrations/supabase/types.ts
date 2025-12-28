@@ -302,8 +302,10 @@ export type Database = {
           image_url: string | null
           is_global: boolean | null
           is_read: boolean | null
+          is_sent: boolean | null
           link: string | null
           message: string
+          scheduled_at: string | null
           title: string
           type: string
           user_id: string | null
@@ -314,8 +316,10 @@ export type Database = {
           image_url?: string | null
           is_global?: boolean | null
           is_read?: boolean | null
+          is_sent?: boolean | null
           link?: string | null
           message: string
+          scheduled_at?: string | null
           title: string
           type?: string
           user_id?: string | null
@@ -326,8 +330,10 @@ export type Database = {
           image_url?: string | null
           is_global?: boolean | null
           is_read?: boolean | null
+          is_sent?: boolean | null
           link?: string | null
           message?: string
+          scheduled_at?: string | null
           title?: string
           type?: string
           user_id?: string | null
