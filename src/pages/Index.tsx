@@ -5,7 +5,7 @@ import { Header } from '@/components/Header';
 import { Hero } from '@/components/Hero';
 import { SaleCountdownWidget } from '@/components/SaleCountdownWidget';
 import { AboutSection } from '@/components/AboutSection';
-import { RecentlyViewedProducts } from '@/components/RecentlyViewedProducts';
+
 import { Footer } from '@/components/Footer';
 import { CartSlide } from '@/components/CartSlide';
 import { PullToRefresh } from '@/components/PullToRefresh';
@@ -41,7 +41,6 @@ const Index = () => {
         <main>
           <Hero />
           <SaleCountdownWidget />
-          <RecentlyViewedProducts />
           <AboutSection />
         </main>
         <Footer />
