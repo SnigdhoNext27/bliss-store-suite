@@ -15,6 +15,7 @@ import Checkout from "./pages/Checkout";
 import Wishlist from "./pages/Wishlist";
 import Account from "./pages/Account";
 import OrderTracking from "./pages/OrderTracking";
+import Category from "./pages/Category";
 import AdminLayout from "./pages/admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import Orders from "./pages/admin/Orders";
@@ -45,6 +46,7 @@ const App = () => (
               <Route path="/shop" element={<Shop />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/product/:id" element={<ProductDetail />} />
+              <Route path="/category/:slug" element={<Category />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/wishlist" element={<Wishlist />} />
               <Route path="/account" element={<Account />} />
