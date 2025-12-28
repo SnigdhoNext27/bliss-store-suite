@@ -17,17 +17,21 @@ export const SaleCountdownWidget = () => {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isExpired, setIsExpired] = useState(false);
 
-  // Get sale end date from settings or default to 7 days from now
-  const saleEndDate = settings.flash_sale_end_date 
-    ? new Date(settings.flash_sale_end_date) 
-    : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  
   const isSaleEnabled = settings.flash_sale_enabled === 'true';
 
+  // Memoize the sale end date string to avoid infinite loops
+  const saleEndDateString = settings.flash_sale_end_date || '';
+
   useEffect(() => {
+    const getSaleEndDate = () => {
+      return saleEndDateString 
+        ? new Date(saleEndDateString) 
+        : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    };
+
     const calculateTimeLeft = () => {
       const now = new Date().getTime();
-      const target = saleEndDate.getTime();
+      const target = getSaleEndDate().getTime();
       const difference = target - now;
 
       if (difference <= 0) {
@@ -50,7 +54,7 @@ export const SaleCountdownWidget = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [saleEndDate.getTime()]);
+  }, [saleEndDateString]);
 
   if (isExpired || !isSaleEnabled) return null;
 
