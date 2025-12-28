@@ -70,16 +70,21 @@ export function Header() {
 
   const handleNavClick = (href: string) => {
     setIsMobileMenuOpen(false);
+    
     if (href.includes('#')) {
       const [path, hash] = href.split('#');
       if (location.pathname !== path && path) {
+        // Navigate to the page first, then scroll after a delay
         navigate(href);
       } else {
+        // Already on the page, just scroll
         const element = document.querySelector(`#${hash}`);
         element?.scrollIntoView({ behavior: 'smooth' });
       }
     } else {
+      // For non-hash links like /shop, navigate and scroll to top
       navigate(href);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 

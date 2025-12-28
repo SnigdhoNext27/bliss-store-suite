@@ -1,8 +1,8 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Sparkles, TrendingUp, Zap, Star, ArrowRight, MapPin, Phone, Mail, Clock, Send, Users, Award, Heart } from 'lucide-react';
+import { Sparkles, TrendingUp, Zap, Star, ArrowRight, MapPin, Phone, Mail, Clock, Send, Users, Award, Heart, Quote } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { ShopCategoriesGrid } from '@/components/ShopCategoriesGrid';
 import { ProductsSection } from '@/components/ProductsSection';
@@ -17,16 +17,68 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useNavigate } from 'react-router-dom';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { useToast } from '@/hooks/use-toast';
+import { z } from 'zod';
 
 const Shop = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { settings } = useSiteSettings();
+  const { toast } = useToast();
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  // Contact form validation schema
+  const contactSchema = z.object({
+    name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100, 'Name is too long'),
+    email: z.string().trim().email('Please enter a valid email').max(255, 'Email is too long'),
+    subject: z.string().trim().min(3, 'Subject must be at least 3 characters').max(200, 'Subject is too long'),
+    message: z.string().trim().min(10, 'Message must be at least 10 characters').max(1000, 'Message is too long'),
+  });
 
   const handleRefresh = useCallback(async () => {
     await queryClient.invalidateQueries();
     await new Promise(resolve => setTimeout(resolve, 500));
   }, [queryClient]);
+
+  const handleContactSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setFormErrors({});
+    
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      name: formData.get('name') as string,
+      email: formData.get('email') as string,
+      subject: formData.get('subject') as string,
+      message: formData.get('message') as string,
+    };
+
+    const result = contactSchema.safeParse(data);
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      result.error.errors.forEach(err => {
+        if (err.path[0]) errors[err.path[0] as string] = err.message;
+      });
+      setFormErrors(errors);
+      toast({
+        title: 'Please fix the errors',
+        description: 'Some fields need attention before submitting.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const whatsappNumber = settings.social_whatsapp || '8801930278877';
+    const whatsappMessage = encodeURIComponent(`Hi, I'm ${data.name} (${data.email}).\n\nSubject: ${data.subject}\n\n${data.message}`);
+    window.open(`https://wa.me/${whatsappNumber}?text=${whatsappMessage}`, '_blank');
+    
+    toast({
+      title: 'Message sent!',
+      description: 'WhatsApp opened with your message. Complete sending there.',
+    });
+
+    // Reset form
+    (e.target as HTMLFormElement).reset();
+  };
 
   const seasonBadges = [
     { icon: Sparkles, label: 'All Seasons', color: 'bg-primary/10 text-primary' },
@@ -450,16 +502,7 @@ const Shop = () => {
                   >
                     <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-8 border border-border/50 h-full">
                       <h3 className="font-display text-2xl font-bold text-foreground mb-6">Send us a Message</h3>
-                      <form className="space-y-6" onSubmit={(e) => {
-                        e.preventDefault();
-                        const formData = new FormData(e.currentTarget);
-                        const name = formData.get('name') as string;
-                        const email = formData.get('email') as string;
-                        const message = formData.get('message') as string;
-                        const whatsappNumber = settings.social_whatsapp || '8801930278877';
-                        const whatsappMessage = encodeURIComponent(`Hi, I'm ${name} (${email}).\n\n${message}`);
-                        window.open(`https://wa.me/${whatsappNumber}?text=${whatsappMessage}`, '_blank');
-                      }}>
+                      <form className="space-y-6" onSubmit={handleContactSubmit}>
                         <div className="grid md:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <label htmlFor="name" className="text-sm font-medium text-foreground">Your Name</label>
@@ -467,9 +510,9 @@ const Shop = () => {
                               id="name"
                               name="name"
                               placeholder="John Doe"
-                              required
-                              className="h-12 rounded-xl border-border/50 bg-background/50"
+                              className={`h-12 rounded-xl border-border/50 bg-background/50 ${formErrors.name ? 'border-destructive' : ''}`}
                             />
+                            {formErrors.name && <p className="text-destructive text-sm">{formErrors.name}</p>}
                           </div>
                           <div className="space-y-2">
                             <label htmlFor="email" className="text-sm font-medium text-foreground">Email Address</label>
@@ -478,9 +521,9 @@ const Shop = () => {
                               name="email"
                               type="email"
                               placeholder="you@example.com"
-                              required
-                              className="h-12 rounded-xl border-border/50 bg-background/50"
+                              className={`h-12 rounded-xl border-border/50 bg-background/50 ${formErrors.email ? 'border-destructive' : ''}`}
                             />
+                            {formErrors.email && <p className="text-destructive text-sm">{formErrors.email}</p>}
                           </div>
                         </div>
                         <div className="space-y-2">
@@ -489,9 +532,9 @@ const Shop = () => {
                             id="subject"
                             name="subject"
                             placeholder="How can we help?"
-                            required
-                            className="h-12 rounded-xl border-border/50 bg-background/50"
+                            className={`h-12 rounded-xl border-border/50 bg-background/50 ${formErrors.subject ? 'border-destructive' : ''}`}
                           />
+                          {formErrors.subject && <p className="text-destructive text-sm">{formErrors.subject}</p>}
                         </div>
                         <div className="space-y-2">
                           <label htmlFor="message" className="text-sm font-medium text-foreground">Message</label>
@@ -500,9 +543,9 @@ const Shop = () => {
                             name="message"
                             placeholder="Tell us more about your inquiry..."
                             rows={5}
-                            required
-                            className="rounded-xl border-border/50 bg-background/50 resize-none"
+                            className={`rounded-xl border-border/50 bg-background/50 resize-none ${formErrors.message ? 'border-destructive' : ''}`}
                           />
+                          {formErrors.message && <p className="text-destructive text-sm">{formErrors.message}</p>}
                         </div>
                         <Button type="submit" size="lg" className="w-full gap-2 h-12 rounded-xl">
                           <Send className="w-4 h-4" />
@@ -511,6 +554,116 @@ const Shop = () => {
                       </form>
                     </div>
                   </motion.div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Testimonials Section */}
+          <section className="py-20 md:py-32 bg-secondary/30 relative overflow-hidden">
+            {/* Background */}
+            <div className="absolute inset-0 pointer-events-none">
+              <motion.div
+                className="absolute top-1/2 right-[20%] w-80 h-80 bg-primary/5 rounded-full blur-3xl"
+                animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+                transition={{ duration: 10, repeat: Infinity }}
+              />
+            </div>
+
+            <div className="container px-4 md:px-8 relative z-10">
+              <div className="max-w-6xl mx-auto">
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6 }}
+                  className="text-center mb-16"
+                >
+                  <span className="inline-block px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium mb-4">
+                    Customer Love
+                  </span>
+                  <h2 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6">
+                    What Our{' '}
+                    <span className="bg-gradient-to-r from-primary to-almans-gold bg-clip-text text-transparent">
+                      Customers Say
+                    </span>
+                  </h2>
+                  <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto">
+                    Join thousands of satisfied customers who trust Almans for their fashion needs.
+                  </p>
+                </motion.div>
+
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {[
+                    {
+                      name: 'Rahim Ahmed',
+                      location: 'Dhaka',
+                      rating: 5,
+                      review: 'Absolutely love the quality! The fabric is premium and the fit is perfect. Will definitely order again.',
+                      avatar: 'R',
+                    },
+                    {
+                      name: 'Sarah Khan',
+                      location: 'Chittagong',
+                      rating: 5,
+                      review: 'Fast delivery and amazing customer service. The clothes exceeded my expectations. Highly recommended!',
+                      avatar: 'S',
+                    },
+                    {
+                      name: 'Mohammad Hasan',
+                      location: 'Sylhet',
+                      rating: 5,
+                      review: 'Best fashion store in Bangladesh! The styles are trendy and the prices are reasonable. Love it!',
+                      avatar: 'M',
+                    },
+                    {
+                      name: 'Fatima Begum',
+                      location: 'Rajshahi',
+                      rating: 5,
+                      review: 'The attention to detail is impressive. Every stitch is perfect. Almans never disappoints!',
+                      avatar: 'F',
+                    },
+                    {
+                      name: 'Karim Ali',
+                      location: 'Khulna',
+                      rating: 5,
+                      review: 'I ordered for my whole family and everyone loved their outfits. Great variety and excellent quality.',
+                      avatar: 'K',
+                    },
+                    {
+                      name: 'Nadia Islam',
+                      location: 'Comilla',
+                      rating: 5,
+                      review: 'The website is easy to use and the products are exactly as shown. Trusted brand for sure!',
+                      avatar: 'N',
+                    },
+                  ].map((testimonial, i) => (
+                    <motion.div
+                      key={testimonial.name}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.5, delay: i * 0.1 }}
+                      className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 border border-border/50 hover:shadow-lg transition-shadow"
+                    >
+                      <Quote className="w-8 h-8 text-primary/30 mb-4" />
+                      <p className="text-foreground leading-relaxed mb-6">"{testimonial.review}"</p>
+                      <div className="flex items-center gap-2 mb-4">
+                        {[...Array(testimonial.rating)].map((_, j) => (
+                          <Star key={j} className="w-4 h-4 fill-almans-gold text-almans-gold" />
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-almans-gold flex items-center justify-center">
+                          <span className="text-sm font-bold text-primary-foreground">{testimonial.avatar}</span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">{testimonial.name}</p>
+                          <p className="text-sm text-muted-foreground">{testimonial.location}</p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
               </div>
             </div>
