@@ -24,6 +24,7 @@ import { DeleteAccount } from '@/components/account/DeleteAccount';
 import { NotificationPreferencesCard } from '@/components/account/NotificationPreferencesCard';
 import { LoyaltyPointsCard } from '@/components/account/LoyaltyPointsCard';
 import { ReferralProgram } from '@/components/ReferralProgram';
+import { SavedPaymentMethods } from '@/components/SavedPaymentMethods';
 
 interface Order {
   id: string;
@@ -739,6 +740,17 @@ export default function Account() {
               {/* Referral Program Tab */}
               {activeTab === 'referrals' && (
                 <ReferralProgram />
+              )}
+
+              {/* Payment Methods Tab */}
+              {activeTab === 'payments' && (
+                <div className="bg-card rounded-xl border border-border p-6">
+                  <div className="mb-6">
+                    <h1 className="font-display text-2xl font-bold">Payment Methods</h1>
+                    <p className="text-muted-foreground">Manage your saved payment methods for faster checkout</p>
+                  </div>
+                  <SavedPaymentMethods />
+                </div>
               )}
 
               {/* Security Tab */}
