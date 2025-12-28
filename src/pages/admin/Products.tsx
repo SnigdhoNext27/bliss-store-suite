@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, Edit, Trash2, Package } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Package, Bell, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -59,6 +59,7 @@ export default function Products() {
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [notifyingProduct, setNotifyingProduct] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     price: '',
@@ -76,6 +77,46 @@ export default function Products() {
     category_id: '',
   });
   const { toast } = useToast();
+
+  const handleNotifySubscribers = async (product: Product) => {
+    if (!product.sale_price || product.sale_price >= product.price) {
+      toast({ title: 'This product is not on sale', variant: 'destructive' });
+      return;
+    }
+
+    setNotifyingProduct(product.id);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('sale-notification', {
+        body: {
+          productName: product.name,
+          originalPrice: product.price,
+          salePrice: product.sale_price,
+          productSlug: product.slug,
+          productImage: product.images?.[0] || null,
+        },
+      });
+
+      if (error) throw error;
+
+      await logAdminAction({ 
+        action: 'notify_subscribers', 
+        entityType: 'product', 
+        entityId: product.id, 
+        details: { name: product.name, subscribersNotified: data?.successCount || 0 } 
+      });
+
+      toast({ 
+        title: 'Subscribers notified!', 
+        description: `${data?.successCount || 0} subscribers were notified about the sale.` 
+      });
+    } catch (error) {
+      console.error('Notify error:', error);
+      toast({ title: 'Failed to notify subscribers', variant: 'destructive' });
+    } finally {
+      setNotifyingProduct(null);
+    }
+  };
 
   useEffect(() => {
     fetchProducts();
@@ -485,7 +526,22 @@ export default function Products() {
                 )}
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Stock: {product.stock}</span>
-                  <div className="flex gap-2">
+                  <div className="flex gap-1">
+                    {product.sale_price && product.sale_price < product.price && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleNotifySubscribers(product)}
+                        disabled={notifyingProduct === product.id}
+                        title="Notify subscribers about this sale"
+                      >
+                        {notifyingProduct === product.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Bell className="h-4 w-4 text-amber-500" />
+                        )}
+                      </Button>
+                    )}
                     <Button variant="ghost" size="sm" onClick={() => openEdit(product)}>
                       <Edit className="h-4 w-4" />
                     </Button>

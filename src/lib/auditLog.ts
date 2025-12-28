@@ -8,7 +8,8 @@ export type AuditAction =
   | 'view' 
   | 'export' 
   | 'login' 
-  | 'logout';
+  | 'logout'
+  | 'notify_subscribers';
 
 export type EntityType = 
   | 'product' 
