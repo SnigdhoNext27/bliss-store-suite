@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, ShoppingBag, ShoppingCart, Heart, User } from 'lucide-react';
+import { Home, ShoppingBag, Heart, User, Briefcase } from 'lucide-react';
 import { useCartStore } from '@/lib/store';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useAuth } from '@/lib/auth';
@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/auth';
 const navItems = [
   { icon: Home, label: 'Home', path: '/' },
   { icon: ShoppingBag, label: 'Shop', path: '/shop' },
-  { icon: ShoppingCart, label: 'Cart', path: 'cart' },
+  { icon: Briefcase, label: 'My Bag', path: 'cart' },
   { icon: Heart, label: 'Wishlist', path: '/wishlist' },
   { icon: User, label: 'Account', path: '/account' },
 ];
