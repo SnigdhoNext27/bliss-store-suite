@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
-import { Package, User, MapPin, Lock, ChevronRight, Loader2, Plus, Trash2, Edit, Calendar } from 'lucide-react';
+import { Package, User, MapPin, Lock, ChevronRight, Loader2, Plus, Trash2, Edit, Calendar, Shield } from 'lucide-react';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,7 @@ import { Footer } from '@/components/Footer';
 import { CartSlide } from '@/components/CartSlide';
 import { AvatarUpload } from '@/components/account/AvatarUpload';
 import { AccountSidebar } from '@/components/account/AccountSidebar';
+import { TwoFactorAuth } from '@/components/account/TwoFactorAuth';
 
 interface Order {
   id: string;
@@ -723,37 +724,49 @@ export default function Account() {
 
               {/* Security Tab */}
               {activeTab === 'security' && (
-                <div className="bg-card rounded-xl border border-border p-6 max-w-lg">
-                  <h1 className="font-display text-2xl font-bold mb-6">Change Password</h1>
-                  
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="newPassword">New Password</Label>
-                      <Input
-                        id="newPassword"
-                        type="password"
-                        value={passwordForm.newPassword}
-                        onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                        placeholder="Enter new password"
-                      />
-                      {errors.newPassword && <p className="text-destructive text-sm">{errors.newPassword}</p>}
-                    </div>
+                <div className="space-y-6">
+                  {/* Two-Factor Authentication */}
+                  <div className="bg-card rounded-xl border border-border p-6">
+                    <h1 className="font-display text-2xl font-bold mb-6">Security Settings</h1>
+                    <TwoFactorAuth />
+                  </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="confirmPassword">Confirm Password</Label>
-                      <Input
-                        id="confirmPassword"
-                        type="password"
-                        value={passwordForm.confirmPassword}
-                        onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                        placeholder="Confirm new password"
-                      />
-                      {errors.confirmPassword && <p className="text-destructive text-sm">{errors.confirmPassword}</p>}
-                    </div>
+                  {/* Change Password */}
+                  <div className="bg-card rounded-xl border border-border p-6">
+                    <h2 className="font-display text-xl font-bold mb-6 flex items-center gap-2">
+                      <Lock className="h-5 w-5" />
+                      Change Password
+                    </h2>
+                    
+                    <div className="space-y-4 max-w-md">
+                      <div className="space-y-2">
+                        <Label htmlFor="newPassword">New Password</Label>
+                        <Input
+                          id="newPassword"
+                          type="password"
+                          value={passwordForm.newPassword}
+                          onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                          placeholder="Enter new password"
+                        />
+                        {errors.newPassword && <p className="text-destructive text-sm">{errors.newPassword}</p>}
+                      </div>
 
-                    <Button onClick={handleChangePassword} disabled={saving}>
-                      {saving ? 'Changing...' : 'Change Password'}
-                    </Button>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirmPassword">Confirm Password</Label>
+                        <Input
+                          id="confirmPassword"
+                          type="password"
+                          value={passwordForm.confirmPassword}
+                          onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                          placeholder="Confirm new password"
+                        />
+                        {errors.confirmPassword && <p className="text-destructive text-sm">{errors.confirmPassword}</p>}
+                      </div>
+
+                      <Button onClick={handleChangePassword} disabled={saving}>
+                        {saving ? 'Changing...' : 'Change Password'}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}

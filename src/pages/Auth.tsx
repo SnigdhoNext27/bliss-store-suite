@@ -11,6 +11,7 @@ import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { PasswordStrengthIndicator, isCommonPassword } from '@/components/PasswordStrengthIndicator';
 import { useLoginRateLimit } from '@/hooks/useLoginRateLimit';
+import { MFAVerification } from '@/components/auth/MFAVerification';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -40,11 +41,12 @@ const signupSchema = z.object({
 });
 
 export default function Auth() {
-  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot' | 'mfa'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -148,7 +150,12 @@ export default function Auth() {
           return;
         }
 
-        const { error } = await signIn(formData.email, formData.password);
+        // Direct login using Supabase to check for MFA
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
+        
         if (error) {
           const wasLocked = recordFailedAttempt();
           if (wasLocked) {
@@ -166,7 +173,24 @@ export default function Auth() {
               variant: 'destructive',
             });
           }
-        } else {
+        } else if (data.session) {
+          // Check if MFA verification is needed
+          const { data: mfaData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+          
+          if (mfaData?.currentLevel === 'aal1' && mfaData?.nextLevel === 'aal2') {
+            // User has MFA enabled, need to verify
+            const { data: factorsData } = await supabase.auth.mfa.listFactors();
+            const verifiedFactor = factorsData?.totp?.find(f => f.status === 'verified');
+            
+            if (verifiedFactor) {
+              setMfaFactorId(verifiedFactor.id);
+              setMode('mfa');
+              setLoading(false);
+              return;
+            }
+          }
+          
+          // No MFA needed or already verified
           recordSuccessfulLogin();
           toast({ title: 'Welcome back!' });
           navigate(redirectTo);
@@ -224,19 +248,36 @@ export default function Auth() {
       >
         <div className="text-center mb-8">
           <h1 className="font-display text-4xl font-bold text-foreground mb-2">
-            {mode === 'login' ? 'Welcome Back' : mode === 'signup' ? 'Create Account' : 'Reset Password'}
+            {mode === 'login' ? 'Welcome Back' : mode === 'signup' ? 'Create Account' : mode === 'mfa' ? 'Verify Your Identity' : 'Reset Password'}
           </h1>
           <p className="text-muted-foreground">
             {mode === 'login' 
               ? 'Sign in to access your account' 
               : mode === 'signup'
               ? 'Join Almans for exclusive access'
+              : mode === 'mfa'
+              ? 'Enter your 2FA code to continue'
               : 'Enter your email to reset your password'}
           </p>
         </div>
 
         <div className="bg-card rounded-2xl p-8 shadow-lg border border-border">
-          {mode === 'forgot' ? (
+          {mode === 'mfa' && mfaFactorId ? (
+            <MFAVerification
+              factorId={mfaFactorId}
+              onSuccess={() => {
+                recordSuccessfulLogin();
+                toast({ title: 'Welcome back!' });
+                navigate(redirectTo);
+              }}
+              onCancel={() => {
+                setMode('login');
+                setMfaFactorId(null);
+                // Sign out the partially authenticated session
+                supabase.auth.signOut();
+              }}
+            />
+          ) : mode === 'forgot' ? (
             resetSent ? (
               <div className="text-center py-4">
                 <Mail className="h-12 w-12 mx-auto text-primary mb-4" />
