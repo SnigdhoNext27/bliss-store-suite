@@ -525,8 +525,15 @@ export default function Auth() {
                             placeholder="••••••••"
                             value={formData.confirmPassword}
                             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                            className="pl-12 h-12 rounded-xl border-border/50 bg-background/50"
+                            className="pl-12 pr-12 h-12 rounded-xl border-border/50 bg-background/50"
                           />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                          </button>
                         </div>
                         {errors.confirmPassword && <p className="text-destructive text-sm">{errors.confirmPassword}</p>}
                       </div>
