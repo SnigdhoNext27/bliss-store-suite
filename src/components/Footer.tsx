@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Facebook, Instagram, Banknote, CreditCard, Smartphone } from 'lucide-react';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 const footerLinks = {
   'About Us': ['Our Story', 'Careers', 'Sustainability', 'Press'],
@@ -7,12 +8,6 @@ const footerLinks = {
   'Company': ['FAQ', 'Shipping', 'Returns', 'Size Guide'],
   'Legal': ['Privacy Policy', 'Terms of Service', 'Cookie Policy'],
 };
-
-const socialLinks = [
-  { name: 'Facebook', icon: Facebook, href: 'https://www.facebook.com/profile.php?id=61584375982557' },
-  { name: 'Instagram', icon: Instagram, href: 'https://www.instagram.com/almans.bd?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==' },
-  { name: 'WhatsApp', href: 'https://wa.me/8801234567890', isWhatsApp: true },
-];
 
 const paymentMethods = [
   { name: 'Cash on Delivery', icon: Banknote, available: true },
@@ -29,6 +24,30 @@ const WhatsAppIcon = ({ className }: { className?: string }) => (
 );
 
 export function Footer() {
+  const { settings } = useSiteSettings();
+
+  // Build social links from settings - these update when admin changes them
+  const socialLinks = [
+    { 
+      name: 'Facebook', 
+      icon: Facebook, 
+      href: settings.social_facebook || 'https://www.facebook.com/profile.php?id=61584375982557',
+      isWhatsApp: false 
+    },
+    { 
+      name: 'Instagram', 
+      icon: Instagram, 
+      href: settings.social_instagram || 'https://www.instagram.com/almans.bd',
+      isWhatsApp: false 
+    },
+    { 
+      name: 'WhatsApp', 
+      icon: null,
+      href: `https://wa.me/${settings.social_whatsapp || '8801930278877'}`,
+      isWhatsApp: true 
+    },
+  ];
+
   return (
     <footer className="bg-almans-chocolate text-almans-cream">
       {/* Brand Banner */}
