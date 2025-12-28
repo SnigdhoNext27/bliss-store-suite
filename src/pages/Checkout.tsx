@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, MapPin, Phone, Truck, Check, PartyPopper, MessageCircle, Mail, AlertTriangle, Banknote, CreditCard, Smartphone, Award, Package, Wallet } from 'lucide-react';
@@ -21,6 +21,8 @@ import { useBulkDiscount } from '@/hooks/useBulkDiscount';
 import { GiftWrapOption } from '@/components/GiftWrapOption';
 import { SavedPaymentMethods } from '@/components/SavedPaymentMethods';
 import { useSavedPaymentMethods } from '@/hooks/useSavedPaymentMethods';
+import { SavedAddressSelector } from '@/components/SavedAddressSelector';
+import { useSavedAddresses, SavedAddress } from '@/hooks/useSavedAddresses';
 
 const deliverySchema = z.object({
   fullName: z.string().min(2, 'Name is required').max(100),
@@ -61,7 +63,44 @@ export default function Checkout() {
   const [giftWrap, setGiftWrap] = useState(false);
   const [giftMessage, setGiftMessage] = useState('');
   const [selectedSavedPayment, setSelectedSavedPayment] = useState<string | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [useNewAddress, setUseNewAddress] = useState(false);
   const { methods: savedPaymentMethods } = useSavedPaymentMethods();
+  const { addresses: savedAddresses, loading: addressesLoading, getDefaultAddress } = useSavedAddresses();
+
+  // Auto-select default address when addresses load
+  useEffect(() => {
+    if (!addressesLoading && savedAddresses.length > 0 && !selectedAddressId && !useNewAddress) {
+      const defaultAddr = getDefaultAddress();
+      if (defaultAddr) {
+        handleSelectSavedAddress(defaultAddr);
+      }
+    }
+  }, [addressesLoading, savedAddresses]);
+
+  const handleSelectSavedAddress = (address: SavedAddress | null) => {
+    if (address) {
+      setSelectedAddressId(address.id);
+      setUseNewAddress(false);
+      // Populate form with saved address data
+      setFormData({
+        ...formData,
+        fullName: address.full_name,
+        phone: address.phone,
+        address: `${address.address_line1}${address.address_line2 ? ', ' + address.address_line2 : ''}, ${address.city}${address.district ? ', ' + address.district : ''}`,
+      });
+    } else {
+      setSelectedAddressId(null);
+      setUseNewAddress(true);
+      // Clear form for new address
+      setFormData({
+        ...formData,
+        fullName: '',
+        phone: '',
+        address: '',
+      });
+    }
+  };
 
   const subtotal = liveSubtotal;
   const { discountAmount: bulkDiscountAmount, applicableTier } = useBulkDiscount(items, subtotal);
@@ -428,43 +467,61 @@ export default function Checkout() {
                 <h2 className="font-display text-2xl font-bold mb-6">Delivery Information</h2>
                 
                 <div className="space-y-5 mb-8">
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName">Full Name *</Label>
-                    <Input
-                      id="fullName"
-                      value={formData.fullName}
-                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                      placeholder="Your full name"
-                    />
-                    {errors.fullName && <p className="text-destructive text-sm">{errors.fullName}</p>}
-                  </div>
+                  {/* Saved Addresses Selector */}
+                  {savedAddresses.length > 0 && (
+                    <div className="mb-6">
+                      <SavedAddressSelector
+                        addresses={savedAddresses}
+                        loading={addressesLoading}
+                        selectedAddressId={selectedAddressId}
+                        onSelectAddress={handleSelectSavedAddress}
+                        onAddNewAddress={() => handleSelectSavedAddress(null)}
+                      />
+                    </div>
+                  )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="phone" className="flex items-center gap-2">
-                      <Phone className="h-4 w-4" /> Phone Number *
-                    </Label>
-                    <Input
-                      id="phone"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="+880 1XXX XXXXXX"
-                    />
-                    {errors.phone && <p className="text-destructive text-sm">{errors.phone}</p>}
-                  </div>
+                  {/* Show form fields when using new address or no saved addresses */}
+                  {(useNewAddress || savedAddresses.length === 0 || selectedAddressId === null) && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="fullName">Full Name *</Label>
+                        <Input
+                          id="fullName"
+                          value={formData.fullName}
+                          onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                          placeholder="Your full name"
+                        />
+                        {errors.fullName && <p className="text-destructive text-sm">{errors.fullName}</p>}
+                      </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="address" className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4" /> Delivery Address *
-                    </Label>
-                    <Textarea
-                      id="address"
-                      value={formData.address}
-                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      placeholder="House, Road, Area, City"
-                      rows={3}
-                    />
-                    {errors.address && <p className="text-destructive text-sm">{errors.address}</p>}
-                  </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="phone" className="flex items-center gap-2">
+                          <Phone className="h-4 w-4" /> Phone Number *
+                        </Label>
+                        <Input
+                          id="phone"
+                          value={formData.phone}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                          placeholder="+880 1XXX XXXXXX"
+                        />
+                        {errors.phone && <p className="text-destructive text-sm">{errors.phone}</p>}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="address" className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4" /> Delivery Address *
+                        </Label>
+                        <Textarea
+                          id="address"
+                          value={formData.address}
+                          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                          placeholder="House, Road, Area, City"
+                          rows={3}
+                        />
+                        {errors.address && <p className="text-destructive text-sm">{errors.address}</p>}
+                      </div>
+                    </>
+                  )}
 
                   <div className="space-y-3">
                     <Label className="flex items-center gap-2">
