@@ -1,12 +1,15 @@
+import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
+import { AnimatePresence } from "framer-motion";
 import { AuthProvider } from "@/lib/auth";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { LiveChatWidget } from "@/components/chat/LiveChatWidget";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import Index from "./pages/Index";
 import Shop from "./pages/Shop";
 import Auth from "./pages/Auth";
@@ -31,48 +34,70 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <HelmetProvider>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <WhatsAppButton />
-          <LiveChatWidget />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/shop" element={<Shop />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/product/:id" element={<ProductDetail />} />
-              <Route path="/category/:slug" element={<Category />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/wishlist" element={<Wishlist />} />
-              <Route path="/account" element={<Account />} />
-              <Route path="/orders/:orderNumber" element={<OrderTracking />} />
-              
-              {/* Admin Routes */}
-              <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<Dashboard />} />
-                <Route path="orders" element={<Orders />} />
-                <Route path="products" element={<Products />} />
-                <Route path="categories" element={<Categories />} />
-                <Route path="customers" element={<Customers />} />
-                <Route path="coupons" element={<Coupons />} />
-                <Route path="banners" element={<Banners />} />
-                <Route path="settings" element={<Settings />} />
-                <Route path="team" element={<Team />} />
-                <Route path="chats" element={<AdminChats />} />
-              </Route>
-              
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
-  </HelmetProvider>
-);
+const App = () => {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Show loading screen for 2.5 seconds on initial load
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            
+            <AnimatePresence mode="wait">
+              {isLoading && <LoadingScreen />}
+            </AnimatePresence>
+            
+            {!isLoading && (
+              <>
+                <WhatsAppButton />
+                <LiveChatWidget />
+                <BrowserRouter>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/shop" element={<Shop />} />
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/product/:id" element={<ProductDetail />} />
+                    <Route path="/category/:slug" element={<Category />} />
+                    <Route path="/checkout" element={<Checkout />} />
+                    <Route path="/wishlist" element={<Wishlist />} />
+                    <Route path="/account" element={<Account />} />
+                    <Route path="/orders/:orderNumber" element={<OrderTracking />} />
+                    
+                    {/* Admin Routes */}
+                    <Route path="/admin" element={<AdminLayout />}>
+                      <Route index element={<Dashboard />} />
+                      <Route path="orders" element={<Orders />} />
+                      <Route path="products" element={<Products />} />
+                      <Route path="categories" element={<Categories />} />
+                      <Route path="customers" element={<Customers />} />
+                      <Route path="coupons" element={<Coupons />} />
+                      <Route path="banners" element={<Banners />} />
+                      <Route path="settings" element={<Settings />} />
+                      <Route path="team" element={<Team />} />
+                      <Route path="chats" element={<AdminChats />} />
+                    </Route>
+                    
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </BrowserRouter>
+              </>
+            )}
+          </TooltipProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </HelmetProvider>
+  );
+};
 
 export default App;
