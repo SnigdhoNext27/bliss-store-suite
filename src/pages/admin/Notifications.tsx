@@ -9,7 +9,10 @@ import {
   ShoppingBag, 
   Sparkles,
   Send,
-  Loader2
+  Loader2,
+  Clock,
+  Calendar,
+  CalendarClock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,9 +22,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow, isFuture } from 'date-fns';
 
 interface Notification {
   id: string;
@@ -31,6 +36,8 @@ interface Notification {
   image_url: string | null;
   link: string | null;
   is_global: boolean;
+  is_sent: boolean;
+  scheduled_at: string | null;
   created_at: string;
 }
 
@@ -46,6 +53,7 @@ export default function Notifications() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('sent');
   const { toast } = useToast();
 
   // Form state
@@ -55,6 +63,9 @@ export default function Notifications() {
     type: 'info',
     link: '',
     is_global: true,
+    scheduleEnabled: false,
+    scheduledDate: '',
+    scheduledTime: '',
   });
 
   const fetchNotifications = async () => {
@@ -65,7 +76,7 @@ export default function Notifications() {
       .limit(50);
 
     if (!error && data) {
-      setNotifications(data);
+      setNotifications(data as Notification[]);
     }
     setLoading(false);
   };
@@ -73,6 +84,9 @@ export default function Notifications() {
   useEffect(() => {
     fetchNotifications();
   }, []);
+
+  const sentNotifications = notifications.filter(n => n.is_sent);
+  const scheduledNotifications = notifications.filter(n => !n.is_sent && n.scheduled_at);
 
   const handleSend = async () => {
     if (!formData.title.trim() || !formData.message.trim()) {
@@ -84,14 +98,34 @@ export default function Notifications() {
       return;
     }
 
+    if (formData.scheduleEnabled && (!formData.scheduledDate || !formData.scheduledTime)) {
+      toast({
+        title: 'Schedule required',
+        description: 'Please select a date and time for the scheduled notification.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setSending(true);
+
+    let scheduledAt: string | null = null;
+    let isSent = true;
+
+    if (formData.scheduleEnabled && formData.scheduledDate && formData.scheduledTime) {
+      scheduledAt = new Date(`${formData.scheduledDate}T${formData.scheduledTime}`).toISOString();
+      isSent = false;
+    }
+
     const { error } = await supabase.from('notifications').insert({
       title: formData.title,
       message: formData.message,
       type: formData.type,
       link: formData.link || null,
       is_global: formData.is_global,
-      user_id: null, // Global notification
+      user_id: null,
+      scheduled_at: scheduledAt,
+      is_sent: isSent,
     });
 
     if (error) {
@@ -102,12 +136,26 @@ export default function Notifications() {
       });
     } else {
       toast({
-        title: 'Notification sent!',
-        description: 'All users will receive this notification.',
+        title: formData.scheduleEnabled ? 'Notification scheduled!' : 'Notification sent!',
+        description: formData.scheduleEnabled 
+          ? `Will be sent on ${format(new Date(scheduledAt!), 'PPp')}`
+          : 'All users will receive this notification.',
       });
       setDialogOpen(false);
-      setFormData({ title: '', message: '', type: 'info', link: '', is_global: true });
+      setFormData({ 
+        title: '', 
+        message: '', 
+        type: 'info', 
+        link: '', 
+        is_global: true,
+        scheduleEnabled: false,
+        scheduledDate: '',
+        scheduledTime: '',
+      });
       fetchNotifications();
+      if (formData.scheduleEnabled) {
+        setActiveTab('scheduled');
+      }
     }
     setSending(false);
   };
@@ -121,9 +169,26 @@ export default function Notifications() {
     }
   };
 
+  const handleSendNow = async (notification: Notification) => {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ is_sent: true, scheduled_at: null })
+      .eq('id', notification.id);
+
+    if (!error) {
+      toast({ title: 'Notification sent!' });
+      fetchNotifications();
+    }
+  };
+
   const getTypeIcon = (type: string) => {
     const found = notificationTypes.find(t => t.value === type);
     return found ? <found.icon className="h-4 w-4" /> : <Bell className="h-4 w-4" />;
+  };
+
+  const getMinDateTime = () => {
+    const now = new Date();
+    return now.toISOString().slice(0, 16);
   };
 
   return (
@@ -131,21 +196,21 @@ export default function Notifications() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
-          <p className="text-muted-foreground">Send notifications to all customers</p>
+          <p className="text-muted-foreground">Send and schedule notifications to customers</p>
         </div>
         
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
-              Send Notification
+              Create Notification
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>Send Notification</DialogTitle>
+              <DialogTitle>Create Notification</DialogTitle>
               <DialogDescription>
-                Send a notification to all customers. They will see it in their notification bell.
+                Send immediately or schedule for later delivery.
               </DialogDescription>
             </DialogHeader>
             
@@ -210,6 +275,53 @@ export default function Notifications() {
                   onCheckedChange={(v) => setFormData(p => ({ ...p, is_global: v }))}
                 />
               </div>
+
+              {/* Schedule Section */}
+              <div className="border-t border-border pt-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <CalendarClock className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <Label>Schedule for later</Label>
+                      <p className="text-xs text-muted-foreground">Send at a specific date and time</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={formData.scheduleEnabled}
+                    onCheckedChange={(v) => setFormData(p => ({ ...p, scheduleEnabled: v }))}
+                  />
+                </div>
+
+                {formData.scheduleEnabled && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="scheduledDate" className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        Date
+                      </Label>
+                      <Input
+                        id="scheduledDate"
+                        type="date"
+                        value={formData.scheduledDate}
+                        min={new Date().toISOString().split('T')[0]}
+                        onChange={(e) => setFormData(p => ({ ...p, scheduledDate: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="scheduledTime" className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        Time
+                      </Label>
+                      <Input
+                        id="scheduledTime"
+                        type="time"
+                        value={formData.scheduledTime}
+                        onChange={(e) => setFormData(p => ({ ...p, scheduledTime: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <DialogFooter>
@@ -217,77 +329,181 @@ export default function Notifications() {
                 Cancel
               </Button>
               <Button onClick={handleSend} disabled={sending} className="gap-2">
-                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                Send Notification
+                {sending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : formData.scheduleEnabled ? (
+                  <CalendarClock className="h-4 w-4" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+                {formData.scheduleEnabled ? 'Schedule' : 'Send Now'}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Recent Notifications */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Notifications</CardTitle>
-          <CardDescription>View and manage sent notifications</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : notifications.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Bell className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p>No notifications sent yet</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {notifications.map((notification) => (
-                <motion.div
-                  key={notification.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex items-start gap-4 p-4 rounded-lg border border-border bg-card hover:bg-muted/30 transition-colors"
-                >
-                  <div className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
-                    notification.type === 'promo' ? 'bg-purple-500/10 text-purple-500' :
-                    notification.type === 'product' ? 'bg-green-500/10 text-green-500' :
-                    notification.type === 'order' ? 'bg-orange-500/10 text-orange-500' :
-                    'bg-blue-500/10 text-blue-500'
-                  }`}>
-                    {getTypeIcon(notification.type)}
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-foreground">{notification.title}</p>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground capitalize">
-                        {notification.type}
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
-                      {notification.message}
-                    </p>
-                    <p className="text-xs text-muted-foreground/70 mt-1">
-                      {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                    </p>
-                  </div>
+      {/* Tabs for Sent and Scheduled */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="sent" className="gap-2">
+            <Send className="h-4 w-4" />
+            Sent ({sentNotifications.length})
+          </TabsTrigger>
+          <TabsTrigger value="scheduled" className="gap-2">
+            <CalendarClock className="h-4 w-4" />
+            Scheduled ({scheduledNotifications.length})
+          </TabsTrigger>
+        </TabsList>
 
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDelete(notification.id)}
-                    className="shrink-0 text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        <TabsContent value="sent" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Sent Notifications</CardTitle>
+              <CardDescription>View and manage sent notifications</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : sentNotifications.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Bell className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                  <p>No notifications sent yet</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {sentNotifications.map((notification) => (
+                    <motion.div
+                      key={notification.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-start gap-4 p-4 rounded-lg border border-border bg-card hover:bg-muted/30 transition-colors"
+                    >
+                      <div className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                        notification.type === 'promo' ? 'bg-purple-500/10 text-purple-500' :
+                        notification.type === 'product' ? 'bg-green-500/10 text-green-500' :
+                        notification.type === 'order' ? 'bg-orange-500/10 text-orange-500' :
+                        'bg-blue-500/10 text-blue-500'
+                      }`}>
+                        {getTypeIcon(notification.type)}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-foreground">{notification.title}</p>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground capitalize">
+                            {notification.type}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
+                          {notification.message}
+                        </p>
+                        <p className="text-xs text-muted-foreground/70 mt-1">
+                          {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                        </p>
+                      </div>
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(notification.id)}
+                        className="shrink-0 text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="scheduled" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Scheduled Notifications</CardTitle>
+              <CardDescription>Notifications waiting to be sent</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : scheduledNotifications.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <CalendarClock className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                  <p>No scheduled notifications</p>
+                  <p className="text-xs mt-1">Schedule a notification to see it here</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {scheduledNotifications.map((notification) => (
+                    <motion.div
+                      key={notification.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-start gap-4 p-4 rounded-lg border border-border bg-card hover:bg-muted/30 transition-colors"
+                    >
+                      <div className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                        notification.type === 'promo' ? 'bg-purple-500/10 text-purple-500' :
+                        notification.type === 'product' ? 'bg-green-500/10 text-green-500' :
+                        notification.type === 'order' ? 'bg-orange-500/10 text-orange-500' :
+                        'bg-blue-500/10 text-blue-500'
+                      }`}>
+                        {getTypeIcon(notification.type)}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-medium text-foreground">{notification.title}</p>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground capitalize">
+                            {notification.type}
+                          </span>
+                          <Badge variant="outline" className="gap-1">
+                            <Clock className="h-3 w-3" />
+                            {notification.scheduled_at && format(new Date(notification.scheduled_at), 'PPp')}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
+                          {notification.message}
+                        </p>
+                        <p className="text-xs text-muted-foreground/70 mt-1">
+                          {notification.scheduled_at && isFuture(new Date(notification.scheduled_at)) 
+                            ? `Sends ${formatDistanceToNow(new Date(notification.scheduled_at), { addSuffix: true })}`
+                            : 'Processing...'}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleSendNow(notification)}
+                          className="gap-1"
+                        >
+                          <Send className="h-3 w-3" />
+                          Send Now
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(notification.id)}
+                          className="shrink-0 text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
