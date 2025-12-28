@@ -117,6 +117,8 @@ export default function Account() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [orderFilters, setOrderFilters] = useState<OrderFiltersState>(defaultFilters);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ordersPerPage = 5;
   const [saving, setSaving] = useState(false);
   const [profileForm, setProfileForm] = useState({ 
     full_name: '', 
@@ -413,6 +415,19 @@ export default function Account() {
     return true;
   });
 
+  // Pagination
+  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+  const paginatedOrders = filteredOrders.slice(
+    (currentPage - 1) * ordersPerPage,
+    currentPage * ordersPerPage
+  );
+  
+  // Reset to page 1 when filters change
+  const handleFiltersChange = (newFilters: OrderFiltersState) => {
+    setOrderFilters(newFilters);
+    setCurrentPage(1);
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -596,7 +611,7 @@ export default function Account() {
                   {/* Filters */}
                   {orders.length > 0 && (
                     <div className="mb-6">
-                      <OrderFilters filters={orderFilters} onFiltersChange={setOrderFilters} />
+                      <OrderFilters filters={orderFilters} onFiltersChange={handleFiltersChange} />
                     </div>
                   )}
                   
@@ -612,16 +627,17 @@ export default function Account() {
                     <div className="text-center py-12">
                       <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                       <p className="text-muted-foreground">No orders match your filters</p>
-                      <Button variant="outline" onClick={() => setOrderFilters(defaultFilters)} className="mt-4">
+                      <Button variant="outline" onClick={() => handleFiltersChange(defaultFilters)} className="mt-4">
                         Clear Filters
                       </Button>
                     </div>
                   ) : (
                     <div className="space-y-4">
                       <p className="text-sm text-muted-foreground">
-                        Showing {filteredOrders.length} of {orders.length} orders
+                        Showing {(currentPage - 1) * ordersPerPage + 1}-{Math.min(currentPage * ordersPerPage, filteredOrders.length)} of {filteredOrders.length} orders
+                        {filteredOrders.length !== orders.length && ` (filtered from ${orders.length})`}
                       </p>
-                      {filteredOrders.map((order) => (
+                      {paginatedOrders.map((order) => (
                         <div
                           key={order.id}
                           onClick={() => navigate(`/orders/${order.order_number}`)}
@@ -662,6 +678,71 @@ export default function Account() {
                           </div>
                         </div>
                       ))}
+                      
+                      {/* Pagination Controls */}
+                      {totalPages > 1 && (
+                        <div className="flex items-center justify-center gap-2 pt-4 border-t border-border">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(1)}
+                            disabled={currentPage === 1}
+                          >
+                            First
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                          >
+                            Previous
+                          </Button>
+                          
+                          <div className="flex items-center gap-1">
+                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                              let pageNum: number;
+                              if (totalPages <= 5) {
+                                pageNum = i + 1;
+                              } else if (currentPage <= 3) {
+                                pageNum = i + 1;
+                              } else if (currentPage >= totalPages - 2) {
+                                pageNum = totalPages - 4 + i;
+                              } else {
+                                pageNum = currentPage - 2 + i;
+                              }
+                              return (
+                                <Button
+                                  key={pageNum}
+                                  variant={currentPage === pageNum ? 'default' : 'outline'}
+                                  size="sm"
+                                  className="w-9"
+                                  onClick={() => setCurrentPage(pageNum)}
+                                >
+                                  {pageNum}
+                                </Button>
+                              );
+                            })}
+                          </div>
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                          >
+                            Next
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(totalPages)}
+                            disabled={currentPage === totalPages}
+                          >
+                            Last
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
