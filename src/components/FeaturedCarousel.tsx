@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ShoppingBag, Eye, Heart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ShoppingBag, Eye, Heart, MoveHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Product, useCartStore } from '@/lib/store';
 import { useProducts } from '@/hooks/useProducts';
@@ -14,6 +14,8 @@ export function FeaturedCarousel() {
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [showSwipeHint, setShowSwipeHint] = useState(true);
+  const [hasSwiped, setHasSwiped] = useState(false);
   const { products } = useProducts();
   const { addItem } = useCartStore();
   const { isInWishlist, toggleWishlist } = useWishlist();
@@ -54,6 +56,8 @@ export function FeaturedCarousel() {
     const isSwipe = Math.abs(distance) > minSwipeDistance;
     
     if (isSwipe) {
+      setHasSwiped(true);
+      setShowSwipeHint(false);
       if (distance > 0) {
         nextSlide();
       } else {
@@ -61,6 +65,13 @@ export function FeaturedCarousel() {
       }
     }
   };
+
+  // Hide swipe hint after 5 seconds or after first swipe
+  useEffect(() => {
+    if (hasSwiped) return;
+    const timer = setTimeout(() => setShowSwipeHint(false), 5000);
+    return () => clearTimeout(timer);
+  }, [hasSwiped]);
 
   // Auto-scroll
   useEffect(() => {
@@ -223,6 +234,27 @@ export function FeaturedCarousel() {
               </motion.div>
             ))}
           </motion.div>
+
+          {/* Mobile Swipe Hint */}
+          <AnimatePresence>
+            {showSwipeHint && maxIndex > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="absolute inset-0 flex items-center justify-center pointer-events-none md:hidden"
+              >
+                <motion.div
+                  animate={{ x: [0, 10, -10, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1 }}
+                  className="flex items-center gap-2 bg-foreground/80 text-background px-4 py-2 rounded-full shadow-lg backdrop-blur-sm"
+                >
+                  <MoveHorizontal className="h-4 w-4" />
+                  <span className="text-sm font-medium">Swipe to browse</span>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Progress Dots */}
