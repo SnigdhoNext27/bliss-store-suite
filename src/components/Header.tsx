@@ -30,6 +30,7 @@ import { MobileMenuOverlay } from '@/components/MobileMenuOverlay';
 import { NotificationBell } from '@/components/NotificationBell';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { CurrencySelector } from '@/components/CurrencySelector';
+import { SettingsPanel } from '@/components/SettingsPanel';
 import { cn } from '@/lib/utils';
 import { useWishlist } from '@/hooks/useWishlist';
 
@@ -184,8 +185,8 @@ export function Header() {
           {/* Theme Toggle */}
           <ThemeToggle />
           
-          {/* Currency Selector */}
-          <CurrencySelector />
+          {/* Settings Panel (Language, Currency, Theme) */}
+          <SettingsPanel />
           
           {/* Notification Bell */}
           <NotificationBell />

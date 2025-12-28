@@ -4,10 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/lib/store';
 import { useCartWithLivePrices } from '@/hooks/useCartWithLivePrices';
+import { useCurrency } from '@/hooks/useCurrency';
 
 export function CartSlide() {
   const { isOpen, closeCart } = useCartStore();
   const navigate = useNavigate();
+  const { format } = useCurrency();
   const {
     items,
     loading,
@@ -138,7 +140,7 @@ export function CartSlide() {
                               )}
                               {item.priceChanged && !item.productUnavailable && (
                                 <p className="text-xs text-amber-600 dark:text-amber-400">
-                                  Price updated from ৳{item.originalStoredPrice.toFixed(0)}
+                                  Price updated from {format(item.originalStoredPrice)}
                                 </p>
                               )}
                             </div>
@@ -189,7 +191,7 @@ export function CartSlide() {
 
                             {/* Price */}
                             <p className="font-semibold text-primary">
-                              ৳{(item.livePrice * item.quantity).toFixed(0)}
+                              {format(item.livePrice * item.quantity)}
                             </p>
                           </div>
                         </div>
@@ -206,7 +208,7 @@ export function CartSlide() {
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Subtotal</span>
                     <span className="text-lg font-semibold text-foreground">
-                      ৳{liveSubtotal.toFixed(0)}
+                      {format(liveSubtotal)}
                     </span>
                   </div>
 
