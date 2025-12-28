@@ -16,6 +16,7 @@ import { AnimatedRoutes } from "@/components/AnimatedRoutes";
 import { ProductComparisonBar } from "@/components/ProductComparisonBar";
 import { ProductComparisonModal } from "@/components/ProductComparisonModal";
 import { AbandonedCartTracker } from "@/components/AbandonedCartTracker";
+import { fetchAndUpdateRates } from "@/hooks/useCurrency";
 import Index from "./pages/Index";
 import Shop from "./pages/Shop";
 import Sales from "./pages/Sales";
@@ -53,6 +54,14 @@ const App = () => {
     }, 2500);
 
     return () => clearTimeout(timer);
+  }, []);
+
+  // Fetch currency rates on app load
+  useEffect(() => {
+    fetchAndUpdateRates();
+    // Refresh rates every 24 hours
+    const interval = setInterval(fetchAndUpdateRates, 24 * 60 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
