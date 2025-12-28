@@ -160,6 +160,21 @@ export default function Orders() {
       if (error) throw error;
 
       await logAdminAction({ action: 'update', entityType: 'order', entityId: orderId, details: { order_number: order?.order_number, previous_status: previousStatus, new_status: status } });
+      
+      // Send order status notification
+      try {
+        await supabase.functions.invoke('order-notification', {
+          body: {
+            order_id: orderId,
+            new_status: status,
+            old_status: previousStatus,
+          },
+        });
+      } catch (notifError) {
+        console.error('Failed to send notification:', notifError);
+        // Don't fail the status update if notification fails
+      }
+      
       setOrders(orders.map(o => o.id === orderId ? { ...o, status } : o));
       toast({ title: 'Order status updated' });
     } catch (error) {

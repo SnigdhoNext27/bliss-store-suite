@@ -12,11 +12,5 @@ verify_jwt = false
 [functions.process-scheduled-notifications]
 verify_jwt = false
 
-[functions.order-notification]
-verify_jwt = false
-
-[functions.sale-notification]
-verify_jwt = false
-
-[functions.newsletter-unsubscribe]
+[functions.process-notification-triggers]
 verify_jwt = false
