@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, MapPin, Phone, Truck, Check, PartyPopper, MessageCircle, Mail, AlertTriangle, Banknote, CreditCard, Smartphone, Award } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Phone, Truck, Check, PartyPopper, MessageCircle, Mail, AlertTriangle, Banknote, CreditCard, Smartphone, Award, Package } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { LoyaltyPointsRedemption } from '@/components/LoyaltyPointsRedemption';
+import { BulkDiscountBanner } from '@/components/BulkDiscountBanner';
+import { useBulkDiscount } from '@/hooks/useBulkDiscount';
 
 const deliverySchema = z.object({
   fullName: z.string().min(2, 'Name is required').max(100),
@@ -55,10 +57,11 @@ export default function Checkout() {
   const [pointsDiscount, setPointsDiscount] = useState(0);
 
   const subtotal = liveSubtotal;
+  const { discountAmount: bulkDiscountAmount, applicableTier } = useBulkDiscount(items, subtotal);
   const deliveryFeeDhaka = parseInt(settings.delivery_fee_dhaka) || 60;
   const deliveryFeeOutside = parseInt(settings.delivery_fee_outside) || 120;
   const deliveryFee = formData.deliveryArea === 'dhaka' ? deliveryFeeDhaka : deliveryFeeOutside;
-  const total = subtotal + deliveryFee - pointsDiscount;
+  const total = subtotal + deliveryFee - pointsDiscount - bulkDiscountAmount;
 
   const handlePointsRedemption = (pointsUsed: number, discountAmount: number) => {
     setRedeemedPoints(pointsUsed);
@@ -394,6 +397,11 @@ export default function Checkout() {
                   </div>
                 </div>
 
+                {/* Bulk Discount Banner */}
+                <div className="mb-6">
+                  <BulkDiscountBanner items={items} subtotal={subtotal} />
+                </div>
+
                 <Button onClick={handleNext} size="lg" className="w-full">
                   NEXT ➜
                 </Button>
@@ -546,6 +554,15 @@ export default function Checkout() {
                         Points Discount ({redeemedPoints} pts)
                       </span>
                       <span>-৳{pointsDiscount}</span>
+                    </div>
+                  )}
+                  {bulkDiscountAmount > 0 && applicableTier && (
+                    <div className="flex justify-between text-purple-600 dark:text-purple-400">
+                      <span className="flex items-center gap-1">
+                        <Package className="h-4 w-4" />
+                        Bulk Discount ({applicableTier.discountPercent}%)
+                      </span>
+                      <span>-৳{bulkDiscountAmount.toLocaleString()}</span>
                     </div>
                   )}
                   <hr className="border-border" />

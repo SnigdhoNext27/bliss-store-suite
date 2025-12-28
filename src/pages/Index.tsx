@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useQueryClient } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
 import { Header } from '@/components/Header';
 import { Hero } from '@/components/Hero';
 import { SaleCountdownWidget } from '@/components/SaleCountdownWidget';
@@ -9,6 +10,8 @@ import { AboutSection } from '@/components/AboutSection';
 import { Footer } from '@/components/Footer';
 import { CartSlide } from '@/components/CartSlide';
 import { PullToRefresh } from '@/components/PullToRefresh';
+import { PageTransition, staggerContainer, staggerItem } from '@/components/PageTransition';
+
 const Index = () => {
   const queryClient = useQueryClient();
 
@@ -36,17 +39,32 @@ const Index = () => {
 
       <PullToRefresh onRefresh={handleRefresh} />
 
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main>
-          <Hero />
-          <SaleCountdownWidget />
-          <ContinueShoppingSection />
-          <AboutSection />
-        </main>
-        <Footer />
-        <CartSlide />
-      </div>
+      <PageTransition variant="fade">
+        <div className="min-h-screen bg-background">
+          <Header />
+          <main>
+            <Hero />
+            <motion.div
+              initial="initial"
+              whileInView="animate"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={staggerContainer}
+            >
+              <motion.div variants={staggerItem}>
+                <SaleCountdownWidget />
+              </motion.div>
+              <motion.div variants={staggerItem}>
+                <ContinueShoppingSection />
+              </motion.div>
+              <motion.div variants={staggerItem}>
+                <AboutSection />
+              </motion.div>
+            </motion.div>
+          </main>
+          <Footer />
+          <CartSlide />
+        </div>
+      </PageTransition>
     </>
   );
 };
