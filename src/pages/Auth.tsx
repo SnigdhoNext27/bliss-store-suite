@@ -9,13 +9,28 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
+import { PasswordStrengthIndicator, passwordRequirements, isCommonPassword } from '@/components/PasswordStrengthIndicator';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
-const signupSchema = loginSchema.extend({
+// Strong password validation for signup
+const strongPasswordSchema = z.string()
+  .min(8, 'Password must be at least 8 characters')
+  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+  .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+  .regex(/[0-9]/, 'Password must contain at least one number')
+  .regex(/[!@#$%^&*()_+\-=\[\]{}|;':",.\/<>?]/, 'Password must contain at least one special character')
+  .refine(
+    (password) => !isCommonPassword(password),
+    'This password is too common. Please choose a stronger password.'
+  );
+
+const signupSchema = z.object({
+  email: z.string().email('Please enter a valid email'),
+  password: strongPasswordSchema,
   fullName: z.string().min(2, 'Name must be at least 2 characters').max(100),
   confirmPassword: z.string(),
 }).refine(data => data.password === data.confirmPassword, {
@@ -331,6 +346,9 @@ export default function Auth() {
                     </button>
                   </div>
                   {errors.password && <p className="text-destructive text-sm">{errors.password}</p>}
+                  {mode === 'signup' && (
+                    <PasswordStrengthIndicator password={formData.password} />
+                  )}
                 </div>
 
                 {mode === 'signup' && (
