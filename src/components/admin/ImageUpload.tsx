@@ -1,8 +1,9 @@
 import { useState, useRef } from 'react';
-import { Upload, X, Loader2 } from 'lucide-react';
+import { Upload, X, Loader2, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { compressImage, supportsWebP, formatBytes, calculateSavings } from '@/lib/imageCompression';
 
 interface ImageUploadProps {
   images: string[];
@@ -10,10 +11,23 @@ interface ImageUploadProps {
   maxImages?: number;
   folder?: string;
   aspectRatio?: string;
+  enableCompression?: boolean;
+  maxWidth?: number;
+  quality?: number;
 }
 
-export function ImageUpload({ images, onImagesChange, maxImages = 5, folder = 'products', aspectRatio = 'aspect-square' }: ImageUploadProps) {
+export function ImageUpload({ 
+  images, 
+  onImagesChange, 
+  maxImages = 5, 
+  folder = 'products', 
+  aspectRatio = 'aspect-square',
+  enableCompression = true,
+  maxWidth = 1920,
+  quality = 0.82,
+}: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
+  const [compressionStats, setCompressionStats] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -27,10 +41,14 @@ export function ImageUpload({ images, onImagesChange, maxImages = 5, folder = 'p
     }
 
     setUploading(true);
+    setCompressionStats(null);
     const newImages: string[] = [];
 
     // Allowed file extensions whitelist
     const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+    
+    let totalOriginalSize = 0;
+    let totalCompressedSize = 0;
     
     try {
       for (const file of Array.from(files)) {
@@ -40,9 +58,9 @@ export function ImageUpload({ images, onImagesChange, maxImages = 5, folder = 'p
           continue;
         }
 
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-          toast({ title: 'Image must be less than 5MB', variant: 'destructive' });
+        // Validate file size (max 10MB before compression, will be reduced after)
+        if (file.size > 10 * 1024 * 1024) {
+          toast({ title: 'Image must be less than 10MB', variant: 'destructive' });
           continue;
         }
 
@@ -53,14 +71,46 @@ export function ImageUpload({ images, onImagesChange, maxImages = 5, folder = 'p
           continue;
         }
 
+        totalOriginalSize += file.size;
+
+        let uploadData: Blob | File = file;
+        let finalExt = fileExt;
+
+        // Compress and convert to WebP if enabled and supported
+        if (enableCompression && file.type !== 'image/gif') {
+          try {
+            const webpSupported = supportsWebP();
+            const { blob, filename } = await compressImage(file, {
+              maxWidth,
+              maxHeight: maxWidth,
+              quality,
+              format: webpSupported ? 'webp' : 'jpeg',
+            });
+            
+            uploadData = blob;
+            finalExt = webpSupported ? 'webp' : 'jpg';
+            totalCompressedSize += blob.size;
+          } catch (err) {
+            console.warn('Compression failed, using original:', err);
+            uploadData = file;
+            totalCompressedSize += file.size;
+          }
+        } else {
+          totalCompressedSize += file.size;
+        }
+
         // Generate cryptographically secure random filename
         const randomName = crypto.randomUUID();
-        const fileName = `${randomName}.${fileExt}`;
+        const fileName = `${randomName}.${finalExt}`;
         const filePath = `${folder}/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from('product-images')
-          .upload(filePath, file);
+          .upload(filePath, uploadData, {
+            contentType: finalExt === 'webp' ? 'image/webp' : 
+                         finalExt === 'jpg' ? 'image/jpeg' : 
+                         `image/${finalExt}`,
+          });
 
         if (uploadError) throw uploadError;
 
@@ -71,8 +121,19 @@ export function ImageUpload({ images, onImagesChange, maxImages = 5, folder = 'p
         newImages.push(urlData.publicUrl);
       }
 
+      // Calculate and show compression savings
+      if (enableCompression && totalOriginalSize > 0) {
+        const { savedPercent } = calculateSavings(totalOriginalSize, totalCompressedSize);
+        if (savedPercent > 5) {
+          setCompressionStats(`Saved ${savedPercent}% (${formatBytes(totalOriginalSize - totalCompressedSize)})`);
+        }
+      }
+
       onImagesChange([...images, ...newImages]);
-      toast({ title: `${newImages.length} image(s) uploaded` });
+      toast({ 
+        title: `${newImages.length} image(s) uploaded`,
+        description: compressionStats || undefined,
+      });
     } catch (error) {
       console.error('Upload error:', error);
       toast({ title: 'Failed to upload image', variant: 'destructive' });
@@ -146,8 +207,16 @@ export function ImageUpload({ images, onImagesChange, maxImages = 5, folder = 'p
         className="hidden"
       />
 
+      {/* Compression stats */}
+      {compressionStats && (
+        <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
+          <Zap className="h-3 w-3" />
+          <span>{compressionStats}</span>
+        </div>
+      )}
+
       <p className="text-xs text-muted-foreground">
-        Max {maxImages} images, 5MB each. JPG, PNG, WebP supported.
+        Max {maxImages} images, 10MB each. Auto-compressed to WebP for faster loading.
       </p>
     </div>
   );
