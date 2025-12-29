@@ -12,20 +12,21 @@ interface LogoProps {
 
 export function Logo({ className, showText = true, size = 'md', animate = true }: LogoProps) {
   const sizeClasses = {
-    sm: { icon: 'h-9 w-9', text: 'text-lg' },
-    md: { icon: 'h-11 w-11', text: 'text-xl' },
-    lg: { icon: 'h-16 w-16', text: 'text-2xl' },
+    sm: { icon: 'h-9 w-9', text: 'text-lg', border: 'border-[2px]' },
+    md: { icon: 'h-11 w-11', text: 'text-xl', border: 'border-[2.5px]' },
+    lg: { icon: 'h-16 w-16', text: 'text-2xl', border: 'border-[3px]' },
   };
 
   const sizes = sizeClasses[size];
 
   const containerVariants = {
-    hidden: { opacity: 0, scale: 0.8 },
+    hidden: { opacity: 0, scale: 0.8, rotate: -10 },
     visible: {
       opacity: 1,
       scale: 1,
+      rotate: 0,
       transition: {
-        duration: 0.5,
+        duration: 0.6,
         ease: [0.25, 0.46, 0.45, 0.94] as Easing,
       },
     },
@@ -46,23 +47,31 @@ export function Logo({ className, showText = true, size = 'md', animate = true }
 
   return (
     <Link to="/" className={cn('flex items-center gap-2.5 group', className)}>
-      {/* Logo Image */}
+      {/* Logo Image with Round Border */}
       <motion.div
         className={cn(
           'relative flex items-center justify-center transition-all duration-300 group-hover:scale-105',
+          'rounded-full overflow-hidden',
+          sizes.border,
+          'border-almans-brown-dark dark:border-almans-gold',
+          'bg-gradient-to-br from-almans-cream to-almans-cream-dark dark:from-almans-chocolate dark:to-background',
+          'shadow-md group-hover:shadow-lg',
           sizes.icon
         )}
         initial={animate ? 'hidden' : 'visible'}
         animate="visible"
         variants={containerVariants}
         whileHover={{ 
-          filter: 'drop-shadow(0 0 14px hsl(24, 42%, 45%, 0.6))',
+          boxShadow: '0 0 20px hsl(24 40% 40% / 0.4)',
         }}
       >
+        {/* Inner glow ring */}
+        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-almans-gold/20 to-transparent dark:from-almans-gold/30" />
+        
         <img 
           src={almansLogo} 
           alt="Almans Logo" 
-          className="w-full h-full object-contain"
+          className="w-[85%] h-[85%] object-contain relative z-10"
         />
       </motion.div>
 
