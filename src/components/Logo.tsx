@@ -51,8 +51,9 @@ export function Logo({ className, showText = true, size = 'md', animate = true }
         className={cn(
           'relative flex items-center justify-center transition-all duration-300 group-hover:scale-105',
           'rounded-full overflow-hidden',
-          'bg-[#5a3825] dark:bg-[#6b4429]',
-          'shadow-lg group-hover:shadow-xl',
+          'bg-[#8B5A3C] dark:bg-[#9B6A4C]',
+          'border-[3px] border-[#4a2a1a] dark:border-[#3d2215]',
+          'shadow-[0_4px_20px_rgba(74,42,26,0.4)] group-hover:shadow-[0_6px_25px_rgba(74,42,26,0.5)]',
           sizes.icon
         )}
         initial={animate ? 'hidden' : 'visible'}

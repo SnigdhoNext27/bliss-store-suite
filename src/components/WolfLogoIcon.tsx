@@ -32,18 +32,19 @@ export function WolfLogoIcon({ className, variant = 'default', animate = false }
     },
   };
 
-  // Variant-specific brown fills
+  // Variant-specific brown fills with deep border
   const variantStyles = {
-    default: 'bg-[#5a3825] dark:bg-[#6b4429]',
-    light: 'bg-[#7a5035]',
-    dark: 'bg-[#4a2d1d]',
+    default: 'bg-[#8B5A3C] dark:bg-[#9B6A4C] border-[3px] border-[#4a2a1a] dark:border-[#3d2215]',
+    light: 'bg-[#9B6A4C] border-[3px] border-[#5a3a2a]',
+    dark: 'bg-[#7B4A2C] border-[3px] border-[#3a1a0a]',
   };
 
   if (animate) {
     return (
       <motion.div
         className={cn(
-          'w-10 h-10 rounded-full overflow-hidden flex items-center justify-center shadow-lg',
+          'w-10 h-10 rounded-full overflow-hidden flex items-center justify-center',
+          'shadow-[0_4px_20px_rgba(74,42,26,0.4)]',
           variantStyles[variant],
           className
         )}
@@ -63,7 +64,8 @@ export function WolfLogoIcon({ className, variant = 'default', animate = false }
   return (
     <div 
       className={cn(
-        'w-10 h-10 rounded-full overflow-hidden flex items-center justify-center shadow-md',
+        'w-10 h-10 rounded-full overflow-hidden flex items-center justify-center',
+        'shadow-[0_4px_20px_rgba(74,42,26,0.4)]',
         variantStyles[variant],
         className
       )}
