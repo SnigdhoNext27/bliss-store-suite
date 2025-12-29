@@ -6,27 +6,24 @@ interface WolfLogoIconProps {
   className?: string;
   variant?: 'default' | 'light' | 'dark';
   animate?: boolean;
-  showBorder?: boolean;
 }
 
-export function WolfLogoIcon({ className, variant = 'default', animate = false, showBorder = true }: WolfLogoIconProps) {
+export function WolfLogoIcon({ className, variant = 'default', animate = false }: WolfLogoIconProps) {
   const containerVariants = {
-    hidden: { opacity: 0, scale: 0.8, rotate: -10 },
+    hidden: { opacity: 0, scale: 0.8 },
     visible: {
       opacity: 1,
       scale: 1,
-      rotate: 0,
       transition: {
-        duration: 0.6,
+        duration: 0.5,
         ease: [0.25, 0.46, 0.45, 0.94] as Easing,
       },
     },
   };
 
   const pulseVariants = {
-    initial: { scale: 1 },
     pulse: {
-      scale: [1, 1.05, 1],
+      scale: [1, 1.03, 1],
       transition: {
         duration: 2,
         repeat: Infinity,
@@ -35,64 +32,30 @@ export function WolfLogoIcon({ className, variant = 'default', animate = false, 
     },
   };
 
-  // Variant-specific styles for the container
+  // Variant-specific brown fills
   const variantStyles = {
-    default: {
-      border: 'border-almans-brown-dark dark:border-almans-gold',
-      bg: 'bg-gradient-to-br from-almans-cream to-almans-cream-dark dark:from-almans-chocolate dark:to-background',
-      glow: 'from-almans-gold/20 to-transparent dark:from-almans-gold/30',
-      filter: '',
-    },
-    light: {
-      border: 'border-almans-cream/80',
-      bg: 'bg-gradient-to-br from-white/10 to-white/5',
-      glow: 'from-white/20 to-transparent',
-      filter: 'brightness-[1.2] contrast-[0.95]',
-    },
-    dark: {
-      border: 'border-almans-gold',
-      bg: 'bg-gradient-to-br from-almans-chocolate to-almans-brown-dark',
-      glow: 'from-almans-gold/30 to-transparent',
-      filter: '',
-    },
+    default: 'bg-[#5a3825] dark:bg-[#6b4429]',
+    light: 'bg-[#7a5035]',
+    dark: 'bg-[#4a2d1d]',
   };
-
-  const styles = variantStyles[variant];
-
-  const content = (
-    <>
-      {/* Inner glow ring */}
-      <div className={cn('absolute inset-0 rounded-full bg-gradient-to-br', styles.glow)} />
-      
-      {/* Decorative inner ring */}
-      {showBorder && (
-        <div className="absolute inset-[3px] rounded-full border border-almans-gold/30 dark:border-almans-gold/40" />
-      )}
-      
-      <img 
-        src={almansLogo} 
-        alt="Almans Logo" 
-        className={cn('w-[80%] h-[80%] object-contain relative z-10', styles.filter)}
-      />
-    </>
-  );
 
   if (animate) {
     return (
       <motion.div
         className={cn(
-          'w-10 h-10 rounded-full overflow-hidden flex items-center justify-center',
-          showBorder && 'border-[2.5px]',
-          showBorder && styles.border,
-          styles.bg,
-          'shadow-lg relative',
+          'w-10 h-10 rounded-full overflow-hidden flex items-center justify-center shadow-lg',
+          variantStyles[variant],
           className
         )}
         initial="hidden"
         animate={['visible', 'pulse']}
         variants={{ ...containerVariants, ...pulseVariants }}
       >
-        {content}
+        <img 
+          src={almansLogo} 
+          alt="Almans Logo" 
+          className="w-[75%] h-[75%] object-contain"
+        />
       </motion.div>
     );
   }
@@ -100,15 +63,16 @@ export function WolfLogoIcon({ className, variant = 'default', animate = false, 
   return (
     <div 
       className={cn(
-        'w-10 h-10 rounded-full overflow-hidden flex items-center justify-center',
-        showBorder && 'border-[2.5px]',
-        showBorder && styles.border,
-        styles.bg,
-        'shadow-md relative',
+        'w-10 h-10 rounded-full overflow-hidden flex items-center justify-center shadow-md',
+        variantStyles[variant],
         className
       )}
     >
-      {content}
+      <img 
+        src={almansLogo} 
+        alt="Almans Logo" 
+        className="w-[75%] h-[75%] object-contain"
+      />
     </div>
   );
 }
