@@ -121,6 +121,15 @@ export function usePerformance() {
       carouselTransition: isLow 
         ? { duration: 0.2 } 
         : { type: 'spring' as const, stiffness: 300, damping: 30 },
+
+      // Scroll optimization
+      smoothScroll: !isLow,
+      useWillChange: !isLow,
+      enableMomentumScroll: true,
+
+      // Touch optimization
+      touchResponseTime: isLow ? 50 : 16,
+      debounceScroll: isLow ? 100 : 16,
     };
   }, [performanceTier, prefersReducedMotion]);
 
