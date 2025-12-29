@@ -1,13 +1,8 @@
 import { useState, useRef, useEffect, memo } from 'react';
 import { cn } from '@/lib/utils';
-import { 
-  transformSupabaseImage, 
-  generateSrcSet, 
-  getImageSizes,
-  IMAGE_PRESETS 
-} from '@/lib/imageTransform';
+import { ImageOff } from 'lucide-react';
 
-type ImagePreset = keyof typeof IMAGE_PRESETS;
+type ImagePreset = 'productCard' | 'productDetail' | 'thumbnail' | 'hero' | 'category';
 
 interface OptimizedImageProps {
   src: string;
@@ -28,7 +23,7 @@ interface OptimizedImageProps {
  * - Lazy loading for off-screen images
  * - Blur-up placeholder effect
  * - Native loading="lazy" support
- * - Fade-in animation on load
+ * - Fallback handling for failed images
  */
 export const OptimizedImage = memo(function OptimizedImage({
   src,
@@ -45,22 +40,20 @@ export const OptimizedImage = memo(function OptimizedImage({
 }: OptimizedImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState<string>('');
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // Get optimized image URL and srcSet
-  const presetConfig = IMAGE_PRESETS[preset];
-  const optimizedSrc = transformSupabaseImage(src, presetConfig);
-  const srcSet = generateSrcSet(src);
-  const defaultSizes = sizes || getImageSizes({
-    mobile: preset === 'productCard' ? '50vw' : '100vw',
-    tablet: preset === 'productCard' ? '33vw' : '50vw',
-    desktop: preset === 'productCard' ? '25vw' : '33vw',
-  });
-
+  // Process image source - use original URL directly for reliability
   useEffect(() => {
-    // Reset state when src changes
     setIsLoaded(false);
     setHasError(false);
+    
+    // Use the original source directly - Supabase render endpoint may not be enabled
+    if (!src || src === '/placeholder.svg') {
+      setCurrentSrc('/placeholder.svg');
+    } else {
+      setCurrentSrc(src);
+    }
   }, [src]);
 
   const handleLoad = () => {
@@ -69,20 +62,27 @@ export const OptimizedImage = memo(function OptimizedImage({
   };
 
   const handleError = () => {
-    setHasError(true);
-    onError?.();
+    // If the current src failed and it's not already the placeholder, try placeholder
+    if (currentSrc !== '/placeholder.svg') {
+      console.warn(`Image failed to load: ${currentSrc}`);
+      setCurrentSrc('/placeholder.svg');
+    } else {
+      setHasError(true);
+      onError?.();
+    }
   };
 
   if (hasError) {
     return (
       <div 
         className={cn(
-          "flex items-center justify-center bg-muted text-muted-foreground",
+          "flex flex-col items-center justify-center bg-muted text-muted-foreground gap-2",
           className
         )}
         style={{ width, height }}
       >
-        <span className="text-xs">Failed to load</span>
+        <ImageOff className="h-8 w-8 opacity-50" />
+        <span className="text-xs opacity-75">No image</span>
       </div>
     );
   }
@@ -93,17 +93,12 @@ export const OptimizedImage = memo(function OptimizedImage({
       {placeholder === 'blur' && !isLoaded && (
         <div 
           className="absolute inset-0 bg-muted animate-pulse"
-          style={{ 
-            backdropFilter: 'blur(20px)',
-          }}
         />
       )}
       
       <img
         ref={imgRef}
-        src={optimizedSrc}
-        srcSet={srcSet || undefined}
-        sizes={srcSet ? defaultSizes : undefined}
+        src={currentSrc}
         alt={alt}
         width={width}
         height={height}
