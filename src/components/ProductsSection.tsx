@@ -1,14 +1,16 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, memo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Loader2, ChevronRight, Shirt, Package, Sparkles, Search, X, LayoutGrid, LayoutList } from 'lucide-react';
 import { ProductCard } from './ProductCard';
 import { ProductGridSkeleton } from './ProductCardSkeleton';
 import { useProducts, Product } from '@/hooks/useProducts';
+import { usePerformance } from '@/hooks/usePerformance';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { ProductFiltersPanel, ActiveFilterTags, ProductFilters } from './ProductFilters';
+import { OptimizedImage } from './OptimizedImage';
 import {
   Select,
   SelectContent,
@@ -51,27 +53,36 @@ interface CategorySectionProps {
   bannerImage?: string | null;
 }
 
-function CategorySection({ category, products, onViewAll, bannerImage }: CategorySectionProps) {
+const CategorySection = memo(function CategorySection({ 
+  category, 
+  products, 
+  onViewAll, 
+  bannerImage,
+  shouldReduceAnimations = false,
+}: CategorySectionProps & { shouldReduceAnimations?: boolean }) {
   if (products.length === 0) return null;
 
   const colorClass = CATEGORY_COLORS[category] || 'from-primary/10 to-primary/5 border-primary/20';
   const icon = CATEGORY_ICONS[category] || <Package className="h-5 w-5" />;
+  
+  const Wrapper = shouldReduceAnimations ? 'div' : motion.div;
+  const wrapperProps = shouldReduceAnimations ? {} : {
+    initial: { opacity: 0, y: 20 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true },
+    transition: { duration: 0.6 },
+  };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6 }}
-      className="mb-12"
-    >
+    <Wrapper {...wrapperProps} className="mb-12">
       {/* Category Banner */}
       {bannerImage && (
         <div className="relative h-36 md:h-48 rounded-t-2xl overflow-hidden">
-          <img 
-            src={bannerImage} 
+          <OptimizedImage
+            src={bannerImage}
             alt={`${category} collection`}
-            className="w-full h-full object-cover"
+            className="w-full h-full"
+            preset="category"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-foreground/70 via-foreground/40 to-transparent" />
           <div className="absolute inset-0 flex items-center justify-between px-6 md:px-8">
@@ -155,9 +166,9 @@ function CategorySection({ category, products, onViewAll, bannerImage }: Categor
           See All {category} <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
-    </motion.div>
+    </Wrapper>
   );
-}
+});
 
 // Quick Category Navigation
 function CategoryNav({ 

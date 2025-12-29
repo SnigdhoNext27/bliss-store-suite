@@ -1,4 +1,7 @@
+import { memo } from 'react';
 import { motion } from 'framer-motion';
+import { usePerformance } from '@/hooks/usePerformance';
+import { OptimizedImage } from './OptimizedImage';
 import collection1 from '@/assets/collection-1.jpg';
 import collection2 from '@/assets/collection-2.jpg';
 import collection3 from '@/assets/collection-3.jpg';
@@ -27,16 +30,67 @@ const collections = [
   },
 ];
 
-export function CollectionSection() {
+const CollectionCard = memo(function CollectionCard({
+  item,
+  isLarge,
+  index,
+  shouldReduceAnimations,
+}: {
+  item: typeof collections[0];
+  isLarge: boolean;
+  index: number;
+  shouldReduceAnimations: boolean;
+}) {
+  const Wrapper = shouldReduceAnimations ? 'div' : motion.div;
+  const wrapperProps = shouldReduceAnimations ? {} : {
+    initial: { opacity: 0, y: 30 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true },
+    transition: { duration: 0.6, delay: index * 0.1 },
+  };
+
+  return (
+    <Wrapper
+      {...wrapperProps}
+      className={`relative overflow-hidden rounded-3xl group ${isLarge ? 'aspect-[4/3] md:row-span-2' : 'aspect-[4/3]'}`}
+    >
+      <div className={`w-full h-full ${!shouldReduceAnimations ? 'transition-transform duration-500 group-hover:scale-105' : ''}`}>
+        <OptimizedImage
+          src={item.image}
+          alt={item.name}
+          className="h-full w-full"
+          preset={isLarge ? 'hero' : 'category'}
+        />
+      </div>
+      <div className="absolute inset-0 bg-gradient-to-t from-almans-chocolate/80 via-transparent to-transparent" />
+      <div className="absolute bottom-6 left-6 right-6">
+        <h3 className={`font-display font-bold text-almans-cream mb-2 ${isLarge ? 'text-2xl md:text-3xl' : 'text-xl md:text-2xl'}`}>
+          {item.name}
+        </h3>
+        <p className={`text-almans-cream/80 text-sm ${!isLarge ? 'line-clamp-2' : ''}`}>
+          {item.description}
+        </p>
+      </div>
+    </Wrapper>
+  );
+});
+
+export const CollectionSection = memo(function CollectionSection() {
+  const { shouldReduceAnimations } = usePerformance();
+  const Wrapper = shouldReduceAnimations ? 'div' : motion.div;
+  const headerProps = shouldReduceAnimations ? {} : {
+    initial: { opacity: 0, y: 20 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true },
+    transition: { duration: 0.6 },
+  };
+
   return (
     <section className="py-20 bg-background">
       <div className="container px-4 md:px-8">
         {/* Section Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+        <Wrapper
+          {...headerProps}
           className="mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-4"
         >
           <div>
@@ -51,62 +105,21 @@ export function CollectionSection() {
             The Almans Autumn & Winter Collection brings together warm textures, durable fabrics, and
             minimalist silhouettes designed for the colder...
           </p>
-        </motion.div>
+        </Wrapper>
 
         {/* Collection Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Large Feature Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="relative aspect-[4/3] md:row-span-2 overflow-hidden rounded-3xl group"
-          >
-            <img
-              src={collections[0].image}
-              alt={collections[0].name}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-almans-chocolate/80 via-transparent to-transparent" />
-            <div className="absolute bottom-6 left-6 right-6">
-              <h3 className="font-display text-2xl md:text-3xl font-bold text-almans-cream mb-2">
-                {collections[0].name}
-              </h3>
-              <p className="text-almans-cream/80 text-sm">
-                {collections[0].description}
-              </p>
-            </div>
-          </motion.div>
-
-          {/* Small Cards */}
-          {collections.slice(1).map((item, index) => (
-            <motion.div
+          {collections.map((item, index) => (
+            <CollectionCard
               key={item.id}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: (index + 1) * 0.1 }}
-              className="relative aspect-[4/3] overflow-hidden rounded-3xl group"
-            >
-              <img
-                src={item.image}
-                alt={item.name}
-                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-almans-chocolate/80 via-transparent to-transparent" />
-              <div className="absolute bottom-6 left-6 right-6">
-                <h3 className="font-display text-xl md:text-2xl font-bold text-almans-cream mb-2">
-                  {item.name}
-                </h3>
-                <p className="text-almans-cream/80 text-sm line-clamp-2">
-                  {item.description}
-                </p>
-              </div>
-            </motion.div>
+              item={item}
+              isLarge={index === 0}
+              index={index}
+              shouldReduceAnimations={shouldReduceAnimations}
+            />
           ))}
         </div>
       </div>
     </section>
   );
-}
+});
