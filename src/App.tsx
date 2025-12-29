@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,6 +22,7 @@ import { ProductComparisonModal } from "@/components/ProductComparisonModal";
 import { AbandonedCartTracker } from "@/components/AbandonedCartTracker";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { fetchAndUpdateRates } from "@/hooks/useCurrency";
+import { usePerformance } from "@/hooks/usePerformance";
 import Index from "./pages/Index";
 import Shop from "./pages/Shop";
 import Sales from "./pages/Sales";
@@ -47,19 +48,31 @@ import Newsletter from "./pages/admin/Newsletter";
 import AdminNotifications from "./pages/admin/Notifications";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+// Optimized QueryClient with better caching for performance
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 30, // 30 minutes (formerly cacheTime)
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
-const App = () => {
+// Inner component to use performance hook
+function AppContent() {
   const [isLoading, setIsLoading] = useState(true);
+  const { loadingDuration, shouldReduceAnimations } = usePerformance();
 
   useEffect(() => {
-    // Show loading screen for 2.5 seconds on initial load
+    // Dynamic loading duration based on device performance
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 2500);
+    }, loadingDuration);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [loadingDuration]);
 
   // Fetch currency rates on app load
   useEffect(() => {
@@ -72,7 +85,6 @@ const App = () => {
   return (
     <HelmetProvider>
       <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-        <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <TooltipProvider>
               <Toaster />
@@ -140,9 +152,17 @@ const App = () => {
             </AnimatePresence>
           </TooltipProvider>
         </AuthProvider>
-      </QueryClientProvider>
-    </ThemeProvider>
+      </ThemeProvider>
     </HelmetProvider>
+  );
+}
+
+// Main App wrapper that provides QueryClient before performance hook
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AppContent />
+    </QueryClientProvider>
   );
 };
 

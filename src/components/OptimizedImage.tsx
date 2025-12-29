@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect, memo } from 'react';
+import { useState, useRef, useEffect, memo, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { ImageOff } from 'lucide-react';
+import { usePerformance } from '@/hooks/usePerformance';
 
 type ImagePreset = 'productCard' | 'productDetail' | 'thumbnail' | 'hero' | 'category';
 
@@ -20,9 +21,10 @@ interface OptimizedImageProps {
 
 /**
  * Optimized image component with:
- * - Lazy loading for off-screen images
- * - Blur-up placeholder effect
- * - Native loading="lazy" support
+ * - Lazy loading with IntersectionObserver for better performance
+ * - Native loading="lazy" as fallback
+ * - Performance-adaptive placeholder
+ * - GPU-accelerated transitions
  * - Fallback handling for failed images
  */
 export const OptimizedImage = memo(function OptimizedImage({
@@ -40,37 +42,71 @@ export const OptimizedImage = memo(function OptimizedImage({
 }: OptimizedImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [isInView, setIsInView] = useState(priority);
   const [currentSrc, setCurrentSrc] = useState<string>('');
   const imgRef = useRef<HTMLImageElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { shouldReduceAnimations, lazyLoadMargin, imageTransition, imagePlaceholder } = usePerformance();
 
-  // Process image source - use original URL directly for reliability
+  // Use performance-based placeholder
+  const effectivePlaceholder = shouldReduceAnimations ? 'empty' : placeholder;
+
+  // Intersection Observer for lazy loading
   useEffect(() => {
+    if (priority) {
+      setIsInView(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsInView(true);
+            observer.disconnect();
+          }
+        });
+      },
+      { 
+        rootMargin: lazyLoadMargin,
+        threshold: 0.01 
+      }
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [priority, lazyLoadMargin]);
+
+  // Process image source
+  useEffect(() => {
+    if (!isInView) return;
+    
     setIsLoaded(false);
     setHasError(false);
     
-    // Use the original source directly - Supabase render endpoint may not be enabled
     if (!src || src === '/placeholder.svg') {
       setCurrentSrc('/placeholder.svg');
     } else {
       setCurrentSrc(src);
     }
-  }, [src]);
+  }, [src, isInView]);
 
-  const handleLoad = () => {
+  const handleLoad = useCallback(() => {
     setIsLoaded(true);
     onLoad?.();
-  };
+  }, [onLoad]);
 
-  const handleError = () => {
-    // If the current src failed and it's not already the placeholder, try placeholder
+  const handleError = useCallback(() => {
     if (currentSrc !== '/placeholder.svg') {
-      console.warn(`Image failed to load: ${currentSrc}`);
       setCurrentSrc('/placeholder.svg');
     } else {
       setHasError(true);
       onError?.();
     }
-  };
+  }, [currentSrc, onError]);
 
   if (hasError) {
     return (
@@ -81,37 +117,55 @@ export const OptimizedImage = memo(function OptimizedImage({
         )}
         style={{ width, height }}
       >
-        <ImageOff className="h-8 w-8 opacity-50" />
-        <span className="text-xs opacity-75">No image</span>
+        <ImageOff className="h-6 w-6 opacity-40" />
+        <span className="text-xs opacity-60">No image</span>
       </div>
     );
   }
 
   return (
-    <div className={cn("relative overflow-hidden", className)}>
-      {/* Blur placeholder */}
-      {placeholder === 'blur' && !isLoaded && (
-        <div 
-          className="absolute inset-0 bg-muted animate-pulse"
-        />
+    <div 
+      ref={containerRef}
+      className={cn("relative overflow-hidden", className)}
+      style={{ 
+        contain: 'layout paint',
+        willChange: shouldReduceAnimations ? 'auto' : 'opacity'
+      }}
+    >
+      {/* Placeholder - simplified for performance */}
+      {effectivePlaceholder === 'blur' && !isLoaded && isInView && (
+        <div className="absolute inset-0 bg-muted/50 skeleton-shimmer" />
       )}
       
-      <img
-        ref={imgRef}
-        src={currentSrc}
-        alt={alt}
-        width={width}
-        height={height}
-        loading={priority ? 'eager' : 'lazy'}
-        decoding={priority ? 'sync' : 'async'}
-        onLoad={handleLoad}
-        onError={handleError}
-        className={cn(
-          "transition-opacity duration-300",
-          isLoaded ? "opacity-100" : "opacity-0",
-          "w-full h-full object-cover"
-        )}
-      />
+      {/* Empty placeholder for space reservation */}
+      {!isInView && (
+        <div className="absolute inset-0 bg-muted/30" />
+      )}
+      
+      {isInView && currentSrc && (
+        <img
+          ref={imgRef}
+          src={currentSrc}
+          alt={alt}
+          width={width}
+          height={height}
+          loading={priority ? 'eager' : 'lazy'}
+          decoding="async"
+          fetchPriority={priority ? 'high' : 'auto'}
+          onLoad={handleLoad}
+          onError={handleError}
+          className={cn(
+            "w-full h-full object-cover",
+            shouldReduceAnimations 
+              ? (isLoaded ? "opacity-100" : "opacity-0")
+              : "transition-opacity",
+            isLoaded ? "opacity-100" : "opacity-0"
+          )}
+          style={{
+            transitionDuration: shouldReduceAnimations ? '0ms' : `${imageTransition.duration * 1000}ms`,
+          }}
+        />
+      )}
     </div>
   );
 });

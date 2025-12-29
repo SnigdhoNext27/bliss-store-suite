@@ -98,8 +98,8 @@ export function usePerformance() {
       easing: isLow ? 'linear' : [0.25, 0.46, 0.45, 0.94],
       staggerDelay: isLow ? 0 : isMedium ? 0.03 : 0.05,
 
-      // Loading screen
-      loadingDuration: isLow ? 500 : isMedium ? 1200 : 2500,
+      // Loading screen - faster on all devices for better UX
+      loadingDuration: isLow ? 300 : isMedium ? 800 : 1500,
 
       // Visual effects
       enableParallax: isHigh,
@@ -108,18 +108,22 @@ export function usePerformance() {
       enableBlurEffects: isHigh,
       enableBackdropBlur: !isLow,
 
-      // Image settings
-      imageTransition: { duration: isLow ? 0.05 : isMedium ? 0.15 : 0.3 },
-      lazyLoadMargin: isLow ? '50px' : '200px',
+      // Image settings - optimized for faster perceived loading
+      imageTransition: { duration: isLow ? 0.05 : isMedium ? 0.15 : 0.25 },
+      lazyLoadMargin: isLow ? '100px' : isMedium ? '150px' : '200px',
+      imagePlaceholder: isLow ? 'empty' : 'blur',
 
       // Grid and list rendering
-      maxVisibleItems: isLow ? 8 : isMedium ? 12 : 20,
+      maxVisibleItems: isLow ? 6 : isMedium ? 12 : 20,
       enableVirtualization: isLow,
+      gridAnimationDelay: isLow ? 0 : isMedium ? 0.02 : 0.05,
 
-      // Carousel settings
-      autoScrollInterval: isLow ? 6000 : 4000,
+      // Carousel settings - optimized transitions
+      autoScrollInterval: isLow ? 6000 : isMedium ? 5000 : 4000,
       carouselTransition: isLow 
-        ? { duration: 0.2 } 
+        ? { duration: 0.15, ease: [0.25, 0.1, 0.25, 1] as const } 
+        : isMedium
+        ? { duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] as const }
         : { type: 'spring' as const, stiffness: 300, damping: 30 },
 
       // Scroll optimization
@@ -127,9 +131,21 @@ export function usePerformance() {
       useWillChange: !isLow,
       enableMomentumScroll: true,
 
-      // Touch optimization
-      touchResponseTime: isLow ? 50 : 16,
-      debounceScroll: isLow ? 100 : 16,
+      // Touch optimization - faster response on all devices
+      touchResponseTime: isLow ? 32 : 16,
+      debounceScroll: isLow ? 50 : 16,
+      
+      // Page transitions
+      pageTransition: isLow 
+        ? { duration: 0.15, ease: [0.25, 0.1, 0.25, 1] as const }
+        : isMedium
+        ? { duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] as const }
+        : { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] as const },
+      
+      // Desktop-specific
+      enableDesktopEffects: isHigh,
+      hoverScale: isHigh ? 1.02 : 1,
+      cardShadow: isLow ? 'shadow-sm' : isMedium ? 'shadow-md' : 'shadow-lg',
     };
   }, [performanceTier, prefersReducedMotion]);
 
