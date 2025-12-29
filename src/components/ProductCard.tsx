@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { SaleCountdown } from '@/components/SaleCountdown';
 import { useCurrency } from '@/hooks/useCurrency';
 import { usePerformance } from '@/hooks/usePerformance';
+import { OptimizedImage } from '@/components/OptimizedImage';
 
 interface ProductCardProps {
   product: Product;
@@ -97,23 +98,29 @@ export const ProductCard = memo(function ProductCard({ product, index = 0 }: Pro
     >
       {/* Image Container */}
       <div className="relative mb-4 aspect-[4/5] overflow-hidden rounded-2xl bg-card shadow-sm">
-        {/* Simplified image - no hover scale on low-end devices */}
+        {/* Optimized image with lazy loading and responsive sizing */}
         {shouldReduceAnimations ? (
-          <img
+          <OptimizedImage
             src={product.images?.[0] || '/placeholder.svg'}
             alt={product.name}
-            className="h-full w-full object-cover object-center"
-            loading="lazy"
+            className="h-full w-full"
+            preset="productCard"
+            priority={index < 4}
           />
         ) : (
-          <motion.img
-            src={product.images?.[0] || '/placeholder.svg'}
-            alt={product.name}
-            className="h-full w-full object-cover object-center"
+          <motion.div
+            className="h-full w-full"
             animate={{ scale: isHovered && enableHoverEffects ? 1.05 : 1 }}
             transition={{ duration: animationDuration }}
-            loading="lazy"
-          />
+          >
+            <OptimizedImage
+              src={product.images?.[0] || '/placeholder.svg'}
+              alt={product.name}
+              className="h-full w-full"
+              preset="productCard"
+              priority={index < 4}
+            />
+          </motion.div>
         )}
 
         {/* Badge */}

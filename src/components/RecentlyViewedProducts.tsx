@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Clock, X } from 'lucide-react';
@@ -7,9 +8,11 @@ import { ProductCard } from './ProductCard';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Product } from '@/lib/store';
+import { usePerformance } from '@/hooks/usePerformance';
 
-export function RecentlyViewedProducts() {
+export const RecentlyViewedProducts = memo(function RecentlyViewedProducts() {
   const { recentlyViewed, clearRecentlyViewed } = useRecentlyViewed();
+  const { shouldReduceAnimations } = usePerformance();
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['recently-viewed-products', recentlyViewed],
@@ -95,19 +98,25 @@ export function RecentlyViewedProducts() {
         ) : products?.length ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
             {products.map((product, i) => (
-              <motion.div
-                key={product.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.05 }}
-              >
-                <ProductCard product={product} index={i} />
-              </motion.div>
+              shouldReduceAnimations ? (
+                <div key={product.id}>
+                  <ProductCard product={product} index={i} />
+                </div>
+              ) : (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: Math.min(i * 0.05, 0.2) }}
+                >
+                  <ProductCard product={product} index={i} />
+                </motion.div>
+              )
             ))}
           </div>
         ) : null}
       </div>
     </section>
   );
-}
+});

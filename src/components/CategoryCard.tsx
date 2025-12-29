@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Clock } from 'lucide-react';
+import { OptimizedImage } from '@/components/OptimizedImage';
 
 // Import AI-generated category banners
 import categoryShirts from '@/assets/category-shirts.jpg';
@@ -61,11 +62,14 @@ export function CategoryCard({ name, slug, image, productCount, isComingSoon, in
     >
       {/* Background Image */}
       <div className="aspect-[4/3] relative overflow-hidden">
-        <img
-          src={bannerImage}
-          alt={name}
-          className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${isComingSoon ? 'grayscale' : ''}`}
-        />
+        <div className={`w-full h-full transition-transform duration-500 group-hover:scale-110 ${isComingSoon ? 'grayscale' : ''}`}>
+          <OptimizedImage
+            src={bannerImage}
+            alt={name}
+            className="w-full h-full"
+            preset="category"
+          />
+        </div>
         
         {/* Soft Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/30 to-transparent" />
