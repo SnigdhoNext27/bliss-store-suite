@@ -1,6 +1,6 @@
 import { motion, AnimatePresence, useDragControls, PanInfo } from 'framer-motion';
 import { X, ShoppingBag, ChevronUp } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/lib/store';
@@ -10,6 +10,7 @@ import { useCurrency } from '@/hooks/useCurrency';
 export function CartQuickView() {
   const { items: cartItems } = useCartStore();
   const navigate = useNavigate();
+  const location = useLocation();
   const { format } = useCurrency();
   const { items, liveSubtotal, liveTotalItems } = useCartWithLivePrices();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -28,7 +29,8 @@ export function CartQuickView() {
     navigate('/checkout');
   };
 
-  if (cartItems.length === 0) return null;
+  // Hide on admin pages and checkout
+  if (cartItems.length === 0 || location.pathname.startsWith('/admin') || location.pathname === '/checkout') return null;
 
   return (
     <>

@@ -1,16 +1,22 @@
 import { useState, useEffect } from 'react';
 import { motion, type Easing } from 'framer-motion';
 import { WolfLogoIcon } from './WolfLogoIcon';
+import { isLowEndDevice } from '@/hooks/usePerformance';
 
 interface LoadingScreenProps {
   duration?: number;
 }
 
-export function LoadingScreen({ duration = 2500 }: LoadingScreenProps) {
+export function LoadingScreen({ duration: propDuration }: LoadingScreenProps) {
   const [progress, setProgress] = useState(0);
+  
+  // Shorter loading time for low-end devices
+  const isLowEnd = isLowEndDevice();
+  const duration = propDuration ?? (isLowEnd ? 800 : 2500);
 
   useEffect(() => {
     const startTime = Date.now();
+    // Use lower frequency updates on low-end devices
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTime;
       const newProgress = Math.min((elapsed / duration) * 100, 100);
@@ -19,10 +25,10 @@ export function LoadingScreen({ duration = 2500 }: LoadingScreenProps) {
       if (newProgress >= 100) {
         clearInterval(interval);
       }
-    }, 16);
+    }, isLowEnd ? 50 : 16);
 
     return () => clearInterval(interval);
-  }, [duration]);
+  }, [duration, isLowEnd]);
 
   return (
     <motion.div
@@ -31,30 +37,32 @@ export function LoadingScreen({ duration = 2500 }: LoadingScreenProps) {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' as Easing }}
     >
-      {/* Animated background particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(6)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-2 h-2 bg-primary/20 rounded-full"
-            initial={{ 
-              x: Math.random() * 100 + '%',
-              y: '110%',
-              opacity: 0.4
-            }}
-            animate={{ 
-              y: '-10%',
-              opacity: [0.4, 0.8, 0.4]
-            }}
-            transition={{ 
-              duration: 4 + Math.random() * 2,
-              repeat: Infinity,
-              delay: i * 0.5,
-              ease: 'linear'
-            }}
-          />
-        ))}
-      </div>
+      {/* Animated background particles - disabled on low-end devices */}
+      {!isLowEnd && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(4)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-2 h-2 bg-primary/20 rounded-full"
+              initial={{ 
+                x: Math.random() * 100 + '%',
+                y: '110%',
+                opacity: 0.4
+              }}
+              animate={{ 
+                y: '-10%',
+                opacity: [0.4, 0.8, 0.4]
+              }}
+              transition={{ 
+                duration: 4 + Math.random() * 2,
+                repeat: Infinity,
+                delay: i * 0.5,
+                ease: 'linear'
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Outer ring animation */}
       <motion.div
