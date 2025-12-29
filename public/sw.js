@@ -20,8 +20,8 @@ self.addEventListener('push', (event) => {
   let data = {
     title: 'Almans',
     body: 'You have a new notification!',
-    icon: '/favicon.jpg',
-    badge: '/favicon.jpg',
+    icon: '/favicon.png',
+    badge: '/favicon.png',
     url: '/'
   };
 
@@ -35,8 +35,8 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: data.body,
-    icon: data.icon || '/favicon.jpg',
-    badge: data.badge || '/favicon.jpg',
+    icon: data.icon || '/favicon.png',
+    badge: data.badge || '/favicon.png',
     vibrate: [100, 50, 100],
     data: {
       url: data.url || '/',

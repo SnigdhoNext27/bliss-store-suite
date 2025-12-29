@@ -58,7 +58,7 @@ export function usePushNotifications() {
         // Show a test notification
         showNotification('Notifications Enabled', {
           body: 'You will now receive notifications from Almans!',
-          icon: '/favicon.jpg',
+          icon: '/favicon.png',
         });
         return true;
       }
@@ -78,8 +78,8 @@ export function usePushNotifications() {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then(registration => {
         registration.showNotification(title, {
-          icon: '/favicon.jpg',
-          badge: '/favicon.jpg',
+          icon: '/favicon.png',
+          badge: '/favicon.png',
           ...options,
         });
       }).catch(() => {
