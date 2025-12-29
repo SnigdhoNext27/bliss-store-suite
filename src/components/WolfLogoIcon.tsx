@@ -32,11 +32,11 @@ export function WolfLogoIcon({ className, variant = 'default', animate = false }
     },
   };
 
-  // Variant-specific brown fills with deep border
+  // Variant-specific with deep enhanced border
   const variantStyles = {
-    default: 'bg-[#8B5A3C] dark:bg-[#9B6A4C] border-[3px] border-[#4a2a1a] dark:border-[#3d2215]',
-    light: 'bg-[#9B6A4C] border-[3px] border-[#5a3a2a]',
-    dark: 'bg-[#7B4A2C] border-[3px] border-[#3a1a0a]',
+    default: 'border-[4px] border-[#3a1a0a] dark:border-[#2d1408]',
+    light: 'border-[4px] border-[#4a2a1a]',
+    dark: 'border-[4px] border-[#2a0a00]',
   };
 
   if (animate) {
@@ -44,7 +44,7 @@ export function WolfLogoIcon({ className, variant = 'default', animate = false }
       <motion.div
         className={cn(
           'w-10 h-10 rounded-full overflow-hidden flex items-center justify-center',
-          'shadow-[0_4px_20px_rgba(74,42,26,0.4)]',
+          'shadow-[0_6px_25px_rgba(58,26,10,0.5),inset_0_0_10px_rgba(0,0,0,0.2)]',
           variantStyles[variant],
           className
         )}
@@ -55,7 +55,7 @@ export function WolfLogoIcon({ className, variant = 'default', animate = false }
         <img 
           src={almansLogo} 
           alt="Almans Logo" 
-          className="w-[75%] h-[75%] object-contain"
+          className="w-full h-full object-cover"
         />
       </motion.div>
     );
@@ -65,7 +65,7 @@ export function WolfLogoIcon({ className, variant = 'default', animate = false }
     <div 
       className={cn(
         'w-10 h-10 rounded-full overflow-hidden flex items-center justify-center',
-        'shadow-[0_4px_20px_rgba(74,42,26,0.4)]',
+        'shadow-[0_6px_25px_rgba(58,26,10,0.5),inset_0_0_10px_rgba(0,0,0,0.2)]',
         variantStyles[variant],
         className
       )}
@@ -73,7 +73,7 @@ export function WolfLogoIcon({ className, variant = 'default', animate = false }
       <img 
         src={almansLogo} 
         alt="Almans Logo" 
-        className="w-[75%] h-[75%] object-contain"
+        className="w-full h-full object-cover"
       />
     </div>
   );
