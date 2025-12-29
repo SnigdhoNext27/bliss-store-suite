@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, ShoppingBag, Heart, GitCompare } from 'lucide-react';
@@ -9,13 +9,14 @@ import { useProductComparison } from '@/hooks/useProductComparison';
 import { useToast } from '@/hooks/use-toast';
 import { SaleCountdown } from '@/components/SaleCountdown';
 import { useCurrency } from '@/hooks/useCurrency';
+import { usePerformance } from '@/hooks/usePerformance';
 
 interface ProductCardProps {
   product: Product;
   index?: number;
 }
 
-export function ProductCard({ product, index = 0 }: ProductCardProps) {
+export const ProductCard = memo(function ProductCard({ product, index = 0 }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [selectedSize, setSelectedSize] = useState(product.sizes?.[1] || product.sizes?.[0] || '');
   const { addItem } = useCartStore();
@@ -24,6 +25,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { format } = useCurrency();
+  const { shouldReduceAnimations, animationDuration, enableHoverEffects } = usePerformance();
 
   const inWishlist = isInWishlist(product.id);
   const inComparison = isInComparison(product.id);
@@ -71,11 +73,23 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
     navigate(`/product/${product.id}`);
   };
 
+  // Optimized animation variants for low-end devices
+  const cardAnimation = shouldReduceAnimations
+    ? { opacity: 1, y: 0 }
+    : { opacity: 1, y: 0 };
+  
+  const cardInitial = shouldReduceAnimations
+    ? { opacity: 0.8, y: 0 }
+    : { opacity: 0, y: 30 };
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: index * 0.1 }}
+      initial={cardInitial}
+      animate={cardAnimation}
+      transition={{ 
+        duration: shouldReduceAnimations ? 0.1 : 0.5, 
+        delay: shouldReduceAnimations ? 0 : Math.min(index * 0.05, 0.3) 
+      }}
       className="group cursor-pointer"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -83,13 +97,24 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
     >
       {/* Image Container */}
       <div className="relative mb-4 aspect-[4/5] overflow-hidden rounded-2xl bg-card shadow-sm">
-        <motion.img
-          src={product.images?.[0] || '/placeholder.svg'}
-          alt={product.name}
-          className="h-full w-full object-cover object-center"
-          animate={{ scale: isHovered ? 1.05 : 1 }}
-          transition={{ duration: 0.4 }}
-        />
+        {/* Simplified image - no hover scale on low-end devices */}
+        {shouldReduceAnimations ? (
+          <img
+            src={product.images?.[0] || '/placeholder.svg'}
+            alt={product.name}
+            className="h-full w-full object-cover object-center"
+            loading="lazy"
+          />
+        ) : (
+          <motion.img
+            src={product.images?.[0] || '/placeholder.svg'}
+            alt={product.name}
+            className="h-full w-full object-cover object-center"
+            animate={{ scale: isHovered && enableHoverEffects ? 1.05 : 1 }}
+            transition={{ duration: animationDuration }}
+            loading="lazy"
+          />
+        )}
 
         {/* Badge */}
         {product.badge && (
@@ -105,62 +130,60 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
             >
               {product.badge === 'limited' ? 'Low Stock' : product.badge}
             </span>
-            {product.badge === 'sale' && (
+            {product.badge === 'sale' && !shouldReduceAnimations && (
               <SaleCountdown compact className="bg-background/90 backdrop-blur-sm rounded-full px-2 py-1" />
             )}
           </div>
         )}
 
-        {/* Action Buttons */}
+        {/* Action Buttons - simplified for low-end devices */}
         <div className="absolute right-3 top-3 flex flex-col gap-2">
-          <motion.button
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: isHovered || inWishlist ? 1 : 0, x: isHovered || inWishlist ? 0 : 10 }}
+          {/* Always show wishlist button on mobile/low-end, animate on desktop */}
+          <button
             onClick={handleToggleWishlist}
             className={`flex h-10 w-10 items-center justify-center rounded-full shadow-medium backdrop-blur-sm transition-colors ${
               inWishlist 
                 ? 'bg-primary text-primary-foreground' 
                 : 'bg-background/90 text-foreground hover:bg-primary hover:text-primary-foreground'
-            }`}
+            } ${!isHovered && !inWishlist && !shouldReduceAnimations ? 'opacity-0 translate-x-2' : 'opacity-100 translate-x-0'}`}
+            style={{ transition: 'opacity 0.2s, transform 0.2s' }}
             aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
           >
             <Heart className={`h-5 w-5 ${inWishlist ? 'fill-current' : ''}`} />
-          </motion.button>
+          </button>
 
-          <motion.button
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: isHovered || inComparison ? 1 : 0, x: isHovered || inComparison ? 0 : 10 }}
-            transition={{ delay: 0.05 }}
+          <button
             onClick={handleToggleComparison}
             className={`flex h-10 w-10 items-center justify-center rounded-full shadow-medium backdrop-blur-sm transition-colors ${
               inComparison 
                 ? 'bg-almans-gold text-almans-chocolate' 
                 : 'bg-background/90 text-foreground hover:bg-almans-gold hover:text-almans-chocolate'
-            }`}
+            } ${!isHovered && !inComparison && !shouldReduceAnimations ? 'opacity-0 translate-x-2' : 'opacity-100 translate-x-0'}`}
+            style={{ transition: 'opacity 0.2s, transform 0.2s' }}
             aria-label={inComparison ? 'Remove from comparison' : 'Add to comparison'}
           >
             <GitCompare className="h-5 w-5" />
-          </motion.button>
+          </button>
 
-          <motion.button
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: isHovered ? 1 : 0, x: isHovered ? 0 : 10 }}
-            transition={{ delay: 0.1 }}
+          <button
             onClick={(e) => { e.stopPropagation(); navigate(`/product/${product.id}`); }}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-background/90 text-foreground shadow-medium backdrop-blur-sm transition-colors hover:bg-primary hover:text-primary-foreground"
+            className={`flex h-10 w-10 items-center justify-center rounded-full bg-background/90 text-foreground shadow-medium backdrop-blur-sm transition-colors hover:bg-primary hover:text-primary-foreground ${
+              !isHovered && !shouldReduceAnimations ? 'opacity-0 translate-x-2' : 'opacity-100 translate-x-0'
+            }`}
+            style={{ transition: 'opacity 0.2s, transform 0.2s' }}
             aria-label="Quick view"
           >
             <Eye className="h-5 w-5" />
-          </motion.button>
+          </button>
         </div>
 
-        {/* Size Selector on Hover */}
-        {product.sizes && product.sizes.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: isHovered ? 1 : 0, y: isHovered ? 0 : 20 }}
-            transition={{ duration: 0.3 }}
-            className="absolute bottom-3 left-3 right-3"
+        {/* Size Selector on Hover - simplified on low-end */}
+        {product.sizes && product.sizes.length > 0 && (isHovered || shouldReduceAnimations) && (
+          <div
+            className={`absolute bottom-3 left-3 right-3 transition-all ${
+              isHovered || shouldReduceAnimations ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            }`}
+            style={{ transition: 'opacity 0.2s, transform 0.2s' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-center gap-2 rounded-lg bg-background/90 p-2 backdrop-blur-sm">
@@ -178,7 +201,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
                 </button>
               ))}
             </div>
-          </motion.div>
+          </div>
         )}
       </div>
 
@@ -216,4 +239,4 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
       </div>
     </motion.div>
   );
-}
+});

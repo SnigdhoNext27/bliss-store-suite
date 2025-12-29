@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { ChevronLeft, ChevronRight, MoveHorizontal, Sparkles, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sparkles, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { haptics } from '@/lib/haptics';
+import { usePerformance } from '@/hooks/usePerformance';
 import heroImage1 from '@/assets/hero-1.jpg';
 import heroImage2 from '@/assets/hero-2.jpg';
 import heroImage3 from '@/assets/hero-3.jpg';
@@ -41,25 +42,26 @@ const defaultSlides = [
   },
 ];
 
-const slideVariants = {
+// Slide variants - will be simplified for low-end devices
+const getSlideVariants = (isLowEnd: boolean) => ({
   enter: (direction: number) => ({
-    x: direction > 0 ? 300 : -300,
+    x: isLowEnd ? 0 : (direction > 0 ? 300 : -300),
     opacity: 0,
-    scale: 1.1,
+    scale: isLowEnd ? 1 : 1.1,
   }),
   center: {
     x: 0,
     opacity: 1,
     scale: 1,
-    transition: { duration: 0.8, ease: "easeOut" as const },
+    transition: { duration: isLowEnd ? 0.2 : 0.8, ease: "easeOut" as const },
   },
   exit: (direction: number) => ({
-    x: direction < 0 ? 300 : -300,
+    x: isLowEnd ? 0 : (direction < 0 ? 300 : -300),
     opacity: 0,
-    scale: 0.95,
-    transition: { duration: 0.5 },
+    scale: isLowEnd ? 1 : 0.95,
+    transition: { duration: isLowEnd ? 0.15 : 0.5 },
   }),
-};
+});
 
 export function Hero() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -71,20 +73,24 @@ export function Hero() {
   const [hasSwiped, setHasSwiped] = useState(false);
   const { settings } = useSiteSettings();
   const navigate = useNavigate();
+  const { shouldReduceAnimations, enableParallax, enableDecorations } = usePerformance();
   
-  // Parallax scroll setup
+  // Get optimized slide variants based on device capability
+  const slideVariants = getSlideVariants(shouldReduceAnimations);
+  
+  // Parallax scroll setup - disabled on low-end devices
   const sectionRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start start", "end start"]
   });
   
-  // Parallax transforms
-  const backgroundY = useTransform(scrollYProgress, [0, 1], ['0%', '30%']);
-  const contentY = useTransform(scrollYProgress, [0, 1], ['0%', '15%']);
-  const brandTextY = useTransform(scrollYProgress, [0, 1], ['0%', '40%']);
-  const overlayOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0.3]);
-  const scale = useTransform(scrollYProgress, [0, 1], [1, 1.1]);
+  // Parallax transforms - use static values on low-end devices
+  const backgroundY = useTransform(scrollYProgress, [0, 1], enableParallax ? ['0%', '30%'] : ['0%', '0%']);
+  const contentY = useTransform(scrollYProgress, [0, 1], enableParallax ? ['0%', '15%'] : ['0%', '0%']);
+  const brandTextY = useTransform(scrollYProgress, [0, 1], enableParallax ? ['0%', '40%'] : ['0%', '0%']);
+  const overlayOpacity = useTransform(scrollYProgress, [0, 0.5], [1, enableParallax ? 0.3 : 1]);
+  const scale = useTransform(scrollYProgress, [0, 1], enableParallax ? [1, 1.1] : [1, 1]);
 
   // Create slides with dynamic tagline
   const slides = defaultSlides.map((slide, index) => ({
@@ -195,57 +201,58 @@ export function Hero() {
           </motion.div>
         </AnimatePresence>
 
-        {/* Animated geometric elements - Futuristic */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {/* Floating particles */}
-          {[...Array(6)].map((_, i) => (
+        {/* Animated geometric elements - Disabled on low-end devices */}
+        {enableDecorations && (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {/* Floating particles - reduced count */}
+            {[...Array(4)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-1 h-1 bg-almans-gold/40 rounded-full"
+                style={{
+                  left: `${15 + i * 20}%`,
+                  top: `${20 + (i % 2) * 30}%`,
+                }}
+                animate={{
+                  y: [-20, 20, -20],
+                  opacity: [0.3, 0.8, 0.3],
+                }}
+                transition={{
+                  duration: 3 + i * 0.5,
+                  repeat: Infinity,
+                  delay: i * 0.3,
+                }}
+              />
+            ))}
+            
+            {/* Scan line effect */}
             <motion.div
-              key={i}
-              className="absolute w-1 h-1 bg-almans-gold/40 rounded-full"
-              style={{
-                left: `${15 + i * 15}%`,
-                top: `${20 + (i % 3) * 25}%`,
-              }}
-              animate={{
-                y: [-20, 20, -20],
-                opacity: [0.3, 0.8, 0.3],
-                scale: [1, 1.5, 1],
-              }}
-              transition={{
-                duration: 3 + i * 0.5,
-                repeat: Infinity,
-                delay: i * 0.3,
-              }}
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-almans-cream/5 to-transparent"
+              animate={{ x: ['-100%', '100%'] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
             />
-          ))}
-          
-          {/* Scan line effect */}
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-almans-cream/5 to-transparent"
-            animate={{ x: ['-100%', '100%'] }}
-            transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-          />
 
-          {/* Geometric accent lines */}
-          <svg className="absolute inset-0 w-full h-full opacity-20" preserveAspectRatio="none">
-            <motion.line
-              x1="0%" y1="30%" x2="40%" y2="30%"
-              stroke="hsl(38 60% 55%)"
-              strokeWidth="1"
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: 1, opacity: 0.5 }}
-              transition={{ duration: 2, delay: 0.5 }}
-            />
-            <motion.line
-              x1="0%" y1="70%" x2="35%" y2="70%"
-              stroke="hsl(38 60% 55%)"
-              strokeWidth="1"
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: 1, opacity: 0.3 }}
-              transition={{ duration: 2, delay: 0.8 }}
-            />
-          </svg>
-        </div>
+            {/* Geometric accent lines */}
+            <svg className="absolute inset-0 w-full h-full opacity-20" preserveAspectRatio="none">
+              <motion.line
+                x1="0%" y1="30%" x2="40%" y2="30%"
+                stroke="hsl(38 60% 55%)"
+                strokeWidth="1"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 0.5 }}
+                transition={{ duration: 2, delay: 0.5 }}
+              />
+              <motion.line
+                x1="0%" y1="70%" x2="35%" y2="70%"
+                stroke="hsl(38 60% 55%)"
+                strokeWidth="1"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 0.3 }}
+                transition={{ duration: 2, delay: 0.8 }}
+              />
+            </svg>
+          </div>
+        )}
 
         {/* Large Brand Typography - Background with Parallax */}
         <motion.div 
@@ -485,14 +492,11 @@ export function Hero() {
               exit={{ opacity: 0, y: -10 }}
               className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 flex items-center pointer-events-none md:hidden"
             >
-              <motion.div
-                animate={{ x: [0, 10, -10, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1 }}
-                className="flex items-center gap-2 bg-almans-cream/90 text-almans-chocolate px-4 py-2 rounded-full shadow-lg"
-              >
-                <MoveHorizontal className="h-4 w-4" />
+              <div className="flex items-center gap-2 bg-almans-cream/90 text-almans-chocolate px-4 py-2 rounded-full shadow-lg">
+                <ChevronLeft className="h-4 w-4" />
                 <span className="text-sm font-medium">Swipe to browse</span>
-              </motion.div>
+                <ChevronRight className="h-4 w-4" />
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
