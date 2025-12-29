@@ -1,5 +1,13 @@
 import { useState, useRef, useEffect, memo } from 'react';
 import { cn } from '@/lib/utils';
+import { 
+  transformSupabaseImage, 
+  generateSrcSet, 
+  getImageSizes,
+  IMAGE_PRESETS 
+} from '@/lib/imageTransform';
+
+type ImagePreset = keyof typeof IMAGE_PRESETS;
 
 interface OptimizedImageProps {
   src: string;
@@ -9,6 +17,8 @@ interface OptimizedImageProps {
   height?: number;
   priority?: boolean;
   placeholder?: 'blur' | 'empty';
+  preset?: ImagePreset;
+  sizes?: string;
   onLoad?: () => void;
   onError?: () => void;
 }
@@ -28,12 +38,24 @@ export const OptimizedImage = memo(function OptimizedImage({
   height,
   priority = false,
   placeholder = 'blur',
+  preset = 'productCard',
+  sizes,
   onLoad,
   onError,
 }: OptimizedImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
+
+  // Get optimized image URL and srcSet
+  const presetConfig = IMAGE_PRESETS[preset];
+  const optimizedSrc = transformSupabaseImage(src, presetConfig);
+  const srcSet = generateSrcSet(src);
+  const defaultSizes = sizes || getImageSizes({
+    mobile: preset === 'productCard' ? '50vw' : '100vw',
+    tablet: preset === 'productCard' ? '33vw' : '50vw',
+    desktop: preset === 'productCard' ? '25vw' : '33vw',
+  });
 
   useEffect(() => {
     // Reset state when src changes
@@ -79,7 +101,9 @@ export const OptimizedImage = memo(function OptimizedImage({
       
       <img
         ref={imgRef}
-        src={src}
+        src={optimizedSrc}
+        srcSet={srcSet || undefined}
+        sizes={srcSet ? defaultSizes : undefined}
         alt={alt}
         width={width}
         height={height}
