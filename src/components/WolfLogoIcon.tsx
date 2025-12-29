@@ -32,11 +32,11 @@ export function WolfLogoIcon({ className, variant = 'default', animate = false }
     },
   };
 
-  // Variant-specific with deep enhanced border
+  // Variant-specific with lighter border
   const variantStyles = {
-    default: 'border-[4px] border-[#3a1a0a] dark:border-[#2d1408]',
-    light: 'border-[4px] border-[#4a2a1a]',
-    dark: 'border-[4px] border-[#2a0a00]',
+    default: 'border-[4px] border-[#5a3a2a] dark:border-[#4a2a1a]',
+    light: 'border-[4px] border-[#6a4a3a]',
+    dark: 'border-[4px] border-[#4a2a1a]',
   };
 
   if (animate) {
@@ -44,7 +44,7 @@ export function WolfLogoIcon({ className, variant = 'default', animate = false }
       <motion.div
         className={cn(
           'w-10 h-10 rounded-full overflow-hidden flex items-center justify-center',
-          'shadow-[0_6px_25px_rgba(58,26,10,0.5),inset_0_0_10px_rgba(0,0,0,0.2)]',
+          'shadow-[0_6px_25px_rgba(90,58,42,0.4),inset_0_0_10px_rgba(0,0,0,0.15)]',
           variantStyles[variant],
           className
         )}
@@ -65,7 +65,7 @@ export function WolfLogoIcon({ className, variant = 'default', animate = false }
     <div 
       className={cn(
         'w-10 h-10 rounded-full overflow-hidden flex items-center justify-center',
-        'shadow-[0_6px_25px_rgba(58,26,10,0.5),inset_0_0_10px_rgba(0,0,0,0.2)]',
+        'shadow-[0_6px_25px_rgba(90,58,42,0.4),inset_0_0_10px_rgba(0,0,0,0.15)]',
         variantStyles[variant],
         className
       )}

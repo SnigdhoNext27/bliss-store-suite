@@ -51,15 +51,15 @@ export function Logo({ className, showText = true, size = 'md', animate = true }
         className={cn(
           'relative flex items-center justify-center transition-all duration-300 group-hover:scale-105',
           'rounded-full overflow-hidden',
-          'border-[4px] border-[#3a1a0a] dark:border-[#2d1408]',
-          'shadow-[0_6px_25px_rgba(58,26,10,0.5),inset_0_0_10px_rgba(0,0,0,0.2)] group-hover:shadow-[0_8px_30px_rgba(58,26,10,0.6)]',
+          'border-[4px] border-[#5a3a2a] dark:border-[#4a2a1a]',
+          'shadow-[0_6px_25px_rgba(90,58,42,0.4),inset_0_0_10px_rgba(0,0,0,0.15)] group-hover:shadow-[0_8px_30px_rgba(90,58,42,0.5)]',
           sizes.icon
         )}
         initial={animate ? 'hidden' : 'visible'}
         animate="visible"
         variants={containerVariants}
         whileHover={{ 
-          boxShadow: '0 0 30px rgba(58, 26, 10, 0.6)',
+          boxShadow: '0 0 30px rgba(90, 58, 42, 0.5)',
         }}
       >
         <img 
