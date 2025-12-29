@@ -113,12 +113,12 @@ export function LoadingScreen({ duration: propDuration }: LoadingScreenProps) {
         
         {/* Main round brown logo */}
         <motion.div
-          className="relative w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-[#8B5A3C] dark:bg-[#9B6A4C] border-4 border-[#4a2a1a] dark:border-[#3d2215] shadow-2xl flex items-center justify-center"
+          className="relative w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden border-[5px] border-[#3a1a0a] dark:border-[#2d1408] shadow-[0_8px_40px_rgba(58,26,10,0.6),inset_0_0_15px_rgba(0,0,0,0.3)] flex items-center justify-center"
           animate={{ 
             boxShadow: [
-              '0 0 30px rgba(74, 42, 26, 0.4)',
-              '0 0 50px rgba(74, 42, 26, 0.6)',
-              '0 0 30px rgba(74, 42, 26, 0.4)',
+              '0 0 30px rgba(58, 26, 10, 0.5)',
+              '0 0 50px rgba(58, 26, 10, 0.7)',
+              '0 0 30px rgba(58, 26, 10, 0.5)',
             ]
           }}
           transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
@@ -126,7 +126,7 @@ export function LoadingScreen({ duration: propDuration }: LoadingScreenProps) {
           <img 
             src={almansLogo} 
             alt="Almans Logo" 
-            className="w-[70%] h-[70%] object-contain"
+            className="w-full h-full object-cover"
           />
         </motion.div>
       </motion.div>
