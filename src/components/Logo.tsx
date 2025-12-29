@@ -12,68 +12,87 @@ interface LogoProps {
 
 export function Logo({ className, showText = true, size = 'md', animate = true }: LogoProps) {
   const sizeClasses = {
-    sm: { icon: 'h-9 w-9', text: 'text-lg' },
-    md: { icon: 'h-11 w-11', text: 'text-xl' },
-    lg: { icon: 'h-16 w-16', text: 'text-2xl' },
+    sm: { 
+      icon: 'h-8 w-8', 
+      text: 'text-base',
+      border: 'border-2',
+      gap: 'gap-2'
+    },
+    md: { 
+      icon: 'h-10 w-10', 
+      text: 'text-lg',
+      border: 'border-[2.5px]',
+      gap: 'gap-2.5'
+    },
+    lg: { 
+      icon: 'h-14 w-14', 
+      text: 'text-xl',
+      border: 'border-[3px]',
+      gap: 'gap-3'
+    },
   };
 
   const sizes = sizeClasses[size];
 
   const containerVariants = {
-    hidden: { opacity: 0, scale: 0.8 },
+    hidden: { opacity: 0, scale: 0.9 },
     visible: {
       opacity: 1,
       scale: 1,
       transition: {
-        duration: 0.5,
+        duration: 0.4,
         ease: [0.25, 0.46, 0.45, 0.94] as Easing,
       },
     },
   };
 
   const textVariants = {
-    hidden: { opacity: 0, x: -10 },
+    hidden: { opacity: 0, x: -8 },
     visible: {
       opacity: 1,
       x: 0,
       transition: {
-        duration: 0.4,
-        delay: 0.3,
+        duration: 0.35,
+        delay: 0.2,
         ease: 'easeOut' as Easing,
       },
     },
   };
 
   return (
-    <Link to="/" className={cn('flex items-center gap-2.5 group', className)}>
-      {/* Fully Round Logo with Brown Fill */}
+    <Link to="/" className={cn('flex items-center group', sizes.gap, className)}>
+      {/* Professional Round Logo */}
       <motion.div
         className={cn(
-          'relative flex items-center justify-center transition-all duration-300 group-hover:scale-105',
+          'relative flex items-center justify-center',
           'rounded-full overflow-hidden',
-          'border-[4px] border-[#5a3a2a] dark:border-[#4a2a1a]',
-          'shadow-[0_6px_25px_rgba(90,58,42,0.4),inset_0_0_10px_rgba(0,0,0,0.15)] group-hover:shadow-[0_8px_30px_rgba(90,58,42,0.5)]',
+          sizes.border,
+          'border-primary/80 dark:border-primary/70',
+          'shadow-sm group-hover:shadow-md',
+          'transition-shadow duration-200',
           sizes.icon
         )}
         initial={animate ? 'hidden' : 'visible'}
         animate="visible"
         variants={containerVariants}
-        whileHover={{ 
-          boxShadow: '0 0 30px rgba(90, 58, 42, 0.5)',
-        }}
+        whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.98 }}
       >
         <img 
           src={almansLogo} 
           alt="Almans Logo" 
           className="w-full h-full object-cover"
+          loading="eager"
         />
       </motion.div>
 
-      {/* Brand Name - ALMANS */}
+      {/* Brand Name - Clean Typography */}
       {showText && (
         <motion.span
           className={cn(
-            'hidden font-display font-bold tracking-[0.15em] sm:inline-block transition-colors text-foreground group-hover:text-primary uppercase',
+            'hidden font-display font-bold tracking-[0.12em] sm:inline-block',
+            'text-foreground group-hover:text-primary',
+            'transition-colors duration-200',
             sizes.text
           )}
           variants={textVariants}
