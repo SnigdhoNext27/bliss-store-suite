@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ShoppingBag, Eye, Heart, MoveHorizontal } from 'lucide-react';
@@ -9,8 +9,112 @@ import { useWishlist } from '@/hooks/useWishlist';
 import { ProductQuickView } from './ProductQuickView';
 import { FeaturedCarouselSkeleton } from './FeaturedCarouselSkeleton';
 import { haptics } from '@/lib/haptics';
+import { usePerformance } from '@/hooks/usePerformance';
+import { OptimizedImage } from './OptimizedImage';
 
-export function FeaturedCarousel() {
+const FeaturedProductCard = memo(function FeaturedProductCard({
+  product,
+  index,
+  shouldReduceAnimations,
+  onQuickView,
+}: {
+  product: Product;
+  index: number;
+  shouldReduceAnimations: boolean;
+  onQuickView: (p: Product) => void;
+}) {
+  const navigate = useNavigate();
+  const { addItem } = useCartStore();
+  const { isInWishlist, toggleWishlist } = useWishlist();
+  const inWishlist = isInWishlist(product.id);
+
+  return (
+    <div className="group cursor-pointer" style={{ width: '100%' }}>
+      <div className="relative overflow-hidden rounded-2xl bg-card mb-4 aspect-[4/5]">
+        <div
+          className={`w-full h-full ${!shouldReduceAnimations ? 'transition-transform duration-500 group-hover:scale-105' : ''}`}
+          onClick={() => navigate(`/product/${product.id}`)}
+        >
+          <OptimizedImage
+            src={product.images[0]}
+            alt={product.name}
+            className="w-full h-full"
+            preset="productCard"
+            priority={index < 4}
+          />
+        </div>
+
+        {/* Badge */}
+        {product.badge && (
+          <div className="absolute left-3 top-3">
+            <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold uppercase ${
+              product.badge === 'new' ? 'bg-primary text-primary-foreground' :
+              product.badge === 'sale' ? 'bg-destructive text-destructive-foreground' :
+              'bg-almans-gold text-almans-chocolate'
+            }`}>
+              {product.badge === 'limited' ? 'Hot' : product.badge}
+            </span>
+          </div>
+        )}
+
+        {/* Action Buttons - simplified on low-end */}
+        <div className={`absolute right-3 top-3 flex flex-col gap-2 ${shouldReduceAnimations ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleWishlist(product.id); }}
+            className={`p-2 rounded-full backdrop-blur-sm transition-colors ${
+              inWishlist
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-background/80 hover:bg-primary hover:text-primary-foreground'
+            }`}
+          >
+            <Heart className={`h-4 w-4 ${inWishlist ? 'fill-current' : ''}`} />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onQuickView(product); }}
+            className="p-2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground transition-colors"
+          >
+            <Eye className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Quick Add Button - simplified on low-end */}
+        <div className={`absolute bottom-3 left-3 right-3 ${shouldReduceAnimations ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
+          <Button
+            size="sm"
+            className="w-full gap-2"
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              addItem(product, product.sizes[1] || product.sizes[0]); 
+            }}
+          >
+            <ShoppingBag className="h-4 w-4" />
+            Quick Add
+          </Button>
+        </div>
+      </div>
+
+      {/* Product Info */}
+      <div onClick={() => navigate(`/product/${product.id}`)}>
+        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+          {product.category}
+        </p>
+        <h3 className="font-display font-semibold text-foreground mb-2 line-clamp-1">
+          {product.name}
+        </h3>
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-primary">৳{product.price.toFixed(0)}</span>
+          {product.originalPrice && (
+            <span className="text-sm text-muted-foreground line-through">
+              ৳{product.originalPrice.toFixed(0)}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+export const FeaturedCarousel = memo(function FeaturedCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
@@ -19,12 +123,12 @@ export function FeaturedCarousel() {
   const [showSwipeHint, setShowSwipeHint] = useState(true);
   const [hasSwiped, setHasSwiped] = useState(false);
   const { products, loading } = useProducts();
-  const { addItem } = useCartStore();
-  const { isInWishlist, toggleWishlist } = useWishlist();
-  const navigate = useNavigate();
+  const { shouldReduceAnimations, autoScrollInterval, carouselTransition, maxVisibleItems } = usePerformance();
 
-  // Filter featured products
-  const featuredProducts = products.filter(p => p.badge === 'new' || p.badge === 'limited').slice(0, 8);
+  // Filter featured products - limit on low-end devices
+  const featuredProducts = products
+    .filter(p => p.badge === 'new' || p.badge === 'limited')
+    .slice(0, shouldReduceAnimations ? 4 : 8);
   
   // Show 4 products at a time on desktop, 2 on tablet, 1 on mobile
   const itemsPerView = typeof window !== 'undefined' ? 
@@ -76,17 +180,17 @@ export function FeaturedCarousel() {
     return () => clearTimeout(timer);
   }, [hasSwiped]);
 
-  // Auto-scroll
+  // Auto-scroll with performance-based interval
   useEffect(() => {
     if (isPaused || featuredProducts.length <= itemsPerView) return;
     
-    const timer = setInterval(nextSlide, 4000);
+    const timer = setInterval(nextSlide, autoScrollInterval);
     return () => clearInterval(timer);
-  }, [isPaused, nextSlide, featuredProducts.length, itemsPerView]);
+  }, [isPaused, nextSlide, featuredProducts.length, itemsPerView, autoScrollInterval]);
 
   // Show skeleton while loading
   if (loading) {
-    return <FeaturedCarouselSkeleton count={4} />;
+    return <FeaturedCarouselSkeleton count={shouldReduceAnimations ? 2 : 4} />;
   }
 
   if (featuredProducts.length === 0) return null;
@@ -99,12 +203,7 @@ export function FeaturedCarousel() {
     >
       <div className="container px-4 md:px-8">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="flex items-center justify-between mb-10"
-        >
+        <div className="flex items-center justify-between mb-10">
           <div>
             <span className="text-primary font-medium text-sm tracking-widest uppercase mb-2 block">
               Trending Now
@@ -135,7 +234,7 @@ export function FeaturedCarousel() {
               <ChevronRight className="h-5 w-5" />
             </Button>
           </div>
-        </motion.div>
+        </div>
 
         {/* Carousel */}
         <div 
@@ -147,122 +246,46 @@ export function FeaturedCarousel() {
           <motion.div
             className="flex gap-6"
             animate={{ x: -currentIndex * (100 / itemsPerView + 6) + '%' }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            transition={carouselTransition}
             style={{ width: `${(featuredProducts.length / itemsPerView) * 100}%` }}
           >
             {featuredProducts.map((product, index) => (
-              <motion.div
+              <div
                 key={product.id}
-                className="group cursor-pointer"
                 style={{ width: `calc(${100 / featuredProducts.length}% - 1.5rem)` }}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
               >
-                <div className="relative overflow-hidden rounded-2xl bg-card mb-4 aspect-[4/5]">
-                  <img
-                    src={product.images[0]}
-                    alt={product.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    onClick={() => navigate(`/product/${product.id}`)}
-                  />
-
-                  {/* Badge */}
-                  {product.badge && (
-                    <div className="absolute left-3 top-3">
-                      <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold uppercase ${
-                        product.badge === 'new' ? 'bg-primary text-primary-foreground' :
-                        product.badge === 'sale' ? 'bg-destructive text-destructive-foreground' :
-                        'bg-almans-gold text-almans-chocolate'
-                      }`}>
-                        {product.badge === 'limited' ? 'Hot' : product.badge}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Action Buttons */}
-                  <div className="absolute right-3 top-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); toggleWishlist(product.id); }}
-                      className={`p-2 rounded-full backdrop-blur-sm transition-colors ${
-                        isInWishlist(product.id)
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-background/80 hover:bg-primary hover:text-primary-foreground'
-                      }`}
-                    >
-                      <Heart className={`h-4 w-4 ${isInWishlist(product.id) ? 'fill-current' : ''}`} />
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setQuickViewProduct(product); }}
-                      className="p-2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground transition-colors"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </button>
-                  </div>
-
-                  {/* Quick Add Button */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 0, y: 20 }}
-                    whileHover={{ opacity: 1, y: 0 }}
-                    className="absolute bottom-3 left-3 right-3 opacity-0 group-hover:opacity-100 transition-all"
-                  >
-                    <Button
-                      size="sm"
-                      className="w-full gap-2"
-                      onClick={(e) => { 
-                        e.stopPropagation(); 
-                        addItem(product, product.sizes[1] || product.sizes[0]); 
-                      }}
-                    >
-                      <ShoppingBag className="h-4 w-4" />
-                      Quick Add
-                    </Button>
-                  </motion.div>
-                </div>
-
-                {/* Product Info */}
-                <div onClick={() => navigate(`/product/${product.id}`)}>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
-                    {product.category}
-                  </p>
-                  <h3 className="font-display font-semibold text-foreground mb-2 line-clamp-1">
-                    {product.name}
-                  </h3>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-primary">৳{product.price.toFixed(0)}</span>
-                    {product.originalPrice && (
-                      <span className="text-sm text-muted-foreground line-through">
-                        ৳{product.originalPrice.toFixed(0)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
+                <FeaturedProductCard
+                  product={product}
+                  index={index}
+                  shouldReduceAnimations={shouldReduceAnimations}
+                  onQuickView={setQuickViewProduct}
+                />
+              </div>
             ))}
           </motion.div>
 
-          {/* Mobile Swipe Hint */}
-          <AnimatePresence>
-            {showSwipeHint && maxIndex > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="absolute inset-0 flex items-center justify-center pointer-events-none md:hidden"
-              >
+          {/* Mobile Swipe Hint - hide on low-end for less visual noise */}
+          {!shouldReduceAnimations && (
+            <AnimatePresence>
+              {showSwipeHint && maxIndex > 0 && (
                 <motion.div
-                  animate={{ x: [0, 10, -10, 0] }}
-                  transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1 }}
-                  className="flex items-center gap-2 bg-foreground/80 text-background px-4 py-2 rounded-full shadow-lg backdrop-blur-sm"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none md:hidden"
                 >
-                  <MoveHorizontal className="h-4 w-4" />
-                  <span className="text-sm font-medium">Swipe to browse</span>
+                  <motion.div
+                    animate={{ x: [0, 10, -10, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1 }}
+                    className="flex items-center gap-2 bg-foreground/80 text-background px-4 py-2 rounded-full shadow-lg backdrop-blur-sm"
+                  >
+                    <MoveHorizontal className="h-4 w-4" />
+                    <span className="text-sm font-medium">Swipe to browse</span>
+                  </motion.div>
                 </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              )}
+            </AnimatePresence>
+          )}
         </div>
 
         {/* Progress Dots */}
@@ -287,4 +310,4 @@ export function FeaturedCarousel() {
       />
     </section>
   );
-}
+});

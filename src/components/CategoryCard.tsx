@@ -1,7 +1,9 @@
+import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Clock } from 'lucide-react';
 import { OptimizedImage } from '@/components/OptimizedImage';
+import { usePerformance } from '@/hooks/usePerformance';
 
 // Import AI-generated category banners
 import categoryShirts from '@/assets/category-shirts.jpg';
@@ -32,8 +34,16 @@ const CATEGORY_BANNERS: Record<string, string> = {
   'accessories': categoryAccessories,
 };
 
-export function CategoryCard({ name, slug, image, productCount, isComingSoon, index }: CategoryCardProps) {
+export const CategoryCard = memo(function CategoryCard({ 
+  name, 
+  slug, 
+  image, 
+  productCount, 
+  isComingSoon, 
+  index 
+}: CategoryCardProps) {
   const navigate = useNavigate();
+  const { shouldReduceAnimations, enableHoverEffects } = usePerformance();
 
   const handleClick = () => {
     if (!isComingSoon) {
@@ -44,13 +54,19 @@ export function CategoryCard({ name, slug, image, productCount, isComingSoon, in
   // Use database image first, then fallback to generated banners
   const bannerImage = image || CATEGORY_BANNERS[slug];
 
+  // Use simplified wrapper on low-end devices
+  const Wrapper = shouldReduceAnimations ? 'div' : motion.div;
+  const wrapperProps = shouldReduceAnimations ? {} : {
+    initial: { opacity: 0, y: 20 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true },
+    transition: { duration: 0.5, delay: Math.min(index * 0.1, 0.3) },
+    whileHover: enableHoverEffects ? { y: -8, scale: 1.02 } : undefined,
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: index * 0.1 }}
-      whileHover={{ y: -8, scale: 1.02 }}
+    <Wrapper
+      {...wrapperProps}
       onClick={handleClick}
       className={`
         relative group cursor-pointer rounded-2xl overflow-hidden
@@ -62,7 +78,7 @@ export function CategoryCard({ name, slug, image, productCount, isComingSoon, in
     >
       {/* Background Image */}
       <div className="aspect-[4/3] relative overflow-hidden">
-        <div className={`w-full h-full transition-transform duration-500 group-hover:scale-110 ${isComingSoon ? 'grayscale' : ''}`}>
+        <div className={`w-full h-full ${!shouldReduceAnimations ? 'transition-transform duration-500 group-hover:scale-110' : ''} ${isComingSoon ? 'grayscale' : ''}`}>
           <OptimizedImage
             src={bannerImage}
             alt={name}
@@ -76,19 +92,15 @@ export function CategoryCard({ name, slug, image, productCount, isComingSoon, in
         
         {/* Coming Soon Badge */}
         {isComingSoon && (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="absolute top-3 right-3 flex items-center gap-1.5 bg-primary/90 text-primary-foreground px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg"
-          >
+          <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-primary/90 text-primary-foreground px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg">
             <Clock className="h-3 w-3" />
             Coming Soon
-          </motion.div>
+          </div>
         )}
         
         {/* Product Count Badge */}
         {!isComingSoon && productCount > 0 && (
-          <div className="absolute top-3 right-3 bg-background/80 backdrop-blur-sm text-foreground px-3 py-1 rounded-full text-xs font-medium border border-border/50">
+          <div className={`absolute top-3 right-3 bg-background/80 ${!shouldReduceAnimations ? 'backdrop-blur-sm' : ''} text-foreground px-3 py-1 rounded-full text-xs font-medium border border-border/50`}>
             {productCount} {productCount === 1 ? 'item' : 'items'}
           </div>
         )}
@@ -106,19 +118,14 @@ export function CategoryCard({ name, slug, image, productCount, isComingSoon, in
           }
         </p>
         
-        {/* Hover Arrow */}
+        {/* Hover Arrow - simplified on low-end */}
         {!isComingSoon && (
-          <div className="mt-3 flex items-center gap-2 text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div className={`mt-3 flex items-center gap-2 text-primary ${shouldReduceAnimations ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity duration-300`}>
             <span className="text-sm font-medium">Shop Now</span>
-            <motion.span
-              animate={{ x: [0, 5, 0] }}
-              transition={{ repeat: Infinity, duration: 1.5 }}
-            >
-              →
-            </motion.span>
+            <span>→</span>
           </div>
         )}
       </div>
-    </motion.div>
+    </Wrapper>
   );
-}
+});
