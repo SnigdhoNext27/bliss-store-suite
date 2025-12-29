@@ -1,7 +1,8 @@
-import { ReactNode } from 'react';
+import { ReactNode, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
+import { usePerformance } from '@/hooks/usePerformance';
 
 interface SwipeNavigationWrapperProps {
   children: ReactNode;
@@ -11,6 +12,7 @@ const routes = ['/', '/shop', '/wishlist', '/account'];
 
 export function SwipeNavigationWrapper({ children }: SwipeNavigationWrapperProps) {
   const location = useLocation();
+  const { shouldReduceAnimations, animationDuration } = usePerformance();
   const { onTouchStart, onTouchMove, onTouchEnd, currentIndex, totalRoutes } = useSwipeNavigation({
     threshold: 80,
     enabled: !location.pathname.startsWith('/admin') && !location.pathname.startsWith('/product'),
@@ -18,20 +20,36 @@ export function SwipeNavigationWrapper({ children }: SwipeNavigationWrapperProps
 
   const showIndicators = routes.includes(location.pathname);
 
+  // Performance-optimized animation variants
+  const pageVariants = useMemo(() => ({
+    initial: shouldReduceAnimations 
+      ? { opacity: 1 } 
+      : { opacity: 0, x: currentIndex >= 0 ? 20 : 0 },
+    animate: { opacity: 1, x: 0 },
+    exit: shouldReduceAnimations 
+      ? { opacity: 1 } 
+      : { opacity: 0, x: currentIndex >= 0 ? -20 : 0 },
+  }), [shouldReduceAnimations, currentIndex]);
+
   return (
     <div
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
-      className="min-h-screen"
+      className="min-h-screen will-change-scroll"
+      style={{ touchAction: 'pan-y pinch-zoom' }}
     >
       <AnimatePresence mode="wait">
         <motion.div
           key={location.pathname}
-          initial={{ opacity: 0, x: currentIndex >= 0 ? 20 : 0 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: currentIndex >= 0 ? -20 : 0 }}
-          transition={{ duration: 0.2, ease: 'easeInOut' }}
+          initial={pageVariants.initial}
+          animate={pageVariants.animate}
+          exit={pageVariants.exit}
+          transition={{ 
+            duration: shouldReduceAnimations ? 0 : animationDuration, 
+            ease: 'easeOut' 
+          }}
+          style={{ willChange: shouldReduceAnimations ? 'auto' : 'opacity, transform' }}
         >
           {children}
         </motion.div>

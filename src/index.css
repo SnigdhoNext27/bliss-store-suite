@@ -127,6 +127,10 @@
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+    /* Smooth scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
+    /* Prevent pull-to-refresh on mobile */
+    overscroll-behavior-y: contain;
   }
 
   body {
@@ -134,6 +138,12 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     touch-action: manipulation;
+    /* Prevent text selection during swipe */
+    -webkit-user-select: none;
+    user-select: auto;
+    /* Smooth scrolling */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -377,6 +387,53 @@
     position: -webkit-sticky;
     position: sticky;
   }
+  
+  /* iOS smooth scrolling */
+  body {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Fix iOS momentum scrolling */
+  .overflow-y-auto,
+  .overflow-x-auto,
+  .overflow-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Optimized touch targets for all touch devices */
+@media (pointer: coarse) {
+  button:not(.icon-btn), 
+  a:not(.inline-link), 
+  [role="button"],
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Passive touch events optimization */
+.touch-optimized {
+  touch-action: pan-y pinch-zoom;
+}
+
+/* Smooth scrolling containers */
+.scroll-smooth {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* GPU-accelerated scrolling */
+.will-change-scroll {
+  will-change: scroll-position;
+}
+
+/* GPU acceleration for smooth animations */
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
 }
 
 /* Prevent layout shift on scrollbar appearance */
@@ -390,13 +447,21 @@ html {
   outline-offset: 2px;
 }
 
-/* Reduced motion preference */
+/* Reduced motion preference - apply to low-end devices too */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  
+  .animate-fade-in,
+  .animate-slide-up,
+  .animate-slide-left,
+  .animate-zoom-in,
+  .animate-float {
+    animation: none !important;
   }
 }
 
@@ -405,4 +470,28 @@ html {
   :root:not(.light) {
     color-scheme: dark;
   }
+}
+
+/* Performance optimizations for all devices */
+img, video {
+  content-visibility: auto;
+}
+
+/* Optimize rendering for large lists */
+.virtualized-list {
+  contain: strict;
+  content-visibility: auto;
+}
+
+/* Smooth 60fps scrolling */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
+}
+
+/* Prevent janky animations */
+.transform-gpu {
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
 }
