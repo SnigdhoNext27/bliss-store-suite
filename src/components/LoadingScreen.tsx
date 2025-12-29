@@ -41,7 +41,7 @@ export function LoadingScreen({ duration: propDuration }: LoadingScreenProps) {
           {[...Array(5)].map((_, i) => (
             <motion.div
               key={i}
-              className="absolute w-2 h-2 bg-[#5a3825]/30 rounded-full"
+              className="absolute w-2 h-2 bg-[#8B5A3C]/30 rounded-full"
               initial={{ 
                 x: `${20 + Math.random() * 60}%`,
                 y: '110%',
@@ -83,13 +83,13 @@ export function LoadingScreen({ duration: propDuration }: LoadingScreenProps) {
             cy="80"
             r="72"
             fill="none"
-            stroke="#5a3825"
+            stroke="#4a2a1a"
             strokeWidth="4"
             strokeLinecap="round"
             strokeDasharray={452}
             strokeDashoffset={452 - (452 * progress) / 100}
             transform="rotate(-90 80 80)"
-            style={{ filter: 'drop-shadow(0 0 8px rgba(90, 56, 37, 0.4))' }}
+            style={{ filter: 'drop-shadow(0 0 8px rgba(74, 42, 26, 0.5))' }}
           />
         </svg>
       </motion.div>
@@ -103,7 +103,7 @@ export function LoadingScreen({ duration: propDuration }: LoadingScreenProps) {
       >
         {/* Glow behind */}
         <motion.div
-          className="absolute inset-0 rounded-full blur-xl bg-[#5a3825]/40"
+          className="absolute inset-0 rounded-full blur-xl bg-[#4a2a1a]/40"
           animate={{ 
             scale: [1.3, 1.5, 1.3], 
             opacity: [0.4, 0.6, 0.4] 
@@ -113,12 +113,12 @@ export function LoadingScreen({ duration: propDuration }: LoadingScreenProps) {
         
         {/* Main round brown logo */}
         <motion.div
-          className="relative w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-[#5a3825] dark:bg-[#6b4429] shadow-2xl flex items-center justify-center"
+          className="relative w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-[#8B5A3C] dark:bg-[#9B6A4C] border-4 border-[#4a2a1a] dark:border-[#3d2215] shadow-2xl flex items-center justify-center"
           animate={{ 
             boxShadow: [
-              '0 0 30px rgba(90, 56, 37, 0.4)',
-              '0 0 50px rgba(90, 56, 37, 0.6)',
-              '0 0 30px rgba(90, 56, 37, 0.4)',
+              '0 0 30px rgba(74, 42, 26, 0.4)',
+              '0 0 50px rgba(74, 42, 26, 0.6)',
+              '0 0 30px rgba(74, 42, 26, 0.4)',
             ]
           }}
           transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
@@ -150,7 +150,7 @@ export function LoadingScreen({ duration: propDuration }: LoadingScreenProps) {
       >
         <div className="h-1.5 bg-muted rounded-full overflow-hidden">
           <motion.div
-            className="h-full rounded-full bg-[#5a3825]"
+            className="h-full rounded-full bg-[#4a2a1a]"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
