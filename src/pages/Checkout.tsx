@@ -250,7 +250,8 @@ export default function Checkout() {
         }
       }
       
-      setStep(4);
+      // Redirect to order confirmation page
+      navigate(`/order-confirmation/${result?.order_number || orderNum}`);
       
       // Send WhatsApp notification to admin
       try {

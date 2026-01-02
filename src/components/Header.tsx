@@ -36,8 +36,8 @@ const navLinks = [
   { name: 'Home', key: 'home', href: '/' },
   { name: 'Shop', key: 'shop', href: '/shop' },
   { name: 'Sales', key: 'sales', href: '/sales', highlight: true },
+  { name: 'My Orders', key: 'myOrders', href: '/my-orders' },
   { name: 'About Us', key: 'aboutUs', href: '/shop#about' },
-  { name: 'Contact', key: 'contact', href: '/shop#contact' },
 ];
 
 export function Header() {
