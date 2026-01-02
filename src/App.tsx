@@ -32,6 +32,8 @@ import Checkout from "./pages/Checkout";
 import Wishlist from "./pages/Wishlist";
 import Account from "./pages/Account";
 import OrderTracking from "./pages/OrderTracking";
+import OrderConfirmation from "./pages/OrderConfirmation";
+import MyOrders from "./pages/MyOrders";
 import Category from "./pages/Category";
 import AdminLayout from "./pages/admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
@@ -125,6 +127,8 @@ function AppContent() {
                         <Route path="/wishlist" element={<Wishlist />} />
                         <Route path="/account" element={<Account />} />
                         <Route path="/orders/:orderNumber" element={<OrderTracking />} />
+                        <Route path="/order-confirmation/:orderNumber" element={<OrderConfirmation />} />
+                        <Route path="/my-orders" element={<MyOrders />} />
                         
                         {/* Admin Routes */}
                         <Route path="/admin" element={<AdminLayout />}>

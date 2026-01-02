@@ -13,6 +13,7 @@ import { CartSlide } from '@/components/CartSlide';
 import { InvoiceDownloadButton } from '@/components/InvoiceDownloadButton';
 import { DeliveryEstimation } from '@/components/DeliveryEstimation';
 import { OrderCancelButton } from '@/components/OrderCancelButton';
+import { OrderModification } from '@/components/OrderModification';
 
 interface OrderItem {
   id: string;
@@ -416,57 +417,71 @@ export default function OrderTracking() {
               </div>
             )}
 
-            {/* Order Items */}
+            {/* Order Items - Editable if pending */}
             <div className="bg-card rounded-xl p-6 mb-6">
               <h2 className="font-display text-lg font-bold mb-4">Order Items</h2>
-              <div className="space-y-4">
-                {orderItems.map((item) => (
-                  <div key={item.id} className="flex gap-4">
-                    {item.product_image ? (
-                      <img
-                        src={item.product_image}
-                        alt={item.product_name}
-                        className="w-16 h-20 object-cover rounded-lg"
-                      />
-                    ) : (
-                      <div className="w-16 h-20 bg-muted rounded-lg flex items-center justify-center">
-                        <Package className="h-6 w-6 text-muted-foreground" />
+              
+              {order.status === 'pending' ? (
+                <OrderModification
+                  orderId={order.id}
+                  orderNumber={order.order_number}
+                  items={orderItems}
+                  subtotal={order.subtotal}
+                  deliveryFee={order.delivery_fee}
+                  onUpdate={() => fetchOrder(true)}
+                />
+              ) : (
+                <>
+                  <div className="space-y-4">
+                    {orderItems.map((item) => (
+                      <div key={item.id} className="flex gap-4">
+                        {item.product_image ? (
+                          <img
+                            src={item.product_image}
+                            alt={item.product_name}
+                            className="w-16 h-20 object-cover rounded-lg"
+                          />
+                        ) : (
+                          <div className="w-16 h-20 bg-muted rounded-lg flex items-center justify-center">
+                            <Package className="h-6 w-6 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <p className="font-medium">{item.product_name}</p>
+                          {item.size && <p className="text-sm text-muted-foreground">Size: {item.size}</p>}
+                          <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                        </div>
+                        <p className="font-medium">৳{(item.price * item.quantity).toFixed(0)}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <hr className="my-4 border-border" />
+
+                  {/* Totals */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Subtotal</span>
+                      <span>৳{order.subtotal.toFixed(0)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Delivery</span>
+                      <span>৳{order.delivery_fee.toFixed(0)}</span>
+                    </div>
+                    {order.discount && order.discount > 0 && (
+                      <div className="flex justify-between text-sm text-green-600">
+                        <span>Discount</span>
+                        <span>-৳{order.discount.toFixed(0)}</span>
                       </div>
                     )}
-                    <div className="flex-1">
-                      <p className="font-medium">{item.product_name}</p>
-                      {item.size && <p className="text-sm text-muted-foreground">Size: {item.size}</p>}
-                      <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                    <hr className="border-border" />
+                    <div className="flex justify-between font-bold text-lg">
+                      <span>Total</span>
+                      <span>৳{order.total.toFixed(0)}</span>
                     </div>
-                    <p className="font-medium">৳{(item.price * item.quantity).toFixed(0)}</p>
                   </div>
-                ))}
-              </div>
-
-              <hr className="my-4 border-border" />
-
-              {/* Totals */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span>৳{order.subtotal.toFixed(0)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Delivery</span>
-                  <span>৳{order.delivery_fee.toFixed(0)}</span>
-                </div>
-                {order.discount && order.discount > 0 && (
-                  <div className="flex justify-between text-sm text-green-600">
-                    <span>Discount</span>
-                    <span>-৳{order.discount.toFixed(0)}</span>
-                  </div>
-                )}
-                <hr className="border-border" />
-                <div className="flex justify-between font-bold text-lg">
-                  <span>Total</span>
-                  <span>৳{order.total.toFixed(0)}</span>
-                </div>
-              </div>
+                </>
+              )}
             </div>
 
             {/* Delivery Address */}
