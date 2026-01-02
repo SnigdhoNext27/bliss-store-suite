@@ -21,6 +21,7 @@ import { ProductComparisonBar } from "@/components/ProductComparisonBar";
 import { ProductComparisonModal } from "@/components/ProductComparisonModal";
 import { AbandonedCartTracker } from "@/components/AbandonedCartTracker";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { FloatingCartButton } from "@/components/FloatingCartButton";
 import { fetchAndUpdateRates } from "@/hooks/useCurrency";
 import { usePerformance } from "@/hooks/usePerformance";
 import Index from "./pages/Index";
@@ -112,6 +113,7 @@ function AppContent() {
                     <AbandonedCartTracker />
                     <ProductComparisonBar />
                     <ProductComparisonModal />
+                    <FloatingCartButton />
                     
                     <SwipeNavigationWrapper>
                     <AnimatedRoutes>

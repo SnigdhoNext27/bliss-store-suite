@@ -1,7 +1,7 @@
 import { useState, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, ShoppingBag, Heart, GitCompare } from 'lucide-react';
+import { Eye, ShoppingBag, Heart, GitCompare, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Product, useCartStore } from '@/lib/store';
 import { useWishlist } from '@/hooks/useWishlist';
@@ -88,16 +88,16 @@ export const ProductCard = memo(function ProductCard({ product, index = 0 }: Pro
       initial={cardInitial}
       animate={cardAnimation}
       transition={{ 
-        duration: shouldReduceAnimations ? 0.1 : 0.5, 
-        delay: shouldReduceAnimations ? 0 : Math.min(index * 0.05, 0.3) 
+        duration: shouldReduceAnimations ? 0.1 : 0.4, 
+        delay: shouldReduceAnimations ? 0 : Math.min(index * 0.03, 0.2) 
       }}
       className="group cursor-pointer"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={handleCardClick}
     >
-      {/* Image Container */}
-      <div className="relative mb-4 aspect-[4/5] overflow-hidden rounded-2xl bg-card shadow-sm">
+      {/* Image Container - Enhanced with better shadows and transitions */}
+      <div className="relative mb-4 aspect-[4/5] overflow-hidden rounded-2xl bg-gradient-to-b from-card to-muted/30 shadow-sm hover:shadow-elevated transition-shadow duration-500">
         {/* Optimized image with lazy loading and responsive sizing */}
         {shouldReduceAnimations ? (
           <OptimizedImage
@@ -110,8 +110,8 @@ export const ProductCard = memo(function ProductCard({ product, index = 0 }: Pro
         ) : (
           <motion.div
             className="h-full w-full"
-            animate={{ scale: isHovered && enableHoverEffects ? 1.05 : 1 }}
-            transition={{ duration: animationDuration }}
+            animate={{ scale: isHovered && enableHoverEffects ? 1.08 : 1 }}
+            transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
             <OptimizedImage
               src={product.images?.[0] || '/placeholder.svg'}
@@ -123,105 +123,118 @@ export const ProductCard = memo(function ProductCard({ product, index = 0 }: Pro
           </motion.div>
         )}
 
-        {/* Badge */}
+        {/* Gradient overlay on hover */}
+        <div className={`absolute inset-0 bg-gradient-to-t from-foreground/20 via-transparent to-transparent transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`} />
+
+        {/* Badge - Enhanced styling */}
         {product.badge && (
           <div className="absolute left-3 top-3 flex flex-col gap-2">
-            <span
-              className={`inline-block rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
+            <motion.span
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-wider shadow-md backdrop-blur-sm ${
                 product.badge === 'new'
-                  ? 'bg-primary text-primary-foreground'
+                  ? 'bg-primary/95 text-primary-foreground'
                   : product.badge === 'sale'
-                  ? 'bg-destructive text-destructive-foreground'
-                  : 'bg-almans-gold text-almans-chocolate'
+                  ? 'bg-destructive/95 text-destructive-foreground'
+                  : 'bg-almans-gold/95 text-almans-chocolate'
               }`}
             >
+              {product.badge === 'new' && <Sparkles className="w-3 h-3" />}
               {product.badge === 'limited' ? 'Low Stock' : product.badge}
-            </span>
+            </motion.span>
             {product.badge === 'sale' && !shouldReduceAnimations && (
-              <SaleCountdown compact className="bg-background/90 backdrop-blur-sm rounded-full px-2 py-1" />
+              <SaleCountdown compact className="bg-background/95 backdrop-blur-sm rounded-full px-2.5 py-1.5 shadow-md" />
             )}
           </div>
         )}
 
-        {/* Action Buttons - simplified for low-end devices */}
+        {/* Action Buttons - Enhanced with better visibility */}
         <div className="absolute right-3 top-3 flex flex-col gap-2">
-          {/* Always show wishlist button on mobile/low-end, animate on desktop */}
-          <button
+          <motion.button
             onClick={handleToggleWishlist}
-            className={`flex h-10 w-10 items-center justify-center rounded-full shadow-medium backdrop-blur-sm transition-colors ${
+            className={`flex h-11 w-11 items-center justify-center rounded-full shadow-lg backdrop-blur-md transition-all duration-300 ${
               inWishlist 
-                ? 'bg-primary text-primary-foreground' 
-                : 'bg-background/90 text-foreground hover:bg-primary hover:text-primary-foreground'
-            } ${!isHovered && !inWishlist && !shouldReduceAnimations ? 'opacity-0 translate-x-2' : 'opacity-100 translate-x-0'}`}
-            style={{ transition: 'opacity 0.2s, transform 0.2s' }}
+                ? 'bg-primary text-primary-foreground scale-110' 
+                : 'bg-background/95 text-foreground hover:bg-primary hover:text-primary-foreground hover:scale-110'
+            }`}
+            whileTap={{ scale: 0.9 }}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: inWishlist || isHovered || shouldReduceAnimations ? 1 : 0, x: 0 }}
+            transition={{ duration: 0.2 }}
             aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
           >
-            <Heart className={`h-5 w-5 ${inWishlist ? 'fill-current' : ''}`} />
-          </button>
+            <Heart className={`h-5 w-5 transition-transform ${inWishlist ? 'fill-current scale-110' : ''}`} />
+          </motion.button>
 
-          <button
+          <motion.button
             onClick={handleToggleComparison}
-            className={`flex h-10 w-10 items-center justify-center rounded-full shadow-medium backdrop-blur-sm transition-colors ${
+            className={`flex h-11 w-11 items-center justify-center rounded-full shadow-lg backdrop-blur-md transition-all duration-300 ${
               inComparison 
-                ? 'bg-almans-gold text-almans-chocolate' 
-                : 'bg-background/90 text-foreground hover:bg-almans-gold hover:text-almans-chocolate'
-            } ${!isHovered && !inComparison && !shouldReduceAnimations ? 'opacity-0 translate-x-2' : 'opacity-100 translate-x-0'}`}
-            style={{ transition: 'opacity 0.2s, transform 0.2s' }}
+                ? 'bg-almans-gold text-almans-chocolate scale-110' 
+                : 'bg-background/95 text-foreground hover:bg-almans-gold hover:text-almans-chocolate hover:scale-110'
+            }`}
+            whileTap={{ scale: 0.9 }}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: inComparison || isHovered || shouldReduceAnimations ? 1 : 0, x: 0 }}
+            transition={{ duration: 0.2, delay: 0.05 }}
             aria-label={inComparison ? 'Remove from comparison' : 'Add to comparison'}
           >
             <GitCompare className="h-5 w-5" />
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
             onClick={(e) => { e.stopPropagation(); navigate(`/product/${product.id}`); }}
-            className={`flex h-10 w-10 items-center justify-center rounded-full bg-background/90 text-foreground shadow-medium backdrop-blur-sm transition-colors hover:bg-primary hover:text-primary-foreground ${
-              !isHovered && !shouldReduceAnimations ? 'opacity-0 translate-x-2' : 'opacity-100 translate-x-0'
-            }`}
-            style={{ transition: 'opacity 0.2s, transform 0.2s' }}
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-background/95 text-foreground shadow-lg backdrop-blur-md transition-all duration-300 hover:bg-primary hover:text-primary-foreground hover:scale-110"
+            whileTap={{ scale: 0.9 }}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: isHovered || shouldReduceAnimations ? 1 : 0, x: 0 }}
+            transition={{ duration: 0.2, delay: 0.1 }}
             aria-label="Quick view"
           >
             <Eye className="h-5 w-5" />
-          </button>
+          </motion.button>
         </div>
 
-        {/* Size Selector on Hover - simplified on low-end */}
-        {product.sizes && product.sizes.length > 0 && (isHovered || shouldReduceAnimations) && (
-          <div
-            className={`absolute bottom-3 left-3 right-3 transition-all ${
-              isHovered || shouldReduceAnimations ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-            }`}
-            style={{ transition: 'opacity 0.2s, transform 0.2s' }}
+        {/* Size Selector on Hover - Enhanced mobile touch */}
+        {product.sizes && product.sizes.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: isHovered || shouldReduceAnimations ? 1 : 0, y: isHovered || shouldReduceAnimations ? 0 : 20 }}
+            transition={{ duration: 0.2 }}
+            className="absolute bottom-3 left-3 right-3"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-center gap-2 rounded-lg bg-background/90 p-2 backdrop-blur-sm">
+            <div className="flex justify-center gap-2 rounded-xl bg-background/95 p-3 backdrop-blur-md shadow-lg">
               {product.sizes.map((size) => (
                 <button
                   key={size}
                   onClick={(e) => { e.stopPropagation(); setSelectedSize(size); }}
-                  className={`flex h-8 w-8 items-center justify-center rounded-md text-xs font-medium transition-colors ${
+                  className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-semibold transition-all duration-200 ${
                     selectedSize === size
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground hover:bg-accent'
+                      ? 'bg-primary text-primary-foreground shadow-md scale-110'
+                      : 'bg-muted text-muted-foreground hover:bg-accent hover:scale-105'
                   }`}
                 >
                   {size}
                 </button>
               ))}
             </div>
-          </div>
+          </motion.div>
         )}
       </div>
 
-      {/* Product Info */}
-      <div className="space-y-2">
-        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+      {/* Product Info - Enhanced typography */}
+      <div className="space-y-2.5 px-1">
+        <p className="text-xs font-semibold uppercase tracking-widest text-primary/80">
           {product.category}
         </p>
-        <h3 className="font-display text-lg font-semibold text-foreground line-clamp-1">
+        <h3 className="font-display text-lg font-bold text-foreground line-clamp-1 group-hover:text-primary transition-colors duration-200">
           {product.name}
         </h3>
-        <div className="flex items-center gap-2">
-          <span className="text-lg font-bold text-primary">
+        <div className="flex items-center gap-3">
+          <span className="text-xl font-bold text-primary">
             {format(product.price)}
           </span>
           {product.originalPrice && (
@@ -229,14 +242,19 @@ export const ProductCard = memo(function ProductCard({ product, index = 0 }: Pro
               {format(product.originalPrice)}
             </span>
           )}
+          {product.originalPrice && (
+            <span className="text-xs font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full">
+              -{Math.round((1 - product.price / product.originalPrice) * 100)}%
+            </span>
+          )}
         </div>
 
-        {/* Action Button */}
-        <div className="pt-2">
+        {/* Action Button - Enhanced with gradient */}
+        <div className="pt-3">
           <Button
             variant="default"
             size="sm"
-            className="w-full gap-2"
+            className="w-full gap-2 h-11 text-sm font-semibold rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-300"
             onClick={handleAddToBag}
           >
             <ShoppingBag className="h-4 w-4" />

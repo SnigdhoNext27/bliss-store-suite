@@ -50,21 +50,30 @@ export function Footer() {
   ];
 
   return (
-    <footer className="bg-almans-chocolate text-almans-cream">
-      {/* Brand Banner */}
-      <div className="border-b border-almans-cream/10 overflow-hidden">
+    <footer className="bg-gradient-to-b from-almans-chocolate to-[hsl(20_35%_12%)] text-almans-cream relative overflow-hidden">
+      {/* Decorative elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-almans-gold/5 rounded-full blur-3xl" />
+      </div>
+
+      {/* Brand Banner - Enhanced */}
+      <div className="border-b border-almans-cream/10 overflow-hidden relative">
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          className="py-12"
+          className="py-16"
         >
-          <h2
-            className="font-display text-[15vw] md:text-[12vw] font-bold text-center tracking-widest text-almans-cream/10 whitespace-nowrap"
-            style={{ letterSpacing: '0.2em' }}
+          <motion.h2
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="font-display text-[18vw] md:text-[14vw] font-bold text-center tracking-[0.15em] text-almans-cream/8 whitespace-nowrap select-none"
           >
             ALMANS
-          </h2>
+          </motion.h2>
         </motion.div>
       </div>
 
@@ -154,15 +163,20 @@ export function Footer() {
         </div>
       </div>
 
-      {/* Bottom Bar */}
-      <div className="border-t border-almans-cream/10">
-        <div className="container px-4 md:px-8 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-almans-cream/60">
-            ©2025 Almans. All rights reserved.
+      {/* Bottom Bar - Enhanced */}
+      <div className="border-t border-almans-cream/10 relative">
+        <div className="container px-4 md:px-8 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-sm text-almans-cream/60 font-medium">
+            © {new Date().getFullYear()} Almans. All rights reserved. Crafted with ❤️ in Bangladesh.
           </p>
-          <a href="#" className="text-sm text-almans-cream/60 hover:text-almans-cream transition-colors">
-            Privacy policy
-          </a>
+          <div className="flex items-center gap-6">
+            <a href="#" className="text-sm text-almans-cream/60 hover:text-almans-cream transition-colors duration-200">
+              Privacy Policy
+            </a>
+            <a href="#" className="text-sm text-almans-cream/60 hover:text-almans-cream transition-colors duration-200">
+              Terms of Service
+            </a>
+          </div>
         </div>
       </div>
     </footer>

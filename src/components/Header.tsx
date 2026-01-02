@@ -113,24 +113,25 @@ export function Header() {
 
       <motion.header 
         className={cn(
-          "sticky top-0 z-50 w-full border-b transition-all duration-300 bg-background",
+          "sticky top-0 z-50 w-full transition-all duration-500 ease-out",
           isScrolled 
-            ? "border-border shadow-md" 
-            : "border-border"
+            ? "border-b border-border/50 bg-background/95 backdrop-blur-xl shadow-lg" 
+            : "border-b border-transparent bg-background"
         )}
         animate={{
-          height: isScrolled ? 56 : 64,
+          height: isScrolled ? 60 : 68,
         }}
-        transition={{ duration: 0.3, ease: 'easeOut' }}
+        transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
       >
       <div className={cn(
         "container flex items-center justify-between px-4 md:px-8 transition-all duration-300",
-        isScrolled ? "h-14" : "h-16"
+        isScrolled ? "h-[60px]" : "h-[68px]"
       )}>
         {/* Logo with scale transition */}
         <motion.div
-          animate={{ scale: isScrolled ? 0.9 : 1 }}
+          animate={{ scale: isScrolled ? 0.92 : 1 }}
           transition={{ duration: 0.3 }}
+          className="flex items-center"
         >
           <Logo size={isScrolled ? 'sm' : 'md'} animate={false} />
         </motion.div>
@@ -277,19 +278,23 @@ export function Header() {
             </Button>
           )}
 
-          {/* My Bag - hidden on mobile since it's in bottom nav */}
+          {/* My Bag - Enhanced styling */}
           <Button
             variant="ghost"
             size="sm"
-            className="relative gap-2 hidden md:flex"
+            className="relative gap-2 hidden md:flex hover:bg-primary/10 transition-colors duration-200"
             onClick={openCart}
           >
             <ShoppingBag className="h-5 w-5" />
-            <span className="hidden sm:inline">{t('myBag')}</span>
+            <span className="hidden sm:inline font-medium">{t('myBag')}</span>
             {totalItems > 0 && (
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+              <motion.span 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground shadow-md"
+              >
                 {totalItems}
-              </span>
+              </motion.span>
             )}
           </Button>
 
