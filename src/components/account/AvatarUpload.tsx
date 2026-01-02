@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/lib/auth';
 
 interface AvatarUploadProps {
   avatarUrl: string | null;
@@ -16,6 +17,7 @@ export function AvatarUpload({ avatarUrl, userId, fullName, onAvatarChange }: Av
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { updateProfile } = useAuth();
 
   const getInitials = (name: string | null) => {
     if (!name) return 'U';
@@ -79,6 +81,9 @@ export function AvatarUpload({ avatarUrl, userId, fullName, onAvatarChange }: Av
         .eq('id', userId);
 
       if (updateError) throw updateError;
+
+      // Update header avatar immediately
+      updateProfile({ avatar_url: urlData.publicUrl });
 
       onAvatarChange(newUrl);
       toast({ title: 'Profile photo updated!' });
