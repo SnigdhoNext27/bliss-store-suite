@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search, ShoppingBag, User, Menu, X, LogOut, Settings, Package, Facebook, Instagram, ChevronDown, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,7 +47,7 @@ export function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { getTotalItems, openCart } = useCartStore();
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, profile, avatarCacheKey, isAdmin, signOut } = useAuth();
   const { settings } = useSiteSettings();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -218,11 +219,15 @@ export function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="gap-1 group">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-almans-gold flex items-center justify-center">
-                      <span className="text-xs font-bold text-primary-foreground uppercase">
-                        {user.email?.charAt(0)}
-                      </span>
-                    </div>
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage
+                        src={profile?.avatar_url ? `${profile.avatar_url}?t=${avatarCacheKey}` : undefined}
+                        alt={profile?.full_name || user.email || 'User'}
+                      />
+                      <AvatarFallback className="bg-primary/10 text-primary font-bold uppercase">
+                        {(profile?.full_name || user.email || 'U').charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
                     <span className="hidden lg:inline text-sm max-w-[100px] truncate">
                       {user.email?.split('@')[0]}
                     </span>
