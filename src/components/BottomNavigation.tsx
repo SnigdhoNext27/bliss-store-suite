@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 const navItems = [
   { icon: Home, label: 'Home', path: '/' },
   { icon: Grid3X3, label: 'Shop', path: '/shop' },
-  { icon: ShoppingBag, label: 'Cart', path: '/cart', isCart: true },
+  { icon: ShoppingBag, label: 'Bag', path: '/bag', isCart: true },
   { icon: Heart, label: 'Wishlist', path: '/wishlist', isWishlist: true },
   { icon: User, label: 'Account', path: '/account' },
 ];
