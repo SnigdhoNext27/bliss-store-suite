@@ -57,7 +57,7 @@ export function SwipeNavigationWrapper({ children }: SwipeNavigationWrapperProps
 
       {/* Page Indicator Dots - Mobile only */}
       {showIndicators && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex gap-1.5 md:hidden">
+        <div className="fixed bottom-[4.5rem] left-1/2 -translate-x-1/2 z-40 flex gap-1.5 md:hidden">
           {Array.from({ length: totalRoutes }).map((_, index) => (
             <motion.div
               key={index}
