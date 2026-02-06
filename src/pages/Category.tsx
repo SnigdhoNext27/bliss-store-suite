@@ -118,7 +118,7 @@ export default function Category() {
 
       <PullToRefresh onRefresh={handleRefresh} />
 
-      <div className="min-h-screen bg-background pb-20 md:pb-0">
+      <div className="min-h-screen bg-background">
         <Header />
         
         <main>

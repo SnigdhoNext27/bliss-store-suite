@@ -21,15 +21,15 @@ export function WhatsAppButton() {
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ delay: 1, type: 'spring', stiffness: 260, damping: 20 }}
-      whileHover={{ scale: 1.1 }}
+      whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
-      className="fixed bottom-36 right-3 z-50 flex h-9 w-9 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg hover:bg-[#20BD5A] transition-colors md:bottom-6 md:right-6 md:h-14 md:w-14"
+      className="fixed bottom-20 right-3 z-50 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#25D366] to-[#128C7E] text-white shadow-lg hover:shadow-xl transition-all md:bottom-6 md:right-6 md:h-14 md:w-14 md:rounded-2xl"
       aria-label="Chat on WhatsApp"
     >
-      <WhatsAppIcon className="h-4 w-4 md:h-7 md:w-7" />
+      <WhatsAppIcon className="h-6 w-6 md:h-7 md:w-7" />
       
-      {/* Pulse animation */}
-      <span className="absolute -z-10 h-full w-full animate-ping rounded-full bg-[#25D366] opacity-30" />
+      {/* Small indicator dot */}
+      <span className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-400 border-2 border-background" />
     </motion.a>
   );
 }
